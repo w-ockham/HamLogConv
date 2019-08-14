@@ -145,32 +145,32 @@ def toAirHam(lcount, line, options, charset):
                         "received_rst","sent_qth","received_qth",
                         "received_qra","frequency","mode","card",
                         "remarks"]))
-    else:
-        h = decodeHamlog(line,charset)
-        if options['MyQTH']=='rmks1':
-            myqth = h['rmks1']
-            comment = h['rmks2']
-        else:
-            myqth = h['rmks2']
-            comment = h['rmks1']
 
-        l = [
-            "",
-            h['operator'],
-            h['portable'],
-            h['year']+h['month']+h['day']+
-            'T'+h['hour']+h['minute']+'00'+h['timezone'],
-            h['rst_sent'],
-            h['rst_rcvd'],
-            myqth,
-            h['qth'],
-            h['name'],
-            h['band'],
-            h['mode-airham'],
-            h['qsl'],
-            comment
-        ]
-        print(",".join(l))
+    h = decodeHamlog(line,charset)
+    if options['MyQTH']=='rmks1':
+        myqth = h['rmks1']
+        comment = h['rmks2']
+    else:
+        myqth = h['rmks2']
+        comment = h['rmks1']
+        
+    l = [
+        "",
+        h['operator'],
+        h['portable'],
+        h['year']+h['month']+h['day']+
+        'T'+h['hour']+h['minute']+'00'+h['timezone'],
+        h['rst_sent'],
+        h['rst_rcvd'],
+        myqth,
+        h['qth'],
+        h['name'],
+        h['band'],
+        h['mode-airham'],
+        h['qsl'],
+        comment
+    ]
+    print(",".join(l))
     
 def toSOTA(lcount, line, options, charset):
     print(line.decode(charset), end='')
