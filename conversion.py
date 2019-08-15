@@ -151,7 +151,7 @@ def decodeHamlog(cols):
     }
 
     
-def toAirHam(lcount, row, options):
+def toAirHam(lcount, row, callsign, options):
     if lcount == 0:
         l= ["id","callsign","portable","qso_at","sent_rst",
             "received_rst","sent_qth","received_qth",
@@ -168,7 +168,7 @@ def toAirHam(lcount, row, options):
         myqth = h['rmks2']
         comment = h['rmks1']
     elif options['QTH']=='user_defined':
-        myqth = options['Summit']
+        myqth = options['Location']
         comment = h['rmks1']
     else:
         myqth = ''
@@ -191,7 +191,7 @@ def toAirHam(lcount, row, options):
     ]
     return l
     
-def toSOTA(lcount, row, options):
+def toSOTA(lcount, row, callsign, options):
     if lcount == 0:
         return None
     
@@ -209,7 +209,7 @@ def toSOTA(lcount, row, options):
         
     l = [
         "V2",
-        options['Activator'],
+        callsign,
         options['Summit'],
         '{day:02}/{month:02}/{year:02}'.format(day=h['day'], month=h['month'], year=h['year']),
         '{hour:02}:{minute:02}'.format(hour=h['hour'], minute=h['minute']),
@@ -219,172 +219,68 @@ def toSOTA(lcount, row, options):
         hisqth,
         comment
     ]
-    print(",".join(l))
-    
-def toADIF(lcount, row, options):
-    if lcount == 0:
-        return None
-    
-    h = decodeHamlog(row)
-    return row
+    return l
     
 def main():
     cgitb.enable()
-    response =u"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-<title> File conversion tool for AirHamLog beta.</title>
-    </head>
-
-    <body>
-    <div class="header clearfix">
-    <h6 class="text-muted"> File Conversion Tool for AirHamLog beta.</h6>
-    </div>
-    <form method="post" enctype="multipart/form-data" action='conversion.py' style="padding:10px">
-    <div class="form-row">
-     <div class="form-group col-sm-6">
-       <label for="inftype">アップロードするファイルの形式</label>
-       <select id="inftype" name="inftype" class="form-control">
-         <option> HamLog CSV </option>
-       </select>
-     </div>
-     <div class="form-group col-sm-6">
-       <label for="outftype">変換後のファイルの形式</label>
-       <select id="outftype" name="outftype" class="form-control">
-         <option>AirHamLog CSV</option>
-         <option>SOTA CSV</option>
-         <option>ADIF</option>
-       </select>
-     </div>
-    </div>
-    <div class="form-row">
-    <div class="form-group col-sm-6">
-    <div class="form-check">
-      <input class="form-check-input" type="radio" name="QTH" id="QTHNone" value="none" checked>
-      <label class="form-check-label" for="QTHNone">
-      指定しない
-      </label>
-    </div>
-    <div class="form-check">
-      <input class="form-check-input" type="radio" name="QTH" id="QTH1" value="rmks1">
-      <label class="form-check-label" for="QTH1">
-      Remarks1を送信QTHにする
-      </label>
-    </div>
-    <div class="form-check">
-      <input class="form-check-input" type="radio" name="QTH" id="QTH2" value="rmks2">
-      <label class="form-check-label" for="QTH2">
-      Remarks2を送信QTHにする
-      </label>
-    </div>
-    <div class="form-check">
-      <input class="form-check-input" type="radio" name="QTH" id="QTH3" value="user_defined">
-      <label class="form-check-label" for="QTH2">
-      移動運用先を送信QTHにする
-      </label>
-    </div>
-    </div>
-
-    <div class ="form-group col-sm-6">
-    <label for="your_call">移動運用時のコールサイン</label>
-    <input type="text" id="your_call" name="your_call" class="form-control" placeholder="コールサイン">
-    <label for="summit">移動運用先(JCC/JCG/SOTA山岳ID/JAFFリファレンスなど)</label>
-    <input type="text" id="summit" name="summit" class="form-control" placeholder="SOTA Summit or JAFF References (e.g. JA/NN-031 JAFF-0056)">
-    </div>
-    </div>
-
-    <div class="form-group">
-    <div class="custom-file">
-    <input type="file" class="custom-file-input" id="filename" name="filename" required>
-    <label class="custom-file-label" for="filename">ファイルを選択</label>
-    <div class="invalid-feedback">ファイルを指定してください</div>
-    </div>
-    </div>
-
-    <div class="form-group">
-    <button type="submit" class="btn btn-primary">アップロード</button>
-    </div>
-    </form>
-    <!-- Option Javascript -->
-    <script src="https://code.jquery.com/jquery-3.4.0.min.js" integrity="sha256-BJeo0qm959uMBGb65z40ejJYGSgR7REI4+CW1fNKwOg=" crossorigin="anonymous"> </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-    
-    <script>
-    $('.custom-file-input').on('change',function(){
-    $(this).next('.custom-file-label').html($(this)[0].files[0].name);
-    })
-    </script>
-    </body>
-    </html>
-    """
 
     form = cgi.FieldStorage()
-    inftype = form.getvalue('inftype',None)
-    outftype = form.getvalue('outftype',None)
 
+    activation_call = form.getvalue('activation_call',None)
+    chaser_call = form.getvalue('chaser_call',None)
+    
     options = {
         'QTH': form.getvalue('QTH',None),
-        'Activator': form.getvalue('your_call',None),
+        'Location': form.getvalue('location',None),
         'Summit': form.getvalue('summit',None)
     }
     
-    if "filename" not in form:
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-        print('Content-type: text/html; charset=UTF-8\n')
-        print(response)
+    fileitem = form['filename']
+    now  = datetime.datetime.now()
+    fname = now.strftime("%Y-%m-%d-%H-%M")
+
+    incharset = 'cp932'
+    
+    if activation_call:
+        outcharset = "utf-8"
+        fname = "sota-" + fname + ".csv"
+        callsign = activation_call
+        convfunc = toSOTA
+    elif chaser_call:
+        outcharset = "utf-8"
+        fname = "sota-" + fname + ".csv"
+        callsign = chaser_call
+        convfunc = toSOTA
     else:
-        fileitem = form['filename']
-        now  = datetime.datetime.now()
-        fname = now.strftime("%Y-%m-%d-%H-%M")
+        outcharset = "utf-8"
+        fname = "airhamlog-" + fname + ".csv"
+        callsign = ''
+        convfunc = toAirHam
 
-        if "HamLog" in inftype:
-            incharset = 'cp932'
-        else:
-            incharset = 'utf-8'
-            
-        if "AirHamLog" in outftype:
-            outcharset = "utf-8"
-            fname = "airhamlog-" + fname + ".csv"
-            convfunc = toAirHam
-        elif "SOTA" in outftype:
-            outcharset = "utf-8"
-            fname = "sota-" + fname + ".csv"
-            convfunc = toSOTA
-        else:
-            outcharset = "utf-8"
-            fname = "adif-" + fname + ".csv"
-            convfunc = toADIF
-
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding=outcharset)
-        print('Content-Disposition: attachment;filename="%s"\n' % fname)
-        #print('Content-Type: text/html\n')
-        if fileitem.file:
-            linecount = 0
-            writer = csv.writer(sys.stdout,delimiter=',',
-                                quoting=csv.QUOTE_MINIMAL)
-            with io.TextIOWrapper(fileitem.file, encoding=incharset) as f:
-                reader = csv.reader(f)
-                for row in reader:
-                    if linecount > 100000:
-                        break
-                    else:
-                        if linecount == 0:
-                            header = convfunc(linecount, row, options)
-                            if header:
-                                writer.writerow(header)
-                                linecount += 1
-                        writer.writerow(convfunc(linecount, row, options))
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding=outcharset)
+    print('Content-Disposition: attachment;filename="%s"\n' % fname)
+    #print('Content-Type: text/html\n')
+    if fileitem.file:
+        linecount = 0
+        writer = csv.writer(sys.stdout,delimiter=',',
+                            quoting=csv.QUOTE_MINIMAL)
+        with io.TextIOWrapper(fileitem.file, encoding=incharset) as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if linecount > 100000:
+                    break
+                else:
+                    if linecount == 0:
+                        header = convfunc(linecount, row, callsign, options)
+                        if header:
+                            writer.writerow(header)
                         linecount += 1
-
-        else:
-            print('Content-type: text/html; charset=utf-8\n')
-            print('<h1> File not found:%s' % fileitem)
-            
+                    writer.writerow(convfunc(linecount, row, callsign, options))
+                    linecount += 1
+    else:
+        print('Content-type: text/html; charset=utf-8\n')
+        print('<h1> File not found:%s' % fileitem)
+        
 if __name__ == '__main__':
     main()
 

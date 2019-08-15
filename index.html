@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <title>File Conversion Tools for HamLog</title>
+  </head>
+  <body>
+    <div class="header clearfix">
+      <h4 class="text-muted"> File Conversion Tools for HamLog.</h4>
+    </div>
+    <ul class="nav nav-tabs nav-pills" role="tablist">
+      <li class="nav-item">
+	<a class="nav-link active" id="AirHamLog-tab" data-toggle="tab" href="#AirHamLog" role="tab" aria-controls="AirHamLog" aria-selected="true">AirHamLog</a>
+      </li>
+      <li class="nav-item">
+	<a class="nav-link" id="SOTAActivator-tab" data-toggle="tab" href="#SOTAActivator" role="tab" aria-controls="SOTAActivator" aria-selected="false">SOTA Acitivator</a>
+      </li>
+      <li class="nav-item">
+	<a class="nav-link" id="SOTAChaser-tab" data-toggle="tab" href="#SOTAChaser" role="tab" aria-controls="SOTAChaser" aria-selected="false">SOTA Chaser</a>
+      </li>
+      <li class="nav-item">
+	<a class="nav-link" id="JAFFActivator-tab" data-toggle="tab" href="#JAFFActivator" role="tab" aria-controls="JAFFActivator" aria-selected="false">JAFF Acitivator</a>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+      <div class="tab-pane fade show active" id="AirHamLog" role="tabpanel" aria-labelledby="AirHamLog-tab">	
+	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
+	  <div class="form-row">
+	    <div class="form-group col-sm-6">
+	      <h6>自分のQTHの指定</h6>
+	      <div class="form-check">
+		<input class="form-check-input" type="radio" name="QTH" id="QTHNone" value="none" checked>
+		<label class="form-check-label" for="QTHNone">
+		  指定しない
+		</label>
+	      </div>
+	      <div class="form-check">
+		<input class="form-check-input" type="radio" name="QTH" id="QTH1" value="rmks1">
+		<label class="form-check-label" for="QTH1">
+		  Remarks1を自分のQTHにする
+		</label>
+	      </div>
+	      <div class="form-check">
+		<input class="form-check-input" type="radio" name="QTH" id="QTH2" value="rmks2">
+		<label class="form-check-label" for="QTH2">
+		  Remarks2を自分のQTHにする
+		</label>
+	      </div>
+	      <div class="form-check">
+		<input class="form-check-input" type="radio" name="QTH" id="QTH3" value="user_defined">
+		<label class="form-check-label" for="QTH2">
+		  移動運用先を自分のQTHにする
+		</label>
+	      </div>
+	    </div>
+	    <div class ="form-group col-sm-6">
+	      <label for="location">移動運用先</label>
+	      <input type="text" id="location" name="location" class="form-control" placeholder="JCC/JCG etc.">
+	    </div>
+	  </div>
+
+	  <div class="form-group">
+	    <div class="custom-file">
+	      <input type="file" class="custom-file-input" id="filename" name="filename" required>
+	      <label class="custom-file-label" for="filename">HamLog CSVファイルを選択</label>
+	      <div class="invalid-feedback">ファイルを指定してください</div>
+	    </div>
+	  </div>
+
+	  <div class="form-group">
+	    <button type="submit" class="btn btn-primary">アップロード</button>
+	  </div>
+	</form>
+      </div><!-- end of tab-pane -->
+
+       <div class="tab-pane fade" id="SOTAActivator" role="tabpanel" aria-labelledby="SOTAActivator-tab">	
+	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
+	  <div class="form-row">
+	    <div class ="form-group col-sm-6">
+	      <label for="activation_call">運用時のコールサイン</label>
+	      <input type="text" id="activation_call" name="activation_call" class="form-control" placeholder="コールサイン" required>
+	      <label for="summit">運用したSOTA山岳ID</label>
+	      <input type="text" id="summit" name="summit" class="form-control" placeholder="e.g. JA/KN-006" required>
+	    </div>
+	  </div>
+
+	  <div class="form-group col-sm-6">
+	    <h6>S2S交信局のSOTA山岳ID</h6>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="QTH" id="QTHNone" value="none" checked>
+	      <label class="form-check-label" for="QTHNone">
+		指定しない
+	      </label>
+	    </div>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="QTH" id="QTH1" value="rmks1">
+	      <label class="form-check-label" for="QTH1">
+		Remarks1で指定する
+	      </label>
+	    </div>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="QTH" id="QTH2" value="rmks2">
+	      <label class="form-check-label" for="QTH2">
+		Remarks2で指定する
+	      </label>
+	    </div>
+	  </div>
+	  <div class="form-group">
+	    <div class="custom-file">
+	      <input type="file" class="custom-file-input" id="filename" name="filename" required>
+	      <label class="custom-file-label" for="filename">HamLog CSVファイルを選択</label>
+	      <div class="invalid-feedback">ファイルを指定してください</div>
+	    </div>
+	  </div>
+
+	  <div class="form-group">
+	    <button type="submit" class="btn btn-primary">アップロード</button>
+	  </div>
+	</form>
+      </div><!-- end of tab-pane -->
+
+       <div class="tab-pane fade" id="SOTAChaser" role="tabpanel" aria-labelledby="SOTAChaser-tab">	
+	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
+	  <div class="form-row">
+	    <div class ="form-group col-sm-6">
+	      <label for="chaser_call">運用時のコールサイン</label>
+	      <input type="text" id="chaser_call" name="chaser_call" class="form-control" placeholder="コールサイン" required>
+	    </div>
+	  </div>
+
+	  <div class="form-group col-sm-6">
+	    <h6>相手局のSOTA山岳ID</h6>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="QTH" id="QTHNone" value="none" checked>
+	      <label class="form-check-label" for="QTHNone">
+		指定しない
+	      </label>
+	    </div>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="QTH" id="QTH1" value="rmks1">
+	      <label class="form-check-label" for="QTH1">
+		Remarks1で指定する
+	      </label>
+	    </div>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="QTH" id="QTH2" value="rmks2">
+	      <label class="form-check-label" for="QTH2">
+		Remarks2で指定する
+	      </label>
+	    </div>
+	  </div>
+	  <div class="form-group">
+	    <div class="custom-file">
+	      <input type="file" class="custom-file-input" id="filename" name="filename" required>
+	      <label class="custom-file-label" for="filename">HamLog CSVファイルを選択</label>
+	      <div class="invalid-feedback">ファイルを指定してください</div>
+	    </div>
+	  </div>
+
+	  <div class="form-group">
+	    <button type="submit" class="btn btn-primary">アップロード</button>
+	  </div>
+	</form>
+       </div><!-- end of tab-pane -->
+
+       <div class="tab-pane fade" id="JAFFActivator" role="tabpanel" aria-labelledby="JAFFActivator-tab">	
+	 <div class="text-muted"> <h1> Coming Soon.</h1></div>
+      </div><!-- end of tab-pane -->
+
+       <div class="tab-pane fade" id="SOTAActivator" role="tabpanel" aria-labelledby="SOTAActivator-tab">	
+	<form method="post" enctype="multipart/form-data" action='conversion.py' style="padding:10px">
+	  <div class="form-row">
+	    <div class ="form-group col-sm-6">
+	      <label for="act_call">運用時のコールサイン</label>
+	      <input type="text" id="act_call" name="act_call" class="form-control" placeholder="コールサイン">
+	      <label for="summit">運用したSOTA山岳ID</label>
+	      <input type="text" id="summit" name="summit" class="form-control" placeholder="JCC/JCG etc.">
+	    </div>
+	  </div>
+
+	  <div class="form-group col-sm-6">
+	    <h6>S2S交信局のSOTA山岳ID</h6>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="QTH" id="QTHNone" value="none" checked>
+	      <label class="form-check-label" for="QTHNone">
+		指定しない
+	      </label>
+	    </div>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="QTH" id="QTH1" value="rmks1">
+	      <label class="form-check-label" for="QTH1">
+		Remarks1で指定する
+	      </label>
+	    </div>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="QTH" id="QTH2" value="rmks2">
+	      <label class="form-check-label" for="QTH2">
+		Remarks2で指定する
+	      </label>
+	    </div>
+	  </div>
+	  <div class="form-group">
+	    <div class="custom-file">
+	      <input type="file" class="custom-file-input" id="filename" name="filename" required>
+	      <label class="custom-file-label" for="filename">HamLog CSVファイルを選択</label>
+	      <div class="invalid-feedback">ファイルを指定してください</div>
+	    </div>
+	  </div>
+
+	  <div class="form-group">
+	    <button type="submit" class="btn btn-primary">アップロード</button>
+	  </div>
+	</form>
+      </div><!-- end of tab-pane -->
+
+    <!-- Option Javascript -->
+    <script src="https://code.jquery.com/jquery-3.4.0.min.js" integrity="sha256-BJeo0qm959uMBGb65z40ejJYGSgR7REI4+CW1fNKwOg=" crossorigin="anonymous"> </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    
+    <script>
+      $('.custom-file-input').on('change',function(){
+      $(this).next('.custom-file-label').html($(this)[0].files[0].name);
+      })
+    </script>
+  </body>
+</html>
+
