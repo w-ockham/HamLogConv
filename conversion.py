@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # coding: utf-8
-
 import cgi
 import cgitb
 import datetime
@@ -66,14 +65,13 @@ def mode_to_airhammode(mode,freq_str):
             return 'SSB(LSB)'
         else:
             return 'SSB(USB)'
-    elif m == 'QPSK':
-        return '4値PSK'
     else:
         return m
     
 def decodeHamlog(line,charset):
     line = line.decode(charset)
     cols = line.split(',')
+
     m = re.match('(\w+)/(\w+)/(\w+)',cols[0])
     if m:
         operator = m.group(2)
@@ -103,13 +101,24 @@ def decodeHamlog(line,charset):
         minute = m.group(2)
         fl = m.group(3).upper()
         if fl == 'U':
-            timezone = ''
+            timezone = '+0000'
         else:
             timezone = '+0900'
     else:
         hour = cols[2]
         minute = ''
-        timezone = 'JST'
+        timezone = '+0900'
+
+    tstr = year + '/' + month + '/' + day + ' ' + hour + ':' + minute + ' ' + timezone
+    atime = datetime.datetime.strptime(tstr,'%Y/%m/%d %H:%M %z')
+    utime = atime.astimezone(datetime.timezone(datetime.timedelta(hours=0)))
+
+    isotime = atime.isoformat()
+    year = utime.year
+    month = utime.month
+    day = utime.day
+    hour = utime.hour
+    minute = utime.minute
 
     (band,_) = freq_to_band(cols[5])
     
@@ -117,6 +126,7 @@ def decodeHamlog(line,charset):
         'callsign': cols[0],
         'operator': operator,
         'portable': portable,
+        'isotime': isotime,
         'year': year,
         'month': month,
         'day': day,
@@ -139,27 +149,30 @@ def decodeHamlog(line,charset):
     }
 
     
-def toAirHam(lcount, line, options, charset):
+def toAirHam(lcount, line, options):
     if lcount == 0:
         print(",".join(["id","callsign","portable","qso_at","sent_rst",
                         "received_rst","sent_qth","received_qth",
                         "received_qra","frequency","mode","card",
                         "remarks"]))
 
-    h = decodeHamlog(line,charset)
-    if options['MyQTH']=='rmks1':
+    h = decodeHamlog(line,'cp932')
+
+    if options['QTH']=='rmks1':
         myqth = h['rmks1']
         comment = h['rmks2']
-    else:
+    elif options['QTH']=='rmks2':
         myqth = h['rmks2']
         comment = h['rmks1']
+    else:
+        myqth = ''
+        comment = ''
         
     l = [
         "",
         h['operator'],
         h['portable'],
-        h['year']+h['month']+h['day']+
-        'T'+h['hour']+h['minute']+'00'+h['timezone'],
+        h['isotime'],
         h['rst_sent'],
         h['rst_rcvd'],
         myqth,
@@ -172,10 +185,35 @@ def toAirHam(lcount, line, options, charset):
     ]
     print(",".join(l))
     
-def toSOTA(lcount, line, options, charset):
-    print(line.decode(charset), end='')
+def toSOTA(lcount, line, options):
+    h = decodeHamlog(line,'cp932')
+
+    if options['QTH']=='rmks1':
+        hisqth = h['rmks1']
+        comment = h['rmks2']
+    elif options['QTH']=='rmks2':
+        hisqth = h['rmks2']
+        comment = h['rmks1']
+    else:
+        hisqth = ''
+        comment = ''
+        
+    l = [
+        "V2",
+        options['Activator'],
+        options['Summit'],
+        '{day:02}/{month:02}/{year:02}'.format(day=h['day'], month=h['month'], year=h['year']),
+        '{hour:02}:{minute:02}'.format(hour=h['hour'], minute=h['minute']),
+        h['band'],
+        h['mode'],
+        h['callsign'],
+        hisqth,
+        comment
+    ]
+    print(",".join(l))
     
-def toADIF(lcount, line, options, charset):
+def toADIF(lcount, line, options):
+    h = decodeHamlog(line,'cp932')
     print(line.decode(charset), end='')
     
 def main():
@@ -214,15 +252,21 @@ def main():
     <div class="form-row">
     <div class="form-group col-sm-6">
     <div class="form-check">
-      <input class="form-check-input" type="radio" name="QTH" id="QTH1" value="rmks1" checked>
+      <input class="form-check-input" type="radio" name="QTH" id="QTHNone" value="none" checked>
+      <label class="form-check-label" for="QTHNone">
+      指定しない
+      </label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="radio" name="QTH" id="QTH1" value="rmks1">
       <label class="form-check-label" for="QTH1">
-      Remarks1を自局QTHにする
+      Remarks1をQTHにする
       </label>
     </div>
     <div class="form-check">
       <input class="form-check-input" type="radio" name="QTH" id="QTH2" value="rmks2">
       <label class="form-check-label" for="QTH2">
-      Remarks2を自局QTHにする
+      Remarks2をQTHにする
       </label>
     </div>
     </div>
@@ -266,7 +310,7 @@ def main():
     outftype = form.getvalue('outftype',None)
 
     options = {
-        'MyQTH': form.getvalue('QTH',None),
+        'QTH': form.getvalue('QTH',None),
         'Activator': form.getvalue('your_call',None),
         'Summit': form.getvalue('summit',None)
     }
@@ -280,8 +324,8 @@ def main():
         now  = datetime.datetime.now()
         fname = now.strftime("%Y-%m-%d-%H-%M")
         if "AirHamLog" in outftype:
-            charset = "shift_jis"
-            fname = "airham-" + fname + ".csv"
+            charset = "cp932"
+            fname = "airhamlog-" + fname + ".csv"
             convfunc = toAirHam
         elif "SOTA" in outftype:
             charset = "utf-8"
@@ -302,7 +346,7 @@ def main():
                 if (not line) or linecount > 100000:
                     break
                 else:
-                    convfunc(linecount,line,options,charset)
+                    convfunc(linecount,line,options)
                     linecount += 1
         else:
             print('Content-type: text/html; charset=utf-8\n')
