@@ -70,12 +70,6 @@ def mode_to_airhammode(mode,freq_str):
     else:
         return m
 
-def escape_rmks(rmks):
-    if ',' in rmks:
-        return '"' + rmks + '"'
-    else:
-        return rmks
-    
 def decodeHamlog(cols):
     m = re.match('(\w+)/(\w+)/(\w+)',cols[0])
     if m:
@@ -152,17 +146,18 @@ def decodeHamlog(cols):
         'qsl': cols[9],
         'name': cols[10],
         'qth': cols[11],
-        'rmks1': escape_rmks(cols[12]),
-        'rmks2': escape_rmks(cols[13])
+        'rmks1': cols[12],
+        'rmks2': cols[13]
     }
 
     
 def toAirHam(lcount, row, options):
     if lcount == 0:
-        print(",".join(["id","callsign","portable","qso_at","sent_rst",
-                        "received_rst","sent_qth","received_qth",
-                        "received_qra","frequency","mode","card",
-                        "remarks"]))
+        l= ["id","callsign","portable","qso_at","sent_rst",
+            "received_rst","sent_qth","received_qth",
+            "received_qra","frequency","mode","card",
+            "remarks"]
+        return l
 
     h = decodeHamlog(row)
 
@@ -194,9 +189,12 @@ def toAirHam(lcount, row, options):
         h['qsl'],
         comment
     ]
-    print(",".join(l))
+    return l
     
 def toSOTA(lcount, row, options):
+    if lcount == 0:
+        return None
+    
     h = decodeHamlog(row)
 
     if options['QTH']=='rmks1':
@@ -224,8 +222,11 @@ def toSOTA(lcount, row, options):
     print(",".join(l))
     
 def toADIF(lcount, row, options):
+    if lcount == 0:
+        return None
+    
     h = decodeHamlog(row)
-    print(line.decode(charset), end='')
+    return row
     
 def main():
     cgitb.enable()
@@ -347,31 +348,39 @@ def main():
             incharset = 'utf-8'
             
         if "AirHamLog" in outftype:
-            charset = "utf-8"
+            outcharset = "utf-8"
             fname = "airhamlog-" + fname + ".csv"
             convfunc = toAirHam
         elif "SOTA" in outftype:
-            charset = "utf-8"
+            outcharset = "utf-8"
             fname = "sota-" + fname + ".csv"
             convfunc = toSOTA
         else:
-            charset = "utf-8"
+            outcharset = "utf-8"
             fname = "adif-" + fname + ".csv"
             convfunc = toADIF
 
-        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding=charset)
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding=outcharset)
         print('Content-Disposition: attachment;filename="%s"\n' % fname)
         #print('Content-Type: text/html\n')
         if fileitem.file:
             linecount = 0
+            writer = csv.writer(sys.stdout,delimiter=',',
+                                quoting=csv.QUOTE_MINIMAL)
             with io.TextIOWrapper(fileitem.file, encoding=incharset) as f:
                 reader = csv.reader(f)
                 for row in reader:
                     if linecount > 100000:
                         break
                     else:
-                        convfunc(linecount, row, options)
+                        if linecount == 0:
+                            header = convfunc(linecount, row, options)
+                            if header:
+                                writer.writerow(header)
+                                linecount += 1
+                        writer.writerow(convfunc(linecount, row, options))
                         linecount += 1
+
         else:
             print('Content-type: text/html; charset=utf-8\n')
             print('<h1> File not found:%s' % fileitem)
