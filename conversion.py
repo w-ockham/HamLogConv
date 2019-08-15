@@ -2,10 +2,12 @@
 # coding: utf-8
 import cgi
 import cgitb
+import csv
 import datetime
+import io
 import re
 import sys
-import io
+
 
 def freq_to_band(freq_str):
     freq_table = [
@@ -29,7 +31,7 @@ def freq_to_band(freq_str):
         (50.0,54.0,'50MHz','6m'),
         (144.0,146.0,'144MHz','2m'),
         (430.0,440.0,'430MHz','70cm'),
-        (1260.0,1300.0,'1200MHz','23cm'),
+        (1200.0,1300.0,'1200MHz','23cm'),
         (2400.0,2450.0,'2400MHz','13cm'),
         (5650.0,5850.0,'5600MHz','6cm'),
         (10000.0,10250.0,'10.1GHz','3cm'),
@@ -67,11 +69,14 @@ def mode_to_airhammode(mode,freq_str):
             return 'SSB(USB)'
     else:
         return m
-    
-def decodeHamlog(line,charset):
-    line = line.decode(charset)
-    cols = line.split(',')
 
+def escape_rmks(rmks):
+    if ',' in rmks:
+        return '"' + rmks + '"'
+    else:
+        return rmks
+    
+def decodeHamlog(cols):
     m = re.match('(\w+)/(\w+)/(\w+)',cols[0])
     if m:
         operator = m.group(2)
@@ -147,25 +152,28 @@ def decodeHamlog(line,charset):
         'qsl': cols[9],
         'name': cols[10],
         'qth': cols[11],
-        'rmks1': cols[12],
-        'rmks2': cols[13]
+        'rmks1': escape_rmks(cols[12]),
+        'rmks2': escape_rmks(cols[13])
     }
 
     
-def toAirHam(lcount, line, options):
+def toAirHam(lcount, row, options):
     if lcount == 0:
         print(",".join(["id","callsign","portable","qso_at","sent_rst",
                         "received_rst","sent_qth","received_qth",
                         "received_qra","frequency","mode","card",
                         "remarks"]))
 
-    h = decodeHamlog(line,'cp932')
+    h = decodeHamlog(row)
 
     if options['QTH']=='rmks1':
         myqth = h['rmks1']
         comment = h['rmks2']
     elif options['QTH']=='rmks2':
         myqth = h['rmks2']
+        comment = h['rmks1']
+    elif options['QTH']=='user_defined':
+        myqth = options['Summit']
         comment = h['rmks1']
     else:
         myqth = ''
@@ -188,8 +196,8 @@ def toAirHam(lcount, line, options):
     ]
     print(",".join(l))
     
-def toSOTA(lcount, line, options):
-    h = decodeHamlog(line,'cp932')
+def toSOTA(lcount, row, options):
+    h = decodeHamlog(row)
 
     if options['QTH']=='rmks1':
         hisqth = h['rmks1']
@@ -215,8 +223,8 @@ def toSOTA(lcount, line, options):
     ]
     print(",".join(l))
     
-def toADIF(lcount, line, options):
-    h = decodeHamlog(line,'cp932')
+def toADIF(lcount, row, options):
+    h = decodeHamlog(row)
     print(line.decode(charset), end='')
     
 def main():
@@ -263,22 +271,28 @@ def main():
     <div class="form-check">
       <input class="form-check-input" type="radio" name="QTH" id="QTH1" value="rmks1">
       <label class="form-check-label" for="QTH1">
-      Remarks1をQTHにする
+      Remarks1を送信QTHにする
       </label>
     </div>
     <div class="form-check">
       <input class="form-check-input" type="radio" name="QTH" id="QTH2" value="rmks2">
       <label class="form-check-label" for="QTH2">
-      Remarks2をQTHにする
+      Remarks2を送信QTHにする
+      </label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="radio" name="QTH" id="QTH3" value="user_defined">
+      <label class="form-check-label" for="QTH2">
+      移動運用先を送信QTHにする
       </label>
     </div>
     </div>
 
     <div class ="form-group col-sm-6">
-    <label for="your_call">運用したコールサイン</label>
+    <label for="your_call">移動運用時のコールサイン</label>
     <input type="text" id="your_call" name="your_call" class="form-control" placeholder="コールサイン">
-    <label for="summit">運用した山岳ID</label>
-    <input type="text" id="summit" name="summit" class="form-control" placeholder="Summit ID (e.g. JA/KN-006)">
+    <label for="summit">移動運用先(JCC/JCG/SOTA山岳ID/JAFFリファレンスなど)</label>
+    <input type="text" id="summit" name="summit" class="form-control" placeholder="SOTA Summit or JAFF References (e.g. JA/NN-031 JAFF-0056)">
     </div>
     </div>
 
@@ -326,8 +340,14 @@ def main():
         fileitem = form['filename']
         now  = datetime.datetime.now()
         fname = now.strftime("%Y-%m-%d-%H-%M")
+
+        if "HamLog" in inftype:
+            incharset = 'cp932'
+        else:
+            incharset = 'utf-8'
+            
         if "AirHamLog" in outftype:
-            charset = "cp932"
+            charset = "utf-8"
             fname = "airhamlog-" + fname + ".csv"
             convfunc = toAirHam
         elif "SOTA" in outftype:
@@ -344,13 +364,14 @@ def main():
         #print('Content-Type: text/html\n')
         if fileitem.file:
             linecount = 0
-            while True:
-                line = fileitem.file.readline()
-                if (not line) or linecount > 100000:
-                    break
-                else:
-                    convfunc(linecount,line,options)
-                    linecount += 1
+            with io.TextIOWrapper(fileitem.file, encoding=incharset) as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    if linecount > 100000:
+                        break
+                    else:
+                        convfunc(linecount, row, options)
+                        linecount += 1
         else:
             print('Content-type: text/html; charset=utf-8\n')
             print('<h1> File not found:%s' % fileitem)
