@@ -87,7 +87,10 @@ def decodeHamlog(line,charset):
     
     m = re.match('(\d+)/(\d+)/(\d+)',cols[1])
     if m:
-        year = '20' + m.group(1)
+        if int(m.group(1)) >= 65:
+            year = '19' + m.group(1)
+        else:
+            year = '20' + m.group(1)
         month = m.group(2)
         day = m.group(3)
     else:
