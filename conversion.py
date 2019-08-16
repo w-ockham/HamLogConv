@@ -78,6 +78,7 @@ def mode_to_SOTAmode(mode):
         ('CW',['CW']),
         ('SSB',['SSB']),
         ('FM',['FM']),
+        ('AM',['AM']),
         ('DATA',['RTTY','RTY','PSK','PSK31','PSK-31','DIG','DATA',
                  'JT9','JT65','FT8','FT4','FSQ']),
         ('DV',['DV','FUSION','DSTAR','D-STAR','DMR','C4FM'])]
