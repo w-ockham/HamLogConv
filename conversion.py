@@ -7,7 +7,10 @@ import datetime
 import io
 import re
 import sys
+import zipfile
 
+debug = False
+#debug = True
 
 def freq_to_band(freq_str):
     freq_table = [
@@ -69,6 +72,20 @@ def mode_to_airhammode(mode,freq_str):
             return 'SSB(USB)'
     else:
         return m
+
+def mode_to_SOTAmode(mode):
+    mode_table = [
+        ('CW',['CW']),
+        ('SSB',['SSB']),
+        ('FM',['FM']),
+        ('DATA',['RTTY','RTY','PSK','PSK31','PSK-31','DIG','DATA',
+                 'JT9','JT65','FT8','FT4','FSQ']),
+        ('DV',['DV','FUSION','DSTAR','D-STAR','DMR','C4FM'])]
+    
+    for smode,pat in mode_table:
+        if mode.upper() in pat:
+            return smode
+    return 'OTHER'
 
 def decodeHamlog(cols):
     m = re.match('(\w+)/(\w+)/(\w+)',cols[0])
@@ -141,6 +158,7 @@ def decodeHamlog(cols):
         'band': band,
         'mode': cols[6],
         'mode-airham': mode_to_airhammode(cols[6],cols[5]),
+        'mode-sota': mode_to_SOTAmode(cols[6]),
         'code': cols[7],
         'gl': cols[8],
         'qsl': cols[9],
@@ -151,7 +169,7 @@ def decodeHamlog(cols):
     }
 
     
-def toAirHam(lcount, row, callsign, options):
+def toAirHam(lcount, row, options):
     if lcount == 0:
         l= ["id","callsign","portable","qso_at","sent_rst",
             "received_rst","sent_qth","received_qth",
@@ -192,9 +210,6 @@ def toAirHam(lcount, row, callsign, options):
     return l
     
 def toSOTA(lcount, row, callsign, options):
-    if lcount == 0:
-        return None
-    
     h = decodeHamlog(row)
 
     if options['QTH']=='rmks1':
@@ -207,19 +222,157 @@ def toSOTA(lcount, row, callsign, options):
         hisqth = ''
         comment = ''
         
+    date = '{day:02}/{month:02}/{year:02}'.format(
+        day=h['day'], month=h['month'], year=h['year'])
+
+    date2 = '{year:02}{month:02}{day:02}'.format(
+        day=h['day'], month=h['month'], year=h['year'])
+    
     l = [
         "V2",
         callsign,
         options['Summit'],
-        '{day:02}/{month:02}/{year:02}'.format(day=h['day'], month=h['month'], year=h['year']),
+        date,
         '{hour:02}:{minute:02}'.format(hour=h['hour'], minute=h['minute']),
         h['band'],
-        h['mode'],
+        h['mode-sota'],
         h['callsign'],
         hisqth,
         ''
     ]
-    return l
+    return (date2,hisqth!='',l)
+
+def sendAirHamLog(fp, fname, options, inchar, outchar):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding=outchar)
+    print('Content-Disposition: attachment;filename="%s"\n' % fname)
+    linecount = 0
+    writer = csv.writer(sys.stdout,delimiter=',',
+                        quoting=csv.QUOTE_MINIMAL)
+    with io.TextIOWrapper(fp, encoding=inchar) as f:
+        reader = csv.reader(f)
+        for row in reader:
+            if linecount > 100000:
+                break
+            else:
+                if linecount == 0:
+                    writer.writerow(toAirHam(linecount, row, options))
+                    linecount += 1
+                writer.writerow(toAirHam(linecount, row, options))
+                linecount += 1
+
+def sendSOTA_A(fp, zipfname, callsign, options, inchar, outchar):
+    prefix = 'sota'
+    prefix2 = 'sota-s2s-'
+    fname = ''
+    files = {}
+    linecount = 0
+
+    outstr = io.StringIO()
+    writer = csv.writer(outstr,delimiter=',',
+                        quoting=csv.QUOTE_MINIMAL)
+    outstr_s2s = io.StringIO()
+    writer_s2s = csv.writer(outstr_s2s,delimiter=',',
+                            quoting=csv.QUOTE_MINIMAL)
+
+    with io.TextIOWrapper(fp, encoding=inchar) as f:
+        reader = csv.reader(f)
+        for row in reader:
+            if linecount > 100000:
+                break
+            else:
+                (fn,s2s,l) = toSOTA(linecount, row, callsign, options)
+                if linecount == 0:
+                    fname = fn
+                    
+                if fn == fname:
+                    writer.writerow(l)
+                    if s2s:
+                        writer_s2s.writerow(l)
+                    linecount += 1
+                else:
+                    name = prefix + fname + '.csv'
+                    files.update({name : outstr.getvalue()})
+
+                    s2sbuff = outstr_s2s.getvalue()
+                    if len(s2sbuff) >0:
+                        name2 = prefix2 + fname + '.csv'
+                        files.update({name2 : s2sbuff})
+                        
+                    outstr = io.StringIO()
+                    writer = csv.writer(outstr,delimiter=',',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    writer.writerow(l)
+
+                    outstr_s2s = io.StringIO()
+                    writer_s2s = csv.writer(outstr_s2s,delimiter=',',
+                                            quoting=csv.QUOTE_MINIMAL)
+                    if s2s:
+                        writer_s2s.writerow(l)
+                    fname = fn
+
+                    
+        name = prefix + fname + '.csv'
+        files.update({name : outstr.getvalue()})
+
+        s2sbuff = outstr_s2s.getvalue()
+        if len(s2sbuff) >0:
+            name2 = prefix2 + fname + '.csv'
+            files.update({name2 : s2sbuff})
+        
+    print('Content-Disposition: attachment;filename="%s"\n' % zipfname)
+    buff = io.BytesIO()
+    z = zipfile.ZipFile(buff, 'w', zipfile.ZIP_DEFLATED)
+    for k,v in files.items():
+        z.writestr(k, v)
+    z.close()
+    sys.stdout.flush()
+    sys.stdout.buffer.write(buff.getvalue())
+
+def sendSOTA_C(fp, zipfname, callsign, options, inchar, outchar):
+    prefix = 'sota'
+    fname = ''
+    files = {}
+    linecount = 0
+
+    outstr = io.StringIO()
+    writer = csv.writer(outstr,delimiter=',',
+                        quoting=csv.QUOTE_MINIMAL)
+
+    with io.TextIOWrapper(fp, encoding=inchar) as f:
+        reader = csv.reader(f)
+        for row in reader:
+            if linecount > 100000:
+                break
+            else:
+                (fn,s2s,l) = toSOTA(linecount, row, callsign, options)
+                if linecount == 0:
+                    fname = fn
+                    
+                if fn == fname:
+                    writer.writerow(l)
+                    linecount += 1
+                else:
+                    name = prefix + fname + '.csv'
+                    files.update({name : outstr.getvalue()})
+
+                    outstr = io.StringIO()
+                    writer = csv.writer(outstr,delimiter=',',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    writer.writerow(l)
+                    fname = fn
+
+                    
+        name = prefix + fname + '.csv'
+        files.update({name : outstr.getvalue()})
+
+    print('Content-Disposition: attachment;filename="%s"\n' % zipfname)
+    buff = io.BytesIO()
+    z = zipfile.ZipFile(buff, 'w', zipfile.ZIP_DEFLATED)
+    for k,v in files.items():
+        z.writestr(k, v)
+    z.close()
+    sys.stdout.flush()
+    sys.stdout.buffer.write(buff.getvalue())
     
 def main():
     cgitb.enable()
@@ -230,56 +383,37 @@ def main():
     chaser_call = form.getvalue('chaser_call',None)
     
     options = {
-        'QTH': form.getvalue('QTH',None),
-        'Location': form.getvalue('location',None),
-        'Summit': form.getvalue('summit',None)
+        'QTH': form.getvalue('QTH',''),
+        'Location': form.getvalue('location',''),
+        'Summit': form.getvalue('summit','')
     }
-    
-    fileitem = form['filename']
+
+    if debug:
+        fp = open('sample.csv','rb')
+        chaser_call = 'JL1NIE'
+    else:
+        fileitem = form['filename']
+        fp = fileitem.file
+        
     now  = datetime.datetime.now()
     fname = now.strftime("%Y-%m-%d-%H-%M")
 
-    incharset = 'cp932'
-    
-    if activation_call:
-        outcharset = "utf-8"
-        fname = "sota-" + fname + ".csv"
-        callsign = activation_call
-        convfunc = toSOTA
-    elif chaser_call:
-        outcharset = "utf-8"
-        fname = "sota-" + fname + ".csv"
-        callsign = chaser_call
-        convfunc = toSOTA
-    else:
-        outcharset = "utf-8"
-        fname = "airhamlog-" + fname + ".csv"
-        callsign = ''
-        convfunc = toAirHam
+    inchar = 'cp932'
 
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding=outcharset)
-    print('Content-Disposition: attachment;filename="%s"\n' % fname)
-    #print('Content-Type: text/html\n')
-    if fileitem.file:
-        linecount = 0
-        writer = csv.writer(sys.stdout,delimiter=',',
-                            quoting=csv.QUOTE_MINIMAL)
-        with io.TextIOWrapper(fileitem.file, encoding=incharset) as f:
-            reader = csv.reader(f)
-            for row in reader:
-                if linecount > 100000:
-                    break
-                else:
-                    if linecount == 0:
-                        header = convfunc(linecount, row, callsign, options)
-                        if header:
-                            writer.writerow(header)
-                        linecount += 1
-                    writer.writerow(convfunc(linecount, row, callsign, options))
-                    linecount += 1
+    if activation_call:
+        outchar = "utf-8"
+        callsign = activation_call
+        fname = "sota-" + fname + ".zip"
+        sendSOTA_A(fp, fname, callsign, options, inchar, outchar)
+    elif chaser_call:
+        outchar = "utf-8"
+        callsign = chaser_call
+        fname = "sota-" + fname + ".zip"
+        sendSOTA_C(fp, fname, callsign, options, inchar, outchar)
     else:
-        print('Content-type: text/html; charset=utf-8\n')
-        print('<h1> File not found:%s' % fileitem)
+        outchar = "utf-8"
+        fname = "airhamlog-" + fname + ".csv"
+        sendAirHamLog(fp,fname,options,inchar,outchar)
         
 if __name__ == '__main__':
     main()
