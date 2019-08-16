@@ -4,24 +4,35 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-139463065-3"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-139463065-3');
+</script>
+
     <title>File Conversion Tools for HamLog</title>
   </head>
   <body>
     <div class="header clearfix">
-      <h4 class="text-muted"> File Conversion Tools for HamLog.</h4>
+      <div class="text-muted"><h4> File Conversion Tools for HamLog.</h4>
+      </div>
     </div>
     <ul class="nav nav-tabs nav-pills" role="tablist">
       <li class="nav-item">
 	<a class="nav-link active" id="AirHamLog-tab" data-toggle="tab" href="#AirHamLog" role="tab" aria-controls="AirHamLog" aria-selected="true">AirHamLog</a>
       </li>
       <li class="nav-item">
-	<a class="nav-link" id="SOTAActivator-tab" data-toggle="tab" href="#SOTAActivator" role="tab" aria-controls="SOTAActivator" aria-selected="false">SOTA Acitivator</a>
+	<a class="nav-link" id="SOTAActivator-tab" data-toggle="tab" href="#SOTAActivator" role="tab" aria-controls="SOTAActivator" aria-selected="false">SOTA Activator</a>
       </li>
       <li class="nav-item">
 	<a class="nav-link" id="SOTAChaser-tab" data-toggle="tab" href="#SOTAChaser" role="tab" aria-controls="SOTAChaser" aria-selected="false">SOTA Chaser</a>
       </li>
       <li class="nav-item">
-	<a class="nav-link" id="JAFFActivator-tab" data-toggle="tab" href="#JAFFActivator" role="tab" aria-controls="JAFFActivator" aria-selected="false">JAFF Acitivator</a>
+	<a class="nav-link" id="JAFFActivator-tab" data-toggle="tab" href="#JAFFActivator" role="tab" aria-controls="JAFFActivator" aria-selected="false">JAFF Activator</a>
       </li>
     </ul>
 
@@ -52,12 +63,12 @@
 	      <div class="form-check">
 		<input class="form-check-input" type="radio" name="QTH" id="QTH3" value="user_defined">
 		<label class="form-check-label" for="QTH2">
-		  移動運用先を自分のQTHにする
+		  運用地を自分のQTHにする
 		</label>
 	      </div>
 	    </div>
 	    <div class ="form-group col-sm-6">
-	      <label for="location">移動運用先</label>
+	      <label for="location">運用地</label>
 	      <input type="text" id="location" name="location" class="form-control" placeholder="JCC/JCG etc.">
 	    </div>
 	  </div>
@@ -71,9 +82,84 @@
 	  </div>
 
 	  <div class="form-group">
-	    <button type="submit" class="btn btn-primary">アップロード</button>
+	    <button type="submit" class="btn-sm btn-primary">アップロード</button>
+	  <button type="button" class="btm-sm btn-info" data-toggle="modal" data-target="#Help">ヘルプ</button>
 	  </div>
 	</form>
+
+	<div class="modal fade" id="Help" tabindex="-1" role="dialog" aria-labelledby="HelpModal" aria-hidden="true">
+	  <div class="modal-dialog" role="document">
+	    <div class="modal-content">
+	      <div class="modal-header">
+		<h6 class="modal-title" id="HelpModal">使い方</h6>
+		<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+		  <span aria-hidden="true">&times;</span>
+		</button>
+	      </div>
+	      <div class="modal-body">
+		<small>
+		  HamLogが出力したCSVファイルをAirHamLogにインポート可能なCSVファイルに変換します。AirHamLogの各項目についてHamLogから以下の通り変換します。
+		  <table class="table table-condensed">
+		    <thead><tr><th>AirHamLog項目</th><th>HamLog項目</th></tr></thead>
+		    <tbody>
+		      <tr>
+			<td>相手のコールサイン</td>
+			<td>Call欄のコールサイン部分</td>
+		      </tr>
+		      <tr>
+			<td>相手の移動エリア</td>
+			<td>Call欄のポータブル表記に該当する部分</td>
+		      </tr>
+		      <tr>
+			<td>交信時刻</td>
+			<td>Date欄/Time欄から求めた時刻<br>Uの場合timezone=+0<br>Jの場合timezone=+0900</td>
+		      </tr>
+		      <tr>
+			<td>RS(T)レポート</td>
+			<td>His欄/My欄の記載</td>
+		      </tr>
+		      <tr>
+			<td>自分のQTH</td>
+			<td>ツール指定<br>Remarks1,Rermarks2,運用地の記載いずれか</td>
+		      </tr>
+		      <tr>
+			<td>相手のQTH</td>
+			<td>QTH欄の記載</td>
+		      </tr>
+		      <tr>
+			<td>相手の名前</td>
+			<td>Name欄の記載</td>
+		      </tr>
+		      <tr>
+			<td>周波数帯</td>
+			<td>Freq欄に記載された周波数から推測した周波数帯</td>
+		      </tr>
+		      <tr>
+			<td>モード</td>
+			<td>Mode欄の記載<br>SSBの場合は周波数帯によってUSB/LSBを付加</td>
+		      </tr>
+		      <tr>
+			<td>カード交換</td>
+			<td>QSL欄の記載<br> CSVファイルには出力されますがAirHamLogには読み込まれません</td>
+		      </tr>
+		      <tr>
+			<td>コメント</td>
+			<td>自分のQTHをRemarks1にした場合はRemarks2欄<br>
+			  自分のQTHをRemarks2または運用地にした場合はRemarks1欄</td>
+		      </tr>
+		    </tbody>
+		  </table>
+		</small>
+	      </div>
+	      <div class="modal-footer">
+		<small>
+		  <strong>ご注意:本ツールはデータの完全な移行を保証するものではありません。</strong><br>
+		  ご不明の点・バグなどがありましたらtwitterのDMで@jl1nieまでご連絡ください。
+		  </small>
+	      </div>
+	    </div>
+	  </div>
+	</div>
       </div><!-- end of tab-pane -->
 
        <div class="tab-pane fade" id="SOTAActivator" role="tabpanel" aria-labelledby="SOTAActivator-tab">	

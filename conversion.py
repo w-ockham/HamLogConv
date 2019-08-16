@@ -217,7 +217,7 @@ def toSOTA(lcount, row, callsign, options):
         h['mode'],
         h['callsign'],
         hisqth,
-        comment
+        ''
     ]
     return l
     
