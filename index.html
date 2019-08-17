@@ -38,7 +38,7 @@
 
     <div class="tab-content">
       <div class="tab-pane fade show active" id="AirHamLog" role="tabpanel" aria-labelledby="AirHamLog-tab">	
-	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
+	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion2.py' style="padding:10px">
 	  <div class="form-row">
 	    <div class="form-group col-sm-6">
 	      <h6>自分のQTHの指定</h6>
@@ -163,7 +163,7 @@
       </div><!-- end of tab-pane -->
 
        <div class="tab-pane fade" id="SOTAActivator" role="tabpanel" aria-labelledby="SOTAActivator-tab">	
-	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
+	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion2.py' style="padding:10px">
 	  <div class="form-row">
 	    <div class ="form-group col-sm-6">
 	      <label for="activation_call">運用時のコールサイン</label>
@@ -210,7 +210,7 @@
       </div><!-- end of tab-pane -->
 
        <div class="tab-pane fade" id="SOTAChaser" role="tabpanel" aria-labelledby="SOTAChaser-tab">	
-	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
+	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion2.py' style="padding:10px">
 	  <div class="form-row">
 	    <div class ="form-group col-sm-6">
 	      <label for="chaser_call">運用時のコールサイン</label>
@@ -248,23 +248,20 @@
 	</form>
        </div><!-- end of tab-pane -->
 
-       <div class="tab-pane fade" id="JAFFActivator" role="tabpanel" aria-labelledby="JAFFActivator-tab">	
-	 <div class="text-muted"> <h1> Coming Soon.</h1></div>
-      </div><!-- end of tab-pane -->
-
-       <div class="tab-pane fade" id="SOTAActivator" role="tabpanel" aria-labelledby="SOTAActivator-tab">	
-	<form method="post" enctype="multipart/form-data" action='conversion.py' style="padding:10px">
+       <div class="tab-pane fade" id="JAFFActivator" role="tabpanel" aria-labelledby="JAFFActivator-tab">
+	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion2.py' style="padding:10px">
 	  <div class="form-row">
 	    <div class ="form-group col-sm-6">
-	      <label for="act_call">運用時のコールサイン</label>
-	      <input type="text" id="act_call" name="act_call" class="form-control" placeholder="コールサイン">
-	      <label for="summit">運用したSOTA山岳ID</label>
-	      <input type="text" id="summit" name="summit" class="form-control" placeholder="JCC/JCG etc.">
+	      <label for="operator">運用時のオペレータ</label>
+	      <input type="text" id="wwffoperator" name="wwffoperator" class="form-control" placeholder="オペレータ(e.g. JL1NIE)" required>
+	      <label for="wwffact_call">運用時のコールサイン</label>
+	      <input type="text" id="wwffact_call" name="wwffact_call" class="form-control" placeholder="コールサイン(e.g. JL1NIE/1)" required>
+	      <label for="wwffref">運用したWWFFリファレンス</label>
+	      <input type="text" id="wwffref" name="wwffref" class="form-control" placeholder="e.g. JAFF-0202" required>
 	    </div>
 	  </div>
-
 	  <div class="form-group col-sm-6">
-	    <h6>S2S交信局のSOTA山岳ID</h6>
+	    <h6>P2P交信局のWWFFリファレンス</h6>
 	    <div class="form-check">
 	      <input class="form-check-input" type="radio" name="QTH" id="QTHNone" value="none" checked>
 	      <label class="form-check-label" for="QTHNone">
@@ -294,8 +291,11 @@
 
 	  <div class="form-group">
 	    <button type="submit" class="btn btn-primary">変換</button>
+	    <a href="mailto:jaff-log@niftycom" target="_blank" class="btn btn-outline-info" role="button">mailto:jaff-log@nifty.com</a>
+	  </div>
 	  </div>
 	</form>
+
       </div><!-- end of tab-pane -->
 
     <!-- Option Javascript -->

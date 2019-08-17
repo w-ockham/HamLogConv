@@ -140,7 +140,7 @@ def decodeHamlog(cols):
     hour = utime.hour
     minute = utime.minute
 
-    (band,_) = freq_to_band(cols[5])
+    (band,wlen) = freq_to_band(cols[5])
     
     return {
         'callsign': cols[0],
@@ -157,6 +157,7 @@ def decodeHamlog(cols):
         'rst_rcvd': cols[4],
         'freq': cols[5],
         'band': band,
+        'band-wlen': wlen,
         'mode': cols[6],
         'mode-airham': mode_to_airhammode(cols[6],cols[5]),
         'mode-sota': mode_to_SOTAmode(cols[6]),
@@ -168,7 +169,6 @@ def decodeHamlog(cols):
         'rmks1': cols[12],
         'rmks2': cols[13]
     }
-
     
 def toAirHam(lcount, row, options):
     if lcount == 0:
@@ -209,20 +209,32 @@ def toAirHam(lcount, row, options):
         comment
     ]
     return l
-    
-def toSOTA(lcount, row, callsign, options):
+
+def get_ref(str):
+    r = { 'SOTA':'', 'WWFF':'' }
+    l = re.split('[,\s]', str)
+    for ref in l:
+        m = re.match('(\w+FF-\d+)',ref)
+        if m:
+            r['WWFF'] = m.group(1)
+        m = re.match('(\w+/\w+-\d+)',ref)
+        if m:
+            r['SOTA'] = m.group(1)
+    return r
+
+def toSOTA(row, callsign, options):
     h = decodeHamlog(row)
 
     if options['QTH']=='rmks1':
-        hisqth = h['rmks1']
+        hisqth = get_ref(h['rmks1'])
         comment = h['rmks2']
     elif options['QTH']=='rmks2':
-        hisqth = h['rmks2']
+        hisqth = get_ref(h['rmks2'])
         comment = h['rmks1']
     else:
-        hisqth = ''
+        hisqth = {'SOTA':''}
         comment = ''
-        
+    
     date = '{day:02}/{month:02}/{year:02}'.format(
         day=h['day'], month=h['month'], year=h['year'])
 
@@ -238,10 +250,82 @@ def toSOTA(lcount, row, callsign, options):
         h['band'],
         h['mode-sota'],
         h['callsign'],
-        hisqth,
+        hisqth['SOTA'],
         ''
     ]
-    return (date2,hisqth!='',l)
+    return (date2,hisqth['SOTA']!='',l)
+
+def adif(key, value):
+    adif_fields = [
+        ('STATION_CALLSIGN','WWFFActivator'),
+        ('CALL','callsign'),
+        ('QSO_DATE','date'),
+        ('TIME_ON','time'),
+        ('BAND','band-wlen'),
+        ('MODE','mode'),
+        ('RST_SENT','rst_sent'),
+        ('RST_RCVD','rst_rcvd'),
+        ('MY_SIG','mysig'),
+        ('MY_SIG_INFO','mysiginfo'),
+        ('SIG','sig'),
+        ('SIG_INFO','siginfo'),
+        ('MY_SOTA_REF','mysotaref'),
+        ('OPERATOR','WWFFOperator'),
+        ('PROGRAMID','programid'),
+        ('ADIF_VER','adifver')
+    ]
+    for (field,k) in adif_fields:
+        if key == k:
+            f ='<' + field + ':' + str(len(value)) + '>' + value
+            return f
+    f ='<COMMENT:' + str(len(value)) + '>' + value
+    return f
+        
+def toWWFF(row, options):
+    h = decodeHamlog(row)
+
+    if options['QTH']=='rmks1':
+        hisref = get_ref(h['rmks1'])
+        comment = h['rmks2']
+    elif options['QTH']=='rmks2':
+        hisref = get_ref(h['rmks2'])
+        comment = h['rmks1']
+    else:
+        hisref = {'SOTA':'','WWFF':''}
+        comment = ''
+        
+    date = '{year:02}{month:02}{day:02}'.format(
+        day=h['day'], month=h['month'], year=h['year'])
+    
+    date2 = '{year:02}-{month:02}-{day:02}'.format(
+        day=h['day'], month=h['month'], year=h['year'])
+    
+    wwffref = options['WWFFRef']
+
+    l = [
+        adif('WWFFActivator',options['WWFFActivator']),
+        adif('callsign',h['callsign']),
+        adif('date',date),
+        adif('time',
+             '{hour:02}{minute:02}'.format(
+                 hour=h['hour'], minute=h['minute'])),
+        adif('band-wlen',h['band-wlen']),
+        adif('mode',h['mode']),
+        adif('rst_sent',h['rst_sent']),
+        adif('rst_rcvd',h['rst_rcvd']),
+        adif('mysig','WWFF'),
+        adif('mysiginfo',options['WWFFRef'])
+        ]
+    
+    if hisref['WWFF'] != '':
+        l+= [adif('sig','WWFF'),adif('siginfo',hisref['WWFF'])]
+
+    if None and hisref['SOTA'] != '':
+        l+= [adif('mysotaref',hisref['SOTA'])]
+
+    l+= [adif('WWFFOperator',options['WWFFOperator']),'<EOR>']
+    
+    return (date2,wwffref,l)
 
 def sendAirHamLog(fp, fname, options, inchar, outchar):
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding=outchar)
@@ -261,6 +345,16 @@ def sendAirHamLog(fp, fname, options, inchar, outchar):
                 writer.writerow(toAirHam(linecount, row, options))
                 linecount += 1
 
+def writeCSV(files,zipfname):
+    print('Content-Disposition: attachment;filename="%s"\n' % zipfname)
+    buff = io.BytesIO()
+    z = zipfile.ZipFile(buff, 'w', zipfile.ZIP_DEFLATED)
+    for k,v in files.items():
+        z.writestr(k, v)
+    z.close()
+    sys.stdout.flush()
+    sys.stdout.buffer.write(buff.getvalue())
+        
 def sendSOTA_A(fp, zipfname, callsign, options, inchar, outchar):
     prefix = 'sota'
     prefix2 = 'sota-s2s-'
@@ -281,7 +375,7 @@ def sendSOTA_A(fp, zipfname, callsign, options, inchar, outchar):
             if linecount > 100000:
                 break
             else:
-                (fn,s2s,l) = toSOTA(linecount, row, callsign, options)
+                (fn,s2s,l) = toSOTA(row, callsign, options)
                 if linecount == 0:
                     fname = fn
                     
@@ -311,7 +405,6 @@ def sendSOTA_A(fp, zipfname, callsign, options, inchar, outchar):
                         writer_s2s.writerow(l)
                     fname = fn
 
-                    
         name = prefix + fname + '.csv'
         files.update({name : outstr.getvalue()})
 
@@ -319,15 +412,8 @@ def sendSOTA_A(fp, zipfname, callsign, options, inchar, outchar):
         if len(s2sbuff) >0:
             name2 = prefix2 + fname + '.csv'
             files.update({name2 : s2sbuff})
-        
-    print('Content-Disposition: attachment;filename="%s"\n' % zipfname)
-    buff = io.BytesIO()
-    z = zipfile.ZipFile(buff, 'w', zipfile.ZIP_DEFLATED)
-    for k,v in files.items():
-        z.writestr(k, v)
-    z.close()
-    sys.stdout.flush()
-    sys.stdout.buffer.write(buff.getvalue())
+
+    writeCSV(files,zipfname)    
 
 def sendSOTA_C(fp, zipfname, callsign, options, inchar, outchar):
     prefix = 'sota'
@@ -345,7 +431,7 @@ def sendSOTA_C(fp, zipfname, callsign, options, inchar, outchar):
             if linecount > 100000:
                 break
             else:
-                (fn,s2s,l) = toSOTA(linecount, row, callsign, options)
+                (fn,s2s,l) = toSOTA(row, callsign, options)
                 if linecount == 0:
                     fname = fn
                     
@@ -362,18 +448,35 @@ def sendSOTA_C(fp, zipfname, callsign, options, inchar, outchar):
                     writer.writerow(l)
                     fname = fn
 
-                    
         name = prefix + fname + '.csv'
         files.update({name : outstr.getvalue()})
 
-    print('Content-Disposition: attachment;filename="%s"\n' % zipfname)
-    buff = io.BytesIO()
-    z = zipfile.ZipFile(buff, 'w', zipfile.ZIP_DEFLATED)
-    for k,v in files.items():
-        z.writestr(k, v)
-    z.close()
-    sys.stdout.flush()
-    sys.stdout.buffer.write(buff.getvalue())
+    writeCSV(files,zipfname)
+
+def sendWWFF(fp, options, inchar, outchar):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding=outchar)
+
+    linecount = 0
+    writer = csv.writer(sys.stdout,delimiter=' ',
+                        quoting=csv.QUOTE_MINIMAL)
+    with io.TextIOWrapper(fp, encoding=inchar) as f:
+        reader = csv.reader(f)
+        for row in reader:
+            if linecount > 100000:
+                break
+            else:
+                (date,ref,l) = toWWFF(row,options)
+                if linecount == 0:
+                    act_call = options['WWFFActivator']
+                    fname = act_call.replace('/','-') + '@' + ref + ' '+ date +'.adif'
+                    print('Content-Disposition: attachment;filename="%s"\n'
+                          % fname)
+                    print('ADIF Export from HAMLOG by JL1NIE')
+                    print(adif('programid','FCTH'))
+                    print(adif('adifver','3.0.6'))
+                    print('<EOH>')
+                writer.writerow(l)
+                linecount += 1
     
 def main():
     cgitb.enable()
@@ -382,16 +485,24 @@ def main():
 
     activation_call = form.getvalue('activation_call',None)
     chaser_call = form.getvalue('chaser_call',None)
+    wwffoperator = form.getvalue('wwffoperator',None)
     
     options = {
         'QTH': form.getvalue('QTH',''),
         'Location': form.getvalue('location',''),
-        'Summit': form.getvalue('summit','')
+        'Summit': form.getvalue('summit',''),
+        'WWFFOperator': form.getvalue('wwffoperator',''),
+        'WWFFActivator': form.getvalue('wwffact_call',''),
+        'WWFFRef': form.getvalue('wwffref','')
     }
 
     if debug:
         fp = open('sample.csv','rb')
-        chaser_call = 'JL1NIE'
+        wwffoperator = 'JL1NIE'
+        options['QTH']='rmks1'
+        options['WWFFOperator']= wwffoperator
+        options['WWFFActivator']=wwffoperator+'/1'
+        options['WWFFRef']= 'JAFF-0123'
     else:
         fileitem = form['filename']
         fp = fileitem.file
@@ -411,6 +522,9 @@ def main():
         callsign = chaser_call
         fname = "sota-" + fname + ".zip"
         sendSOTA_C(fp, fname, callsign, options, inchar, outchar)
+    elif wwffoperator:
+        outchar = "utf-8"
+        sendWWFF(fp, options, inchar, outchar)
     else:
         outchar = "utf-8"
         fname = "airhamlog-" + fname + ".csv"
