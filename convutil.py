@@ -129,9 +129,9 @@ def decodeHamlog(cols):
         month = m.group(2)
         day = m.group(3)
     else:
-        year = '20' + cols[1]
-        month = ''
-        day = ''
+        year = '2000'
+        month = '01'
+        day = '01'
 
     m = re.match('(\d+):(\d+)(\w+)',cols[2])
     if m:
@@ -143,8 +143,8 @@ def decodeHamlog(cols):
         else:
             timezone = '+0900'
     else:
-        hour = cols[2]
-        minute = ''
+        hour = '00'
+        minute = '00'
         timezone = '+0900'
 
     tstr = year + '/' + month + '/' + day + ' ' + hour + ':' + minute + ' ' + timezone

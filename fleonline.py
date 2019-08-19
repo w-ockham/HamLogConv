@@ -2,6 +2,7 @@
 # coding: utf-8
 import cgi
 import cgitb
+import csv
 import datetime
 import io
 import json
@@ -10,7 +11,9 @@ import sys
 from convutil import (
     writeZIP,
     freq_to_band,
-    band_to_freq
+    band_to_freq,
+    mode_to_SOTAmode,
+    adif
 )
 
 
@@ -24,7 +27,8 @@ keyword_table = {
     'mywwff':1,
     'mysota':1,
     'nickname':1,
-    'date':1
+    'date':1,
+    'day':1,
 }
 
 def keyword(key):
@@ -35,9 +39,26 @@ def keyword(key):
     return((key.lower(),arg))
 
 mode_table = {
-    'cw':0,
-    'ssb':0,
-    'fm':0,
+    'cw':'rst',
+    'ssb':'rs',
+    'fm':'rs',
+    'am':'rs',
+    'rtty':'rst',
+    'rtty':'rst',
+    'rty':'rst',
+    'psk':'rst',
+    'psk31':'rst',
+    'data':'snr',
+    'jt9':'snr',
+    'jt65':'snr',
+    'ft8':'snr',
+    'ft4':'snr',
+    'dv':'rs',
+    'fusion':'rs',
+    'dstar':'rs',
+    'd-star':'rs',
+    'dmr':'rs',
+    'c4fm':'rs'
 }
 
 def modes(key):
@@ -46,6 +67,13 @@ def modes(key):
     except Exception as e:
         return None
     return(key.upper())
+
+def modes_sig(key):
+    try:
+        arg = mode_table[key.lower()]
+    except Exception as e:
+        return None
+    return(arg)
     
 def tokenizer(line):
     res = []
@@ -105,7 +133,7 @@ def tokenizer(line):
         res.append(('id',w.upper(),word))
     return(res)
 
-def compileFLE(text):
+def compileFLE(text,conv_mode):
     res = []
     (NORM,FREQ,RSTS,RSTR)=(1,2,3,4)
     env = {
@@ -132,7 +160,7 @@ def compileFLE(text):
         'current_r_r':5,
         'current_s_r':9,
         'current_t_r':9,
-        'errorno':[]
+        'errno':[]
     }
     
     lines = text.splitlines()
@@ -147,82 +175,118 @@ def compileFLE(text):
         env['current_r_r']=5
         env['current_s_r']=9
         env['current_t_r']=9
-        env['cuurent_call']=''
+        env['current_call']=''
+        env['current_snr_s']='-10'
+        env['current_snr_r']='-10'
         env['current_his_wwff']=''
         env['current_his_sota']=''
         tl = tokenizer(l)
-        pos = 0
         if not tl:
             continue
+        pos = 0
+        ml = len(tl) -1
         (t,p1,p2) = tl[pos]
         if t == 'kw':
             (key, l) = p1
-            if key == 'mycall':
-                (id, call, w) = tl[pos+1]
-                if id =='id':
-                    env['mycall'] = call
+            if key == 'day':
+                if pos < ml:
+                    (id, inc, w) = tl[pos+1]
+                    d = datetime.datetime(env['current_year'],env['current_month'],env['current_day'])
+                    delta = datetime.timedelta(days=0)
+                    if w == '+':
+                        delta = datetime.timedelta(days=1)
+                    elif w == '++':
+                        delta = datetime.timedelta(days=2)
+                    d = d + delta
+                    env['current_year'] = d.year
+                    env['current_day'] = d.day
+                    env['current_month'] = d.month
                 else:
-                    errno.append(lc,pos+1,w)
+                    env['errno'].append((lc,pos+1,w))
                 lc += 1
                 continue
-            if key == 'operator':
-                (id, op, w) = tl[pos+1]
-                if id =='id':
-                    env['operator'] = op
+            if key == 'mycall':
+                if pos < ml:
+                    (id, call, w) = tl[pos+1]
+                    if id =='id':
+                        env['mycall'] = call
+                    else:
+                        env['errno'].append((lc,pos+1,w))
                 else:
-                    errno.append(lc,pos+1,w)
+                    env['errno'].append((lc,pos,w))
+
+                lc += 1                    
+                continue
+            if key == 'operator':
+                if pos < ml:
+                    (id, op, w) = tl[pos+1]
+                    if id =='id':
+                        env['operator'] = op
+                    else:
+                        env['errno'].append((lc,pos+1,w))
+                else:
+                    env['errno'].append((lc,pos,w))
                 lc += 1
                 continue
             if key == 'mywwff':
-                (id, ref, w) = tl[pos+1]
-                if id =='wwffref':
-                    env['mywwff'] = ref
-                    wwfffl = True
+                if pos < ml:
+                    (id, ref, w) = tl[pos+1]
+                    if id =='wwffref':
+                        env['mywwff'] = ref
+                        wwfffl = True
+                    else:
+                        env['errno'].append(lc,pos+1,w)
                 else:
-                    env['errno'].append(lc,pos+1,w)
+                    env['errno'].append((lc,pos,w))
                 lc += 1
                 continue
             if key == 'mysota':
-                (id, ref, w) = tl[pos+1]
-                if id =='sotaref':
-                    env['mysota'] = ref
-                    sotafl = True
+                if pos < ml:
+                    (id, ref, w) = tl[pos+1]
+                    if id =='sotaref':
+                        env['mysota'] = ref
+                        sotafl = True
+                    else:
+                        env['errno'].append(lc,pos+1,w)
                 else:
-                    env['errno'].append(lc,pos+1,w)
+                    env['errno'].append((lc,pos,w))
                 lc += 1
                 continue
             if key == 'nickname':
-                (_, _, w) = tl[pos+1]
-                env['nickname'] = w
+                if pos < ml:
+                    (_, _, w) = tl[pos+1]
+                    env['nickname'] = w
                 lc += 1
                 continue
             if key == 'qslmsg':
-                msg = ""
+                msg = []
                 for i in range(len(tl)-1):
                     (_ , _, w) = tl[i+1]
-                    msg = msg + " " + w
-                env['qslmsg'] = msg
+                    msg.append(w)
+                env['qslmsg'] = " ".join(msg)
                 lc += 1
                 continue
             if key == 'date':
-                (d, dp, w) = tl[pos+1]
-                if d =='date':
-                    (y,m,d) = dp
-                    env['current_year'] = int(y)
-                    env['current_month'] = int(m)
-                    env['current_day'] = int(d)
-                elif d =='date2':
-                    (m,d) = dp
-                    env['current_month'] = int(m)
-                    env['current_day'] = int(d)
+                if pos < ml:
+                    (d, dp, w) = tl[pos+1]
+                    if d =='date':
+                        (y,m,d) = dp
+                        env['current_year'] = int(y)
+                        env['current_month'] = int(m)
+                        env['current_day'] = int(d)
+                    elif d =='date2':
+                        (m,d) = dp
+                        env['current_month'] = int(m)
+                        env['current_day'] = int(d)
+                    else:
+                        env['errno'].append((lc,pos+1,w))
                 else:
-                    env['errno'].append((lc,pos+1,w))
+                    env['errno'].append((lc,pos,w))
                 lc += 1
                 continue
         else:
             length = len(tl)
             state = NORM
-
             while pos < length:
                 (t,p1,p2) = tl[pos]
                 if state == NORM:
@@ -256,6 +320,13 @@ def compileFLE(text):
                         pos+=1
                         state = NORM
                         continue
+                    if t == 'freq':
+                        env['current_freq'] = p2
+                        (f,b) =freq_to_band(p2)
+                        env['current_band'] = b
+                        pos+=1
+                        state = NORM
+                        continue
                     if t == 'wwffref':
                         env['current_his_wwff'] = p1
                         pos+=1
@@ -278,6 +349,8 @@ def compileFLE(text):
                 elif state == FREQ:
                     if t == 'freq':
                         env['current_freq'] = p2
+                        (f,b) = freq_to_band(p2)
+                        env['current_band'] = b
                         pos+=1
                         state = NORM
                         continue
@@ -304,6 +377,11 @@ def compileFLE(text):
                             pos += 1
                             state = RSTR
                             continue
+                    elif t == 'snr':
+                        env['current_snr_s'] = p1
+                        pos += 1
+                        state = RSTR
+                        continue
                     else:
                         state = NORM
                         continue
@@ -327,66 +405,249 @@ def compileFLE(text):
                             pos += 1
                             state = NORM
                             continue
-                    else:
+                    elif t == 'snr':
+                        env['current_snr_r'] = p1
+                        pos += 1
                         state = NORM
                         continue
+                else:
+                    state = NORM
+                    continue
             lc+=1
         if env['current_call'] != '':
-            mycall = env['mycall']
-            call = env['current_call']
-            date = '{y:02}-{m:02}-{d:02}'.format(y=env['current_year'],m=env['current_month'],d=env['current_day'])
-            time = '{h:02}:{m:02}'.format(h=env['current_hour'],m=env['current_min'])
-            band = env['current_band']
-            mode = env['current_mode']
-            rsts = str(env['current_r_s']*100+env['current_s_s']*10+env['current_t_s'])
-            rstr = str(env['current_r_r']*100+env['current_s_r']*10+env['current_t_r'])
-            mysota = env['mysota']
-            hissota = env['current_his_sota']
-            mywwff = env['mywwff']
-            hiswwff = env['current_his_wwff']
-            operator = env['operator']
-            qso = [ qsoc, mycall, date, time, call, band, mode, rsts, rstr, mysota, hissota,mywwff, hiswwff ,operator]
+            if conv_mode : # GenerateLog
+                rt = modes_sig(env['current_mode'])
+                if rt == 'rst':
+                    rsts = '{}{}{}'.format(env['current_r_s'],env['current_s_s'],env['current_t_s'])
+                    rstr = '{}{}{}'.format(env['current_r_r'],env['current_s_r'],env['current_t_r'])
+                elif rt == 'rs':
+                    rsts = '{}{}'.format(env['current_r_s'],env['current_s_s'])
+                    rstr = '{}{}'.format(env['current_r_r'],env['current_s_r'])
+                elif rt == 'snr':
+                    rsts = env['current_snr_s']
+                    rstr = env['current_snr_r']
+
+                qso = {
+                    'mycall': env['mycall'],
+                    'year':env['current_year'],
+                    'month':env['current_month'],
+                    'day':env['current_day'],
+                    'hour':env['current_hour'],
+                    'min':env['current_min'],
+                    'callsign':env['current_call'],
+                    'band':env['current_band'],
+                    'mode':env['current_mode'],
+                    'rst_sent': rsts,
+                    'rst_rcvd': rstr,
+                    'mysota':env['mysota'],
+                    'hissota':env['current_his_sota'],
+                    'mywwff':env['mywwff'],
+                    'hiswwff':env['current_his_wwff'],
+                    'operator':env['operator']
+                }
+            else: #Online
+                mycall = env['mycall']
+                call = env['current_call']
+                date = '{y:02}-{m:02}-{d:02}'.format(y=env['current_year'],m=env['current_month'],d=env['current_day'])
+                time = '{h:02}:{m:02}'.format(h=env['current_hour'],m=env['current_min'])
+                band = env['current_band']
+                mode = env['current_mode']
+                rt = modes_sig(mode)
+                if rt == 'rst':
+                    rsts = '{}{}{}'.format(env['current_r_s'],env['current_s_s'],env['current_t_s'])
+                    rstr = '{}{}{}'.format(env['current_r_r'],env['current_s_r'],env['current_t_r'])
+                elif rt == 'rs':
+                    rsts = '{}{}'.format(env['current_r_s'],env['current_s_s'])
+                    rstr = '{}{}'.format(env['current_r_r'],env['current_s_r'])
+                elif rt == 'snr':
+                    rsts = env['current_snr_s']
+                    rstr = env['current_snr_r']
+                    
+                mysota = env['mysota']
+                hissota = env['current_his_sota']
+                mywwff = env['mywwff']
+                hiswwff = env['current_his_wwff']
+                operator = env['operator']
+                qso = [ str(qsoc), mycall, date, time, call, band, mode, rsts, rstr, mysota, hissota,mywwff, hiswwff ,operator]
             res.append(qso)
-            
-    status = 'OK'
-    if sotafl and wwfffl:
-        logtype = 'BOTH'
-    elif sotafl:
-        logtype = 'SOTA'
-    elif wwfffl:
-        logtype = 'WWFF'
+
+    if conv_mode:
+        now  = datetime.datetime.now()
+        fname = "fle-" + now.strftime("%Y-%m-%d-%H-%M")
+        files = {fname+".txt":text}
+        if sotafl and wwfffl:
+            files = sendSOTA_FLE(files,res)
+            files = sendWWFF_FLE(files, res, env['mycall'])
+            writeZIP(files,fname+".zip")
+        elif sotafl:
+            files = sendSOTA_FLE(files,res)
+            writeZIP(files,fname+".zip")
+        elif wwfffl:
+            files = sendWWFF_FLE(files, res, env['mycall'])
+            writeZIP(files,fname+".zip")
     else:
-        logtype = 'NONE'
+        status = 'OK'
+        if sotafl and wwfffl:
+            logtype = 'BOTH'
+        elif sotafl:
+            logtype = 'SOTA'
+        elif wwfffl:
+            logtype = 'WWFF'
+        else:
+            logtype = 'NONE'
 
-    logtext = res
+        logtext = res
 
-    res = {'status': status,
-           'logtype': logtype,
-           'logtext': logtext
-    }
-    return (res)
+        res = {'status': status,
+               'logtype': logtype,
+               'mycall':env['mycall'],
+               'operator':env['operator'],
+               'mysota':env['mysota'],
+               'mywwff':env['mywwff'],
+               'logtext': logtext
+        }
+        return (res)
+
+def toSOTAFLE(h):
+    date = '{day:02}/{month:02}/{year:02}'.format(
+        day=h['day'], month=h['month'], year=h['year'])
+
+    date2 = '{year:02}{month:02}{day:02}'.format(
+        day=h['day'], month=h['month'], year=h['year'])
+    
+    l = [
+        "V2",
+        h['mycall'],
+        h['mysota'],
+        date,
+        '{hour:02}:{minute:02}'.format(hour=h['hour'], minute=h['min']),
+        h['band'],
+        mode_to_SOTAmode(h['mode']),
+        h['callsign'],
+        h['hissota'],
+        ''
+    ]
+    return (date2,h['hissota']!='',l)
+
+def sendSOTA_FLE(files, loginput):
+    prefix = 'sota'
+    prefix2 = 'sota-s2s-'
+    fname = ''
+    linecount = 0
+
+    outstr = io.StringIO()
+    writer = csv.writer(outstr,delimiter=',',
+                        quoting=csv.QUOTE_MINIMAL)
+    outstr_s2s = io.StringIO()
+    writer_s2s = csv.writer(outstr_s2s,delimiter=',',
+                            quoting=csv.QUOTE_MINIMAL)
+
+    for row in loginput:
+        if linecount > 100000:
+            break
+        else:
+            (fn,s2s,l) = toSOTAFLE(row)
+            if linecount == 0:
+                fname = fn
+                
+            if fn == fname:
+                writer.writerow(l)
+                if s2s:
+                    writer_s2s.writerow(l)
+                linecount += 1
+            else:
+                name = prefix + fname + '.csv'
+                files.update({name : outstr.getvalue()})
+
+                s2sbuff = outstr_s2s.getvalue()
+                if len(s2sbuff) >0:
+                    name2 = prefix2 + fname + '.csv'
+                    files.update({name2 : s2sbuff})
+                        
+                outstr = io.StringIO()
+                writer = csv.writer(outstr,delimiter=',',
+                                        quoting=csv.QUOTE_MINIMAL)
+                writer.writerow(l)
+
+                outstr_s2s = io.StringIO()
+                writer_s2s = csv.writer(outstr_s2s,delimiter=',',
+                                        quoting=csv.QUOTE_MINIMAL)
+                if s2s:
+                    writer_s2s.writerow(l)
+                fname = fn
+
+    name = prefix + fname + '.csv'
+    files.update({name : outstr.getvalue()})
+
+    s2sbuff = outstr_s2s.getvalue()
+    if len(s2sbuff) >0:
+        name2 = prefix2 + fname + '.csv'
+        files.update({name2 : s2sbuff})
+
+    return(files)
+
+def toWWFF_FLE(h):
+    date = '{year:02}{month:02}{day:02}'.format(
+        day=h['day'], month=h['month'], year=h['year'])
+    
+    date2 = '{year:02}-{month:02}-{day:02}'.format(
+        day=h['day'], month=h['month'], year=h['year'])
+    
+    wwffref = h['mywwff']
+
+    l = [
+        adif('WWFFActivator',h['mycall']),
+        adif('callsign',h['callsign']),
+        adif('date',date),
+        adif('time',
+             '{hour:02}{minute:02}'.format(
+                 hour=h['hour'], minute=h['min'])),
+        adif('band-wlen',h['band']),
+        adif('mode',h['mode']),
+        adif('rst_sent',h['rst_sent']),
+        adif('rst_rcvd',h['rst_rcvd']),
+        adif('mysig','WWFF'),
+        adif('mysiginfo',wwffref)
+        ]
+    
+    if h['hiswwff'] != '':
+        l+= [adif('sig','WWFF'),adif('siginfo',h['hiswwff'])]
+
+    if None and hisref['SOTA'] != '':
+        l+= [adif('mysotaref',hisref['SOTA'])]
+
+    l+= [adif('WWFFOperator',h['operator']),'<EOR>']
+    
+    return (date2,wwffref,l)
+
+def sendWWFF_FLE(files, loginput, callsign):
+    outstr = io.StringIO()
+    linecount = 0
+    writer = csv.writer(outstr, delimiter=' ',
+                        quoting=csv.QUOTE_MINIMAL)
+    for row in loginput:
+        if linecount > 100000:
+            break
+        else:
+            (date,ref,l) = toWWFF_FLE(row)
+            if linecount == 0:
+                fname = callsign.replace('/','-') + '@' + ref + ' '+ date +'.adi'
+                outstr.write('ADIF Export from FLEO by JL1NIE\n')
+                outstr.write(adif('programid','FLEO')+'\n')
+                outstr.write(adif('adifver','3.0.6')+'\n')
+                outstr.write('<EOH>\n')
+            writer.writerow(l)
+            linecount += 1
+    files.update({fname : outstr.getvalue()})
+
+    return files
 
 def do_command(command, arg):
     res = {'status': "None" }
     if command == "interp":
-        res = compileFLE(arg)
+        res = compileFLE(arg, False)
     print("Content-Type:application/json\n\n")
     print(json.dumps(res))
-        
-def generateLog(text):
-    now  = datetime.datetime.now()
-    fnamezip = "fle-" + now.strftime("%Y-%m-%d-%H-%M") +".zip"
-    fnameorg = "flelog" + now.strftime("%Y-%m-%d-%H-%M") +".txt"
-    fnamecsv = "sota-" + now.strftime("%Y-%m-%d-%H-%M") +".csv"
-    
-    res = compileFLE(text)
-    loglist = res['logtext']
-    
-    files = {
-        fnameorg:text,
-        fnamecsv:"".join(loglist)
-        }
-    writeZIP(files,fnamezip)
         
 def main():
 #    cgitb.enable(display=1, logdir='/tmp')
@@ -404,13 +665,14 @@ def main():
     if command:
         do_command(command,arg)
     elif text:
-        generateLog(text)
+        compileFLE(text, True)
     else:
         print("Content-Type:application/json\n\n")
         
 if __name__ == '__main__':
     main()
-    #l ="mycall jl1nie/1\n operator jl1nie\n mywwff jaff-0202\n"+"mysota ja/kn-032\n nickname tom \n qslmsg Hello 123 Myname\ndate 2019-1-1\n date 11/2\n"+"2230 jl1nie\n 9 jj1swi 9\n 20 jp1qec 4 4\n"
-    #r = compileFLE(l)
-    #print(r)
+    #l ="day +\n day ++\nmycall jl1nie/1\n operator jl1nie\n mywwff jaff-0202\n"+"mysota ja/kn-032\n nickname tom \n qslmsg Hello 123 Myname\ndate 2019-1-1\n date 11/2\n"+"2230 jl1nie\n 9 jj1swi 9\n 20 jp1qec 4 4\n"
+    #print(tokenizer(l))
+    #r = compileFLE(l,False)
+    #print(r["logtext"])
   

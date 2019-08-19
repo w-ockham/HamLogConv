@@ -4,15 +4,34 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-<!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-139463065-3"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'UA-139463065-3');
-</script>
+    <style>
+      .loglist-exetend {
+      position: relative;
+      height: 35vh;
+      border: 1px solid #aaa;
+      min-height: 100px;
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      margin-bottom: 5px;
+      }
+      .table-condensed > thead > tr > th,
+      .table-condensed > tbody > tr > th,
+      .table-condensed > tfoot > tr > th,
+      .table-condensed > thead > tr > td,
+      .table-condensed > tbody > tr > td,
+      .table-condensed > tfoot > tr > td {
+      padding: 1px;
+      }
+</style>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139463065-3"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      
+      gtag('config', 'UA-139463065-3');
+    </script>
 
     <title>File Conversion Tools for HamLog</title>
   </head>
@@ -34,11 +53,14 @@
       <li class="nav-item">
 	<a class="nav-link" id="JAFFActivator-tab" data-toggle="tab" href="#JAFFActivator" role="tab" aria-controls="JAFFActivator" aria-selected="false">JAFF Activator</a>
       </li>
+      <li class="nav-item">
+	<a class="nav-link" id="FLEOnline-tab" data-toggle="tab" href="#FLEOnline" role="tab" aria-controls="FLEOnline" aria-selected="false">FLE Online</a>
+      </li>
     </ul>
 
     <div class="tab-content">
       <div class="tab-pane fade show active" id="AirHamLog" role="tabpanel" aria-labelledby="AirHamLog-tab">	
-	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion2.py' style="padding:10px">
+	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
 	  <div class="form-row">
 	    <div class="form-group col-sm-6">
 	      <h6>自分のQTHの指定</h6>
@@ -83,7 +105,7 @@
 
 	  <div class="form-group">
 	    <button type="submit" class="btn-sm btn-primary">変換</button>
-	  <button type="button" class="btm-sm btn-info" data-toggle="modal" data-target="#Help">ヘルプ</button>
+	    <button type="button" class="btm-sm btn-info" data-toggle="modal" data-target="#Help">ヘルプ</button>
 	  </div>
 	</form>
 
@@ -99,7 +121,7 @@
 	      <div class="modal-body">
 		<small>
 		  HamLogが出力したCSVファイルをAirHamLogにインポート可能なCSVファイルに変換します。AirHamLogの各項目についてHamLogから以下の通り変換します。
-		  <table class="table table-condensed">
+		  <table class="table table-condensed table-fixed" height="100px">
 		    <thead><tr><th>AirHamLog項目</th><th>HamLog項目</th></tr></thead>
 		    <tbody>
 		      <tr>
@@ -155,15 +177,15 @@
 		<small>
 		  <strong>ご注意:本ツールはデータの完全な移行を保証するものではありません。</strong><br>
 		  ご不明の点・バグなどがありましたらtwitterのDMで@jl1nieまでご連絡ください。
-		  </small>
+		</small>
 	      </div>
 	    </div>
 	  </div>
 	</div>
       </div><!-- end of tab-pane -->
 
-       <div class="tab-pane fade" id="SOTAActivator" role="tabpanel" aria-labelledby="SOTAActivator-tab">	
-	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion2.py' style="padding:10px">
+      <div class="tab-pane fade" id="SOTAActivator" role="tabpanel" aria-labelledby="SOTAActivator-tab">	
+	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
 	  <div class="form-row">
 	    <div class ="form-group col-sm-6">
 	      <label for="activation_call">運用時のコールサイン</label>
@@ -209,8 +231,8 @@
 	</form>
       </div><!-- end of tab-pane -->
 
-       <div class="tab-pane fade" id="SOTAChaser" role="tabpanel" aria-labelledby="SOTAChaser-tab">	
-	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion2.py' style="padding:10px">
+      <div class="tab-pane fade" id="SOTAChaser" role="tabpanel" aria-labelledby="SOTAChaser-tab">	
+	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
 	  <div class="form-row">
 	    <div class ="form-group col-sm-6">
 	      <label for="chaser_call">運用時のコールサイン</label>
@@ -246,9 +268,9 @@
 	    <a href="http://sotadata.org.uk/" target="_blank" class="btn btn-outline-info" role="button">sotadata.org.uk</a>
 	  </div>
 	</form>
-       </div><!-- end of tab-pane -->
+      </div><!-- end of tab-pane -->
 
-       <div class="tab-pane fade" id="JAFFActivator" role="tabpanel" aria-labelledby="JAFFActivator-tab">
+      <div class="tab-pane fade" id="JAFFActivator" role="tabpanel" aria-labelledby="JAFFActivator-tab">
 	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion2.py' style="padding:10px">
 	  <div class="form-row">
 	    <div class ="form-group col-sm-6">
@@ -293,21 +315,123 @@
 	    <button type="submit" class="btn btn-primary">変換</button>
 	    <a href="mailto:jaff-log@niftycom" target="_blank" class="btn btn-outline-info" role="button">mailto:jaff-log@nifty.com</a>
 	  </div>
-	  </div>
 	</form>
-
       </div><!-- end of tab-pane -->
 
+      <div class="tab-pane fade" id="FLEOnline" role="tabpanel" aria-labelledby="FLEOnline-tab">
+	<div class="container">
+	  <form name="FLEEdit" method="post" action='/cgi-bin/fleonline.py'>
+	    <div class="form-group" style="margin-bottom:-3px;">
+	      <div class="form-check form-check-inline" style="font-size:8pt">
+		<input class="form-check-input" disabled="disabled" type="checkbox" id="checkSOTA">
+		<label class="form-check-label" for="checkSOTA"><strong>SOTA</strong></label>
+	      </div>
+	      <div class="form-check form-check-inline" style="font-size:8pt">
+		<input class="form-check-input" disabled="disabled" type="checkbox" id="checkWWFF">
+		<label class="form-check-label" for="checWWFF"><strong>WWFF</strong></label>
+	      </div>
+	    </div>
+	    <div class="form-group">
+	      <div id="loglist" class="container loglist-exetend">
+		<div class="table-responsive">
+		  <table class="table table-striped table-condensed text-nowrap" style="font-size:8pt;">
+		    <thead class="thead-light">
+		      <tr><th>No.</th><th>My Call</th>
+			<th>Date</th><th>Time</th>
+			<th>Call</th><th>Band</th>
+			<th>Mode</th><th>RSTs</th><th>RSTr</th>
+			<th>My SOTA</th><th>His SOTA</th>
+			<th>My WWFF</th><th>His WWFF</th>
+			<th>Operator</th>
+		      </tr>
+		    </thead>
+    		    <tbody id="loglisttable">
+		    </tbody>
+		  </table>
+		</div>
+	      </div>
+	    </div>
+	    <div class="form-group">
+	      <textarea class="form-control" name="edittext" id="edittext" rows="20" style="resize:none;font-size: 10pt;line-height: 11pt;"></textarea>
+	    </div>
+	    <div class="form-group">
+	      <div class="button-group d-flex" style="justify-content:space-around">
+		<input id="loadfle" type="file" style="display:none">
+		<button type="button" class="btn-sm btn-primary" 
+			  onClick="$('input[id=loadfle]').click()">Load FLE log</button>
+		<button type="button" id="update" class="btn-info btn-sm" onClick="clickUpdate()">Interpret</button>
+		<button type="submit" id="generate" class="btn-primary btn-sm">Generate Logs</button>
+	      </div>
+	    </div>
+	</div>
+      </div><!-- end of tab-pane -->
+    </div>
     <!-- Option Javascript -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<!--
     <script src="https://code.jquery.com/jquery-3.4.0.min.js" integrity="sha256-BJeo0qm959uMBGb65z40ejJYGSgR7REI4+CW1fNKwOg=" crossorigin="anonymous"> </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     
     <script>
-      $('.custom-file-input').on('change',function(){
-      $(this).next('.custom-file-label').html($(this)[0].files[0].name);
-      })
+    
+$('.custom-file-input').on('change',function(){
+    $(this).next('.custom-file-label').html($(this)[0].files[0].name);
+});
+$('input[id=loadfle]').change(function(e){
+    var result = e.target.files[0];
+    var reader = new FileReader();
+    reader.readAsText(result,'Shift_JIS');
+    reader.addEventListener('load', function() {
+	editor = document.getElementById("edittext")
+	editor.value = reader.result;
+    })
+});
+
+function clickUpdate() {
+    editor = document.getElementById("edittext")
+    txt = editor.value
+    console.log(txt)
+    $.post("/cgi-bin/fleonline.py",
+	      {"command":"interp",
+	       "arg":txt
+	      },
+	      function(data, status, xhr) {
+		  console.log(data)
+		  if (data.status == "OK") {
+		      if (data.logtype == "SOTA") {
+			  sota = document.getElementById("checkSOTA");
+			  sota.checked = true;
+			  wwff = document.getElementById("checkWWFF");
+			  wwff.checked = false;
+		      } else if (data.logtype == "WWFF") {
+			  wwff = document.getElementById("checkWWFF");
+			  sota = document.getElementById("checkSOTA");
+			  sota.checked = false;
+			  wwff.checked = true;
+		      } else if (data.logtype == "BOTH") {
+			  sota = document.getElementById("checkSOTA");
+			  sota.checked = true;
+			  wwff = document.getElementById("checkWWFF");
+			  wwff.checked = true;
+		      } else {
+			  sota = document.getElementById("checkSOTA");
+			  sota.checked = false;
+			  wwff = document.getElementById("checkWWFF");
+			  wwff.checked = false;
+		      }
+		      tlist = data.logtext;
+		      $('#loglisttable').empty()
+		      for(var i = 0, len = tlist.length; i < len; ++i) {
+			  td = "";
+			  for(var j =0,len2 = tlist[i].length; j < len2;++j)
+			      td = td + "<td>" + tlist[i][j] + "</td>";
+			  $('#loglisttable').append('<tr>'+td+'</tr>');
+		      }
+		  }
+	      });
+};
     </script>
   </body>
 </html>
-
