@@ -143,23 +143,26 @@ def compileFLE(text,conv_mode):
         'mywwff':'',
         'mysota':'',
         'nickname':'',
-        'current_year':2000,
-        'current_month':1,
-        'current_day':1,
-        'current_hour':0,
-        'current_min':0,
-        'current_mode':'cw',
-        'current_band':'20m',
-        'current_freq':'14.062',
-        'current_call':'',
-        'current_his_wwff':'',
-        'current_his_sota':'',
-        'current_r_s':5,
-        'current_s_s':9,
-        'current_t_s':9,
-        'current_r_r':5,
-        'current_s_r':9,
-        'current_t_r':9,
+        'year':2000,
+        'month':1,
+        'day':1,
+        'c_year':2000,
+        'c_month':1,
+        'c_day':1,
+        'c_hour':0,
+        'c_min':0,
+        'c_mode':'cw',
+        'c_band':'20m',
+        'c_freq':'14.062',
+        'c_call':'',
+        'c_his_wwff':'',
+        'c_his_sota':'',
+        'c_r_s':5,
+        'c_s_s':9,
+        'c_t_s':9,
+        'c_r_r':5,
+        'c_s_r':9,
+        'c_t_r':9,
         'errno':[]
     }
     
@@ -169,17 +172,17 @@ def compileFLE(text,conv_mode):
     sotafl = False
     wwfffl = False
     for l in lines:
-        env['current_r_s']=5
-        env['current_s_s']=9
-        env['current_t_s']=9
-        env['current_r_r']=5
-        env['current_s_r']=9
-        env['current_t_r']=9
-        env['current_call']=''
-        env['current_snr_s']='-10'
-        env['current_snr_r']='-10'
-        env['current_his_wwff']=''
-        env['current_his_sota']=''
+        env['c_r_s']=5
+        env['c_s_s']=9
+        env['c_t_s']=9
+        env['c_r_r']=5
+        env['c_s_r']=9
+        env['c_t_r']=9
+        env['c_call']=''
+        env['c_snr_s']='-10'
+        env['c_snr_r']='-10'
+        env['c_his_wwff']=''
+        env['c_his_sota']=''
         tl = tokenizer(l)
         if not tl:
             continue
@@ -191,18 +194,18 @@ def compileFLE(text,conv_mode):
             if key == 'day':
                 if pos < ml:
                     (id, inc, w) = tl[pos+1]
-                    d = datetime.datetime(env['current_year'],env['current_month'],env['current_day'])
+                    d = datetime.datetime(env['c_year'],env['c_month'],env['c_day'])
                     delta = datetime.timedelta(days=0)
                     if w == '+':
                         delta = datetime.timedelta(days=1)
                     elif w == '++':
                         delta = datetime.timedelta(days=2)
                     d = d + delta
-                    env['current_year'] = d.year
-                    env['current_day'] = d.day
-                    env['current_month'] = d.month
+                    env['c_year'] = d.year
+                    env['c_day'] = d.day
+                    env['c_month'] = d.month
                 else:
-                    env['errno'].append((lc,pos+1,w))
+                    env['errno'].append((lc,pos+1,p2))
                 lc += 1
                 continue
             if key == 'mycall':
@@ -213,7 +216,7 @@ def compileFLE(text,conv_mode):
                     else:
                         env['errno'].append((lc,pos+1,w))
                 else:
-                    env['errno'].append((lc,pos,w))
+                    env['errno'].append((lc,pos,p2))
 
                 lc += 1                    
                 continue
@@ -225,7 +228,7 @@ def compileFLE(text,conv_mode):
                     else:
                         env['errno'].append((lc,pos+1,w))
                 else:
-                    env['errno'].append((lc,pos,w))
+                    env['errno'].append((lc,pos,p2))
                 lc += 1
                 continue
             if key == 'mywwff':
@@ -237,7 +240,7 @@ def compileFLE(text,conv_mode):
                     else:
                         env['errno'].append(lc,pos+1,w)
                 else:
-                    env['errno'].append((lc,pos,w))
+                    env['errno'].append((lc,pos,p2))
                 lc += 1
                 continue
             if key == 'mysota':
@@ -249,7 +252,7 @@ def compileFLE(text,conv_mode):
                     else:
                         env['errno'].append(lc,pos+1,w)
                 else:
-                    env['errno'].append((lc,pos,w))
+                    env['errno'].append((lc,pos,p2))
                 lc += 1
                 continue
             if key == 'nickname':
@@ -271,17 +274,22 @@ def compileFLE(text,conv_mode):
                     (d, dp, w) = tl[pos+1]
                     if d =='date':
                         (y,m,d) = dp
-                        env['current_year'] = int(y)
-                        env['current_month'] = int(m)
-                        env['current_day'] = int(d)
+                        env['c_year'] = int(y)
+                        env['year'] = int(y)
+                        env['c_month'] = int(m)
+                        env['month'] = int(m)
+                        env['c_day'] = int(d)
+                        env['day'] = int(d)
                     elif d =='date2':
                         (m,d) = dp
-                        env['current_month'] = int(m)
-                        env['current_day'] = int(d)
+                        env['c_month'] = int(m)
+                        env['month'] = int(m)
+                        env['c_day'] = int(d)
+                        env['day'] = int(d)
                     else:
                         env['errno'].append((lc,pos+1,w))
                 else:
-                    env['errno'].append((lc,pos,w))
+                    env['errno'].append((lc,pos,p2))
                 lc += 1
                 continue
         else:
@@ -291,54 +299,54 @@ def compileFLE(text,conv_mode):
                 (t,p1,p2) = tl[pos]
                 if state == NORM:
                     if t == 'md':
-                        env['current_mode'] = p1
+                        env['c_mode'] = p1
                         state = NORM
                         pos += 1
                         continue
                     if t == 'band':
-                        env['current_band'] =p2
+                        env['c_band'] =p2
                         state = FREQ
                         pos += 1
                         continue
                     if t == 'dec':
                         if p1 == 1:
-                            env['current_min'] = int(env['current_min']//10)*10 + int(p2)
+                            env['c_min'] = int(env['c_min']//10)*10 + int(p2)
                         elif p1 ==2:
-                            env['current_min'] = int(p2) % 60
+                            env['c_min'] = int(p2) % 60
                         elif p1 == 3:
                             h = int(p2) // 100
                             m = int(p2) % 60
-                            env['current_hour'] = int(env['current_hour']//10)*10 + h
-                            env['current_min'] = m
+                            env['c_hour'] = int(env['c_hour']//10)*10 + h
+                            env['c_min'] = m
                         elif p1 == 4:
                             h = int(p2) // 100
                             m = int(p2) %100 % 60
-                            env['current_hour'] = h
-                            env['current_min'] = m
+                            env['c_hour'] = h
+                            env['c_min'] = m
                         else:
                             env['errno'].append((lc,pos,p2))
                         pos+=1
                         state = NORM
                         continue
                     if t == 'freq':
-                        env['current_freq'] = p2
+                        env['c_freq'] = p2
                         (f,b) =freq_to_band(p2)
-                        env['current_band'] = b
+                        env['c_band'] = b
                         pos+=1
                         state = NORM
                         continue
                     if t == 'wwffref':
-                        env['current_his_wwff'] = p1
+                        env['c_his_wwff'] = p1
                         pos+=1
                         state = NORM
                         continue
                     if t == 'sotaref':
-                        env['current_his_sota'] = p1
+                        env['c_his_sota'] = p1
                         pos+=1
                         state = NORM
                         continue
                     if t == 'id':
-                        env['current_call'] = p1
+                        env['c_call'] = p1
                         pos+=1
                         qsoc+=1
                         state = RSTS
@@ -348,9 +356,9 @@ def compileFLE(text,conv_mode):
                         state = NORM
                 elif state == FREQ:
                     if t == 'freq':
-                        env['current_freq'] = p2
+                        env['c_freq'] = p2
                         (f,b) = freq_to_band(p2)
-                        env['current_band'] = b
+                        env['c_band'] = b
                         pos+=1
                         state = NORM
                         continue
@@ -360,25 +368,25 @@ def compileFLE(text,conv_mode):
                 elif state == RSTS:
                     if t == 'dec':
                         if p1 == 1:
-                            env['current_s_s'] = int(p2)
+                            env['c_s_s'] = int(p2)
                             pos += 1
                             state = RSTR
                             continue
                         elif p1 == 2:
-                            env['current_r_s'] = int(p2)//10
-                            env['current_s_s'] = int(p2)%10
+                            env['c_r_s'] = int(p2)//10
+                            env['c_s_s'] = int(p2)%10
                             pos += 1
                             state = RSTR
                             continue
                         elif p1 == 3:
-                            env['current_r_s'] = int(p2)//100
-                            env['current_s_s'] = (int(p2)%100)//10
-                            env['current_t_s'] = int(p2)%10
+                            env['c_r_s'] = int(p2)//100
+                            env['c_s_s'] = (int(p2)%100)//10
+                            env['c_t_s'] = int(p2)%10
                             pos += 1
                             state = RSTR
                             continue
                     elif t == 'snr':
-                        env['current_snr_s'] = p1
+                        env['c_snr_s'] = p1
                         pos += 1
                         state = RSTR
                         continue
@@ -388,85 +396,85 @@ def compileFLE(text,conv_mode):
                 elif state == RSTR:
                     if t == 'dec':
                         if p1 == 1:
-                            env['current_s_r'] = int(p2)
+                            env['c_s_r'] = int(p2)
                             pos += 1
                             state = NORM
                             continue
                         elif p1 == 2:
-                            env['current_r_r'] = int(p2)//10
-                            env['current_s_r'] = int(p2)%10
+                            env['c_r_r'] = int(p2)//10
+                            env['c_s_r'] = int(p2)%10
                             pos += 1
                             state = NORM
                             continue
                         elif p1 == 3:
-                            env['current_r_r'] = int(p2)//100
-                            env['current_s_r'] = (int(p2)%100)//10
-                            env['current_t_r'] = int(p2)%10
+                            env['c_r_r'] = int(p2)//100
+                            env['c_s_r'] = (int(p2)%100)//10
+                            env['c_t_r'] = int(p2)%10
                             pos += 1
                             state = NORM
                             continue
                     elif t == 'snr':
-                        env['current_snr_r'] = p1
+                        env['c_snr_r'] = p1
                         pos += 1
                         state = NORM
                         continue
-                else:
-                    state = NORM
-                    continue
+                    else:
+                        state = NORM
+                        continue
             lc+=1
-        if env['current_call'] != '':
+        if env['c_call'] != '':
             if conv_mode : # GenerateLog
-                rt = modes_sig(env['current_mode'])
+                rt = modes_sig(env['c_mode'])
                 if rt == 'rst':
-                    rsts = '{}{}{}'.format(env['current_r_s'],env['current_s_s'],env['current_t_s'])
-                    rstr = '{}{}{}'.format(env['current_r_r'],env['current_s_r'],env['current_t_r'])
+                    rsts = '{}{}{}'.format(env['c_r_s'],env['c_s_s'],env['c_t_s'])
+                    rstr = '{}{}{}'.format(env['c_r_r'],env['c_s_r'],env['c_t_r'])
                 elif rt == 'rs':
-                    rsts = '{}{}'.format(env['current_r_s'],env['current_s_s'])
-                    rstr = '{}{}'.format(env['current_r_r'],env['current_s_r'])
+                    rsts = '{}{}'.format(env['c_r_s'],env['c_s_s'])
+                    rstr = '{}{}'.format(env['c_r_r'],env['c_s_r'])
                 elif rt == 'snr':
-                    rsts = env['current_snr_s']
-                    rstr = env['current_snr_r']
+                    rsts = env['c_snr_s']
+                    rstr = env['c_snr_r']
 
                 qso = {
                     'mycall': env['mycall'],
-                    'year':env['current_year'],
-                    'month':env['current_month'],
-                    'day':env['current_day'],
-                    'hour':env['current_hour'],
-                    'min':env['current_min'],
-                    'callsign':env['current_call'],
-                    'band':env['current_band'],
-                    'mode':env['current_mode'],
+                    'year':env['c_year'],
+                    'month':env['c_month'],
+                    'day':env['c_day'],
+                    'hour':env['c_hour'],
+                    'min':env['c_min'],
+                    'callsign':env['c_call'],
+                    'band':env['c_band'],
+                    'mode':env['c_mode'],
                     'rst_sent': rsts,
                     'rst_rcvd': rstr,
                     'mysota':env['mysota'],
-                    'hissota':env['current_his_sota'],
+                    'hissota':env['c_his_sota'],
                     'mywwff':env['mywwff'],
-                    'hiswwff':env['current_his_wwff'],
+                    'hiswwff':env['c_his_wwff'],
                     'operator':env['operator']
                 }
             else: #Online
                 mycall = env['mycall']
-                call = env['current_call']
-                date = '{y:02}-{m:02}-{d:02}'.format(y=env['current_year'],m=env['current_month'],d=env['current_day'])
-                time = '{h:02}:{m:02}'.format(h=env['current_hour'],m=env['current_min'])
-                band = env['current_band']
-                mode = env['current_mode']
+                call = env['c_call']
+                date = '{y:02}-{m:02}-{d:02}'.format(y=env['c_year'],m=env['c_month'],d=env['c_day'])
+                time = '{h:02}:{m:02}'.format(h=env['c_hour'],m=env['c_min'])
+                band = env['c_band']
+                mode = env['c_mode']
                 rt = modes_sig(mode)
                 if rt == 'rst':
-                    rsts = '{}{}{}'.format(env['current_r_s'],env['current_s_s'],env['current_t_s'])
-                    rstr = '{}{}{}'.format(env['current_r_r'],env['current_s_r'],env['current_t_r'])
+                    rsts = '{}{}{}'.format(env['c_r_s'],env['c_s_s'],env['c_t_s'])
+                    rstr = '{}{}{}'.format(env['c_r_r'],env['c_s_r'],env['c_t_r'])
                 elif rt == 'rs':
-                    rsts = '{}{}'.format(env['current_r_s'],env['current_s_s'])
-                    rstr = '{}{}'.format(env['current_r_r'],env['current_s_r'])
+                    rsts = '{}{}'.format(env['c_r_s'],env['c_s_s'])
+                    rstr = '{}{}'.format(env['c_r_r'],env['c_s_r'])
                 elif rt == 'snr':
-                    rsts = env['current_snr_s']
-                    rstr = env['current_snr_r']
+                    rsts = env['c_snr_s']
+                    rstr = env['c_snr_r']
                     
                 mysota = env['mysota']
-                hissota = env['current_his_sota']
+                hissota = env['c_his_sota']
                 mywwff = env['mywwff']
-                hiswwff = env['current_his_wwff']
+                hiswwff = env['c_his_wwff']
                 operator = env['operator']
                 qso = [ str(qsoc), mycall, date, time, call, band, mode, rsts, rstr, mysota, hissota,mywwff, hiswwff ,operator]
             res.append(qso)
@@ -474,7 +482,9 @@ def compileFLE(text,conv_mode):
     if conv_mode:
         now  = datetime.datetime.now()
         fname = "fle-" + now.strftime("%Y-%m-%d-%H-%M")
-        files = {fname+".txt":text}
+        aday = '{}{:02}{:02}'.format(env['year'],env['month'],env['day'])
+        logname= "fle-" + aday + '@' + env['mysota'].replace('/','-')+env['mywwff'] + '.txt'
+        files = {logname:text}
         if sotafl and wwfffl:
             files = sendSOTA_FLE(files,res)
             files = sendWWFF_FLE(files, res, env['mycall'])
@@ -658,10 +668,6 @@ def main():
     arg = form.getvalue('arg',json.dumps("None"))
     text = form.getvalue('edittext',None)
 
-    if debug:
-        command = "interp"
-        arg = "Quick\n Brown\n Fox\n Jumps\n Over\n The\n Lazu\n Dog.\n"
-        
     if command:
         do_command(command,arg)
     elif text:
@@ -670,9 +676,9 @@ def main():
         print("Content-Type:application/json\n\n")
         
 if __name__ == '__main__':
-    main()
-    #l ="day +\n day ++\nmycall jl1nie/1\n operator jl1nie\n mywwff jaff-0202\n"+"mysota ja/kn-032\n nickname tom \n qslmsg Hello 123 Myname\ndate 2019-1-1\n date 11/2\n"+"2230 jl1nie\n 9 jj1swi 9\n 20 jp1qec 4 4\n"
-    #print(tokenizer(l))
-    #r = compileFLE(l,False)
-    #print(r["logtext"])
+    if not debug:
+        main()
+    else:
+        f = open ("sample.fle","r")
+        compileFLE(f.read(),False)
   

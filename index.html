@@ -7,12 +7,11 @@
     <style>
       .loglist-exetend {
       position: relative;
-      height: 35vh;
+      height: 40vh;
       border: 1px solid #aaa;
       min-height: 100px;
       overflow:auto;
       -webkit-overflow-scrolling:touch;
-      margin-bottom: 5px;
       }
       .table-condensed > thead > tr > th,
       .table-condensed > tbody > tr > th,
@@ -271,7 +270,7 @@
       </div><!-- end of tab-pane -->
 
       <div class="tab-pane fade" id="JAFFActivator" role="tabpanel" aria-labelledby="JAFFActivator-tab">
-	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion2.py' style="padding:10px">
+	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
 	  <div class="form-row">
 	    <div class ="form-group col-sm-6">
 	      <label for="operator">運用時のオペレータ</label>
@@ -351,8 +350,11 @@
 		</div>
 	      </div>
 	    </div>
+	    <div class="button-group d-flex" style="justify-content:flex-end">
+	      <button type="button" class="btn-sm btn-light p-0" style="font-size 4px" onClick="setSample()">Sample</button>
+	    </div>
 	    <div class="form-group">
-	      <textarea class="form-control" name="edittext" id="edittext" rows="20" style="resize:none;font-size: 10pt;line-height: 11pt;"></textarea>
+	      <textarea class="form-control text-monospace" name="edittext" id="edittext" rows="20" style="resize:none;font-size: 10pt;line-height: 11pt;"></textarea>
 	    </div>
 	    <div class="form-group">
 	      <div class="button-group d-flex" style="justify-content:space-around">
@@ -389,16 +391,40 @@ $('input[id=loadfle]').change(function(e){
     })
 });
 
+function setSample() {
+    editor = document.getElementById("edittext")
+    editor.value =
+"#Header\n" + 
+"mycall jl1nie/0\n" +
+"operator jl1nie\n" +
+"mywwff jaff-0056\n" +
+"mysota ja/nn-031\n" +
+"# Log\n" +
+"date 2019-08-02\n" +
+"40m cw\n" +
+"2302 jg1bok\n" +
+"4 ja4rqo\n" +
+"40m ssb\n" +
+"14 ja4rqo\n" + 
+"40 jp1qec/1 5 3 jaff-0213 ja/st-018\n"+
+"day +\n"+
+"0001 17m cw\n"+
+"zl1byz 41 31\n"+
+"20m ft4\n"+
+"12 zl1tm -18 -19\n"+
+"50.550 am\n"+
+"30 jj1swi/1 3 4\n"
+;
+};
+
 function clickUpdate() {
     editor = document.getElementById("edittext")
     txt = editor.value
-    console.log(txt)
     $.post("/cgi-bin/fleonline.py",
 	      {"command":"interp",
 	       "arg":txt
 	      },
 	      function(data, status, xhr) {
-		  console.log(data)
 		  if (data.status == "OK") {
 		      if (data.logtype == "SOTA") {
 			  sota = document.getElementById("checkSOTA");
