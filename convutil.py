@@ -106,6 +106,39 @@ def mode_to_SOTAmode(mode):
             return smode
     return 'OTHER'
 
+def splitCallsign(call):
+    call = call.upper()
+    m = re.match('(\w+)/(\w+)/(\w+)',call)
+    if m:
+        m2 = re.match('\d+',m.group(2))
+        if m2:
+            operator = m.group(1)
+            portable = m.group(2)+'/'+m.group(3)
+        else:
+            operator = m.group(2)
+            portable = m.group(1)
+    else:
+        m = re.match('(\w+)/(\w+)',call)
+        if m:
+            m2 = re.match('\d+',m.group(2))
+            if m2:
+                operator = m.group(1)
+                portable = m.group(2)
+            elif m.group(2).upper() == "QRP":
+                operator = m.group(1)
+                portable = m.group(2)
+            elif len(m.group(2))>len(m.group(1)):
+                operator = m.group(2)
+                portable = m.group(1)
+            else:
+                operator = m.group(1)
+                portable = m.group(2)
+        else:
+            operator = call.strip()
+            portable = ''
+            
+    return (operator, portable)
+    
 def decodeHamlog(cols):
 
     errorfl = False
@@ -119,35 +152,8 @@ def decodeHamlog(cols):
             'errormsg': errormsg
         }
     else:
-        m = re.match('(\w+)/(\w+)/(\w+)',cols[0])
-        if m:
-            m2 = re.match('\d+',m.group(2))
-            if m2:
-                operator = m.group(1)
-                portable = m.group(2)+'/'+m.group(3)
-            else:
-                operator = m.group(2)
-                portable = m.group(1)
-        else:
-            m = re.match('(\w+)/(\w+)',cols[0])
-            if m:
-                m2 = re.match('\d+',m.group(2))
-                if m2:
-                    operator = m.group(1)
-                    portable = m.group(2)
-                elif m.group(2).upper() == "QRP":
-                    operator = m.group(1)
-                    portable = m.group(2)
-                elif len(m.group(2))>len(m.group(1)):
-                    operator = m.group(2)
-                    portable = m.group(1)
-                else:
-                    operator = m.group(1)
-                    portable = m.group(2)
-            else:
-                operator = cols[0].strip()
-                portable = ''
-    
+        (operator, portable) = splitCallsign(cols[0])
+        
         m = re.match('(\d+)/(\d+)/(\d+)',cols[1])
         if m:
             if len(m.group(1)) > 2:
@@ -198,7 +204,26 @@ def decodeHamlog(cols):
         minute = utime.minute
 
         (band,wlen) = freq_to_band(cols[5])
-    
+
+        qsl_sent = 0
+        qsl_rcvd = 0
+        qsl_via = ""
+        qslflag = cols[9].upper() +'   '
+        qslflag = qslflag[:3]
+        
+        if len(qslflag) == 3:
+            if qslflag[0] == 'N':
+                qsl_via = 'No Card'
+            elif qslflag[0] == 'J':
+                qsl_via = 'JARL (Bureau)'
+            else:
+                qsl_via = qslflag[0]
+
+            if qslflag[1] != ' ':
+                qsl_sent = 1
+            if qslflag[2] != ' ':
+                qsl_rcvd = 1
+                
         return {
             'error':errorfl,
             'errormsg':" , ".join(errormsg),
@@ -222,7 +247,9 @@ def decodeHamlog(cols):
             'mode-sota': mode_to_SOTAmode(cols[6]), #SOTA
             'code': cols[7],   # None
             'gl': cols[8],     # None
-            'qsl': cols[9],    # AirHam
+            'qsl': qsl_via,    # AirHam
+            'qsl_sent':qsl_sent, #AirHam
+            'qsl_rcvd':qsl_rcvd, #AirHam
             'name': cols[10],  # None
             'qth': cols[11],   # None
             'rmks1': cols[12], # All

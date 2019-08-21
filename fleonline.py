@@ -12,6 +12,8 @@ from convutil import (
     writeZIP,
     freq_to_band,
     band_to_freq,
+    splitCallsign,
+    mode_to_airhammode,
     mode_to_SOTAmode,
     adif
 )
@@ -490,11 +492,11 @@ def compileFLE(text,conv_mode):
         now  = datetime.datetime.now()
         fname = "fle-" + now.strftime("%Y-%m-%d-%H-%M")
         aday = '{}{:02}{:02}'.format(env['year'],env['month'],env['day'])
-        logname= aday + '@' + env['mysota'].replace('/','-')+env['mywwff'] + '.txt'
+        logname= aday + '@' + env['mysota'].replace('/','-')+env['mywwff']
         files = {
-            "fle-" + logname:text,
-            "hamlog-" + logname : sendHamlog_FLE(res,'hisref',env),
-            # "airham-" + logname : sendAirHam_FLE(res)
+            "fle-" + logname + ".txt" :text,
+            "hamlog-" + logname + ".csv" : sendHamlog_FLE(res,'hisref',env),
+            "airham-" + logname + ".csv" : sendAirHam_FLE(res,env)
         }
         
         if sotafl and wwfffl:
@@ -638,9 +640,6 @@ def toWWFF_FLE(h):
     if h['hiswwff'] != '':
         l+= [adif('sig','WWFF'),adif('siginfo',h['hiswwff'])]
 
-    if None and hisref['SOTA'] != '':
-        l+= [adif('mysotaref',hisref['SOTA'])]
-
     l+= [adif('WWFFOperator',h['operator']),'<EOR>']
     
     return (date2,wwffref,l)
@@ -722,6 +721,68 @@ def sendHamlog_FLE(loginput, rmksfl, env):
     outstr.flush()
     return (raw.getvalue())
 
+def toAirHamFLE(lcount, h, env):
+    if lcount == 0:
+        l= ["id","callsign","portable","qso_at","sent_rst",
+            "received_rst","sent_qth","received_qth",
+            "received_qra","frequency","mode","card",
+            "remarks"]
+        return l
+
+    tstr ="{year:04}/{month:02}/{day:02} {hour:02}:{min:02} +0000".format(year=h['year'],month=h['month'],day=h['day'],hour=h['hour'],min=h['min'])
+    atime = datetime.datetime.strptime(tstr,'%Y/%m/%d %H:%M %z')
+    utime = atime.astimezone(datetime.timezone(datetime.timedelta(hours=0)))
+    isotime = atime.isoformat()
+    
+    (operator, portable) = splitCallsign(h['callsign'])
+    
+    freq = band_to_freq(h['band'])
+    freq_dec = re.sub(r'[MHz|KHz|GHz]','',freq)
+    mode = mode_to_airhammode(h['mode'], freq_dec)
+
+    hisref = []
+    if h['hissota'] != '':
+        hisref.append(h['hissota'])
+        
+    if h['hiswwff'] != '':
+        hisref.append(h['hiswwff'])
+                                         
+    l = ["",
+         operator,
+         portable,
+         isotime,
+         h['rst_sent'],
+         h['rst_rcvd'],
+         env['qslmsg'],
+         ",".join(hisref),
+         "",
+         freq,
+         mode,
+         "",
+         ""
+        ]
+    return l
+
+def sendAirHam_FLE(loginput, env):
+    raw = io.BytesIO()
+    outstr =io.TextIOWrapper(io.BufferedWriter(raw),
+                             encoding='utf-8',errors="backslashreplace")
+    linecount = 0
+    writer = csv.writer(outstr, delimiter=',',
+                        quoting=csv.QUOTE_MINIMAL)
+    for row in loginput:
+        if linecount > 100000:
+            break
+        else:
+            if linecount == 0:
+                writer.writerow(toAirHamFLE(linecount, row, env))
+                linecount += 1
+            writer.writerow(toAirHamFLE(linecount, row, env))
+            linecount += 1
+
+    outstr.flush()
+    return (raw.getvalue())
+
 def do_command(command, arg):
     res = {'status': "None" }
     if command == "interp":
@@ -754,4 +815,4 @@ if __name__ == '__main__':
         main()
     else:
         f = open ("sample.fle","r")
-        print(compileFLE(f.read(),False))
+        print(compileFLE(f.read(),True))
