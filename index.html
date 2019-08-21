@@ -7,7 +7,7 @@
     <style>
       .loglist-exetend {
       position: relative;
-      height: 40vh;
+      height: 35vh;
       border: 1px solid #aaa;
       min-height: 100px;
       overflow:auto;
@@ -355,7 +355,7 @@
 	      <button type="button" class="btn-sm btn-outline-info p-0 bg-light" style="font-size 4px" onClick="setSample()">Sample</button>
 	    </div>
 	    <div class="form-group">
-	      <textarea class="form-control text-monospace" name="edittext" id="edittext" rows="20" style="resize:none;font-size: 10pt;line-height: 11pt;margin-top:2pt;"></textarea>
+	      <textarea class="form-control text-monospace" name="edittext" id="edittext" rows="22" style="resize:none;font-size: 9pt;line-height: 10pt;margin-top:2pt;"></textarea>
 	    </div>
 	    <div class="form-group">
 	      <div class="button-group d-flex" style="justify-content:space-around">
@@ -395,11 +395,12 @@ $('input[id=loadfle]').change(function(e){
 function setSample() {
     editor = document.getElementById("edittext")
     editor.value =
-"#Header\n" + 
+"#Header\n" +
 "mycall jl1nie/0\n" +
 "operator jl1nie\n" +
 "mywwff jaff-0056\n" +
 "mysota ja/nn-031\n" +
+"qslmsg Tateshinasan $mysota ($mywwff),JCC0914 Rig:KX2 Ant:EFHW 5mH\n"+
 "# Log\n" +
 "date 2019-08-02\n" +
 "40m cw\n" +

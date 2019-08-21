@@ -77,9 +77,13 @@ def modes_sig(key):
     
 def tokenizer(line):
     res = []
-    words = line.split()
+    pos = []
+    words = re.split('\s',line)
     for word in words:
         w = word.upper()
+
+        if len(w) == 0:
+            continue
         if w[0] == '#':
             break
         m = re.match('(\d+)-(\d+)-(\d+)',w)
@@ -124,8 +128,13 @@ def tokenizer(line):
             continue
         kw = keyword(w)
         if kw:
-            res.append(('kw',kw,word))
-            continue
+            if w == 'QSLMSG':
+                w2 = re.sub('qslmsg\s+','',line)
+                res.append(('kw',kw,w2))
+                break
+            else:
+                res.append(('kw',kw,word))
+                continue
         md = modes(w)
         if md:
             res.append(('md',md,word))
@@ -262,11 +271,9 @@ def compileFLE(text,conv_mode):
                 lc += 1
                 continue
             if key == 'qslmsg':
-                msg = []
-                for i in range(len(tl)-1):
-                    (_ , _, w) = tl[i+1]
-                    msg.append(w)
-                env['qslmsg'] = " ".join(msg)
+                p2 = re.sub('\$mywwff',env['mywwff'],p2)
+                p2 = re.sub('\$mysota',env['mysota'],p2)
+                env['qslmsg'] = p2
                 lc += 1
                 continue
             if key == 'date':
@@ -483,8 +490,13 @@ def compileFLE(text,conv_mode):
         now  = datetime.datetime.now()
         fname = "fle-" + now.strftime("%Y-%m-%d-%H-%M")
         aday = '{}{:02}{:02}'.format(env['year'],env['month'],env['day'])
-        logname= "fle-" + aday + '@' + env['mysota'].replace('/','-')+env['mywwff'] + '.txt'
-        files = {logname:text}
+        logname= aday + '@' + env['mysota'].replace('/','-')+env['mywwff'] + '.txt'
+        files = {
+            "fle-" + logname:text,
+            "hamlog-" + logname : sendHamlog_FLE(res,'hisref',env),
+            # "airham-" + logname : sendAirHam_FLE(res)
+        }
+        
         if sotafl and wwfffl:
             files = sendSOTA_FLE(files,res)
             files = sendWWFF_FLE(files, res, env['mycall'])
@@ -514,6 +526,7 @@ def compileFLE(text,conv_mode):
                'operator':env['operator'],
                'mysota':env['mysota'],
                'mywwff':env['mywwff'],
+               'qslmsg':env['qslmsg'],
                'logtext': logtext
         }
         return (res)
@@ -524,14 +537,16 @@ def toSOTAFLE(h):
 
     date2 = '{year:02}{month:02}{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year'])
-    
+
+    f =band_to_freq(h['band'])
+
     l = [
         "V2",
         h['mycall'],
         h['mysota'],
         date,
         '{hour:02}:{minute:02}'.format(hour=h['hour'], minute=h['min']),
-        h['band'],
+        f,
         mode_to_SOTAmode(h['mode']),
         h['callsign'],
         h['hissota'],
@@ -652,6 +667,61 @@ def sendWWFF_FLE(files, loginput, callsign):
 
     return files
 
+def toHamlog_FLE(h,rmksfl,env):
+    date = '{year:02}/{month:02}/{day:02}'.format(
+        day=h['day'], month=h['month'], year=h['year']%100)
+    f = re.sub(r'[MHz|KHz|GHz]','',band_to_freq(h['band']))
+
+    hisref = h['hissota']
+
+    if h['hiswwff'] != '':
+        hisref = hisref + "," + h['hiswwff']
+
+    if rmksfl == 'hisref' :
+        rmks1 = hisref
+        rmks2 = env['qslmsg']
+    else:
+        rmks2 = hisref
+        rmks1 = env['qslmsg']
+        
+    l = [
+        h['callsign'],
+        date,
+        '{hour:02}:{minute:02}U'.format(hour=h['hour'], minute=h['min']),
+        h['rst_sent'],
+        h['rst_rcvd'],
+        f,
+        h['mode'],
+        '',
+        '',
+        '',
+        '',
+        '',
+        rmks1,
+        rmks2,
+        '0'
+        ]
+    
+    return (l)
+
+def sendHamlog_FLE(loginput, rmksfl, env):
+    raw = io.BytesIO()
+    outstr =io.TextIOWrapper(io.BufferedWriter(raw),
+                             encoding='cp932',errors="backslashreplace")
+    linecount = 0
+    writer = csv.writer(outstr, delimiter=',',
+                        quoting=csv.QUOTE_MINIMAL)
+    for row in loginput:
+        if linecount > 100000:
+            break
+        else:
+            l = toHamlog_FLE(row, rmksfl, env)
+            writer.writerow(l)
+            linecount += 1
+
+    outstr.flush()
+    return (raw.getvalue())
+
 def do_command(command, arg):
     res = {'status': "None" }
     if command == "interp":
@@ -669,7 +739,11 @@ def main():
     text = form.getvalue('edittext',None)
 
     if command:
-        do_command(command,arg)
+        if len(arg) < 131072:
+            do_command(command,arg)
+        else:
+            print("Content-Type:application/json\n\n")
+            print("<h4>Interal Error: Too many lines.</h4>\n\n")
     elif text:
         compileFLE(text, True)
     else:
@@ -680,5 +754,4 @@ if __name__ == '__main__':
         main()
     else:
         f = open ("sample.fle","r")
-        compileFLE(f.read(),False)
-  
+        print(compileFLE(f.read(),False))

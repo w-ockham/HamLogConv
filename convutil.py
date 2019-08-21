@@ -107,86 +107,127 @@ def mode_to_SOTAmode(mode):
     return 'OTHER'
 
 def decodeHamlog(cols):
-    m = re.match('(\w+)/(\w+)/(\w+)',cols[0])
-    if m:
-        operator = m.group(2)
-        portable = m.group(1)
+
+    errorfl = False
+    errormsg = []
+    
+    if len(cols) < 15:
+        errorfl = True
+        errormsg = [ "Fatal:Too short columns." ]
+        return {
+            'error':True,
+            'errormsg': errormsg
+        }
     else:
-        m = re.match('(\w+)/(\w+)',cols[0])
+        m = re.match('(\w+)/(\w+)/(\w+)',cols[0])
         if m:
-            operator = m.group(1)
-            portable = m.group(2)
+            m2 = re.match('\d+',m.group(2))
+            if m2:
+                operator = m.group(1)
+                portable = m.group(2)+'/'+m.group(3)
+            else:
+                operator = m.group(2)
+                portable = m.group(1)
         else:
-            operator = cols[0].strip()
-            portable = ''
+            m = re.match('(\w+)/(\w+)',cols[0])
+            if m:
+                m2 = re.match('\d+',m.group(2))
+                if m2:
+                    operator = m.group(1)
+                    portable = m.group(2)
+                elif m.group(2).upper() == "QRP":
+                    operator = m.group(1)
+                    portable = m.group(2)
+                elif len(m.group(2))>len(m.group(1)):
+                    operator = m.group(2)
+                    portable = m.group(1)
+                else:
+                    operator = m.group(1)
+                    portable = m.group(2)
+            else:
+                operator = cols[0].strip()
+                portable = ''
     
-    m = re.match('(\d+)/(\d+)/(\d+)',cols[1])
-    if m:
-        if int(m.group(1)) >= 65:
-            year = '19' + m.group(1)
+        m = re.match('(\d+)/(\d+)/(\d+)',cols[1])
+        if m:
+            if len(m.group(1)) > 2:
+                year = m.group(1)
+            else:
+                if int(m.group(1)) >= 65:
+                    year = '19' + m.group(1)
+                else:
+                    year = '20' + m.group(1)
+            month = m.group(2)
+            day = m.group(3)
         else:
-            year = '20' + m.group(1)
-        month = m.group(2)
-        day = m.group(3)
-    else:
-        year = '2000'
-        month = '01'
-        day = '01'
+            errorfl = True
+            errormsg.append("Wrong date format:{}".format(cols[1]))
+            year = '1900'
+            month = '01'
+            day = '01'
 
-    m = re.match('(\d+):(\d+)(\w+)',cols[2])
-    if m:
-        hour = m.group(1)
-        minute = m.group(2)
-        fl = m.group(3).upper()
-        if fl == 'U':
-            timezone = '+0000'
+        m = re.match('(\d\d):(\d\d)(\w)',cols[2])
+        if m:
+            hour = m.group(1)
+            minute = m.group(2)
+            fl = m.group(3).upper()
+            if fl == 'U' or fl == 'Z':
+                timezone = '+0000'
+            else:
+                timezone = '+0900'
         else:
+            errorfl = True
+            errormsg.append("Wrong time format:{}".format(cols[2]))
+            hour = '00'
+            minute = '00'
             timezone = '+0900'
-    else:
-        hour = '00'
-        minute = '00'
-        timezone = '+0900'
 
-    tstr = year + '/' + month + '/' + day + ' ' + hour + ':' + minute + ' ' + timezone
-    atime = datetime.datetime.strptime(tstr,'%Y/%m/%d %H:%M %z')
-    utime = atime.astimezone(datetime.timezone(datetime.timedelta(hours=0)))
+        tstr = year + '/' + month + '/' + day + ' ' + hour + ':' + minute + ' ' + timezone
+        try:
+            atime = datetime.datetime.strptime(tstr,'%Y/%m/%d %H:%M %z')
+            utime = atime.astimezone(datetime.timezone(datetime.timedelta(hours=0)))
+            isotime = atime.isoformat()
+        except Exception as e:
+            errorfl = True
+            errormsg.append("Wrong time format:{}".format(tstr))
 
-    isotime = atime.isoformat()
-    year = utime.year
-    month = utime.month
-    day = utime.day
-    hour = utime.hour
-    minute = utime.minute
+        year = utime.year
+        month = utime.month
+        day = utime.day
+        hour = utime.hour
+        minute = utime.minute
 
-    (band,wlen) = freq_to_band(cols[5])
+        (band,wlen) = freq_to_band(cols[5])
     
-    return {
-        'callsign': cols[0],   # All
-        'operator': operator,  # AirHam
-        'portable': portable,  # AirHam
-        'isotime': isotime,    # AirHam
-        'year': year,          # SOTA,WWFF
-        'month': month,        # SOTA,WWFF
-        'day': day,            # SOTA,WWFF
-        'hour': hour,          # SOTA,WWFF
-        'minute': minute,      # SOTA,WWFF
-        'timezone': timezone,  # AirHam
-        'rst_sent': cols[3],   # All
-        'rst_rcvd': cols[4],   # All
-        'freq': cols[5],       # None
-        'band': band,          # SOTA
-        'band-wlen': wlen,     # WWFF
-        'mode': cols[6],       # WWFF
-        'mode-airham': mode_to_airhammode(cols[6],cols[5]), #AirHam
-        'mode-sota': mode_to_SOTAmode(cols[6]), #SOTA
-        'code': cols[7],   # None
-        'gl': cols[8],     # None
-        'qsl': cols[9],    # AirHam
-        'name': cols[10],  # None
-        'qth': cols[11],   # None
-        'rmks1': cols[12], # All
-        'rmks2': cols[13]  # All
-    }
+        return {
+            'error':errorfl,
+            'errormsg':" , ".join(errormsg),
+            'callsign': cols[0],   # All
+            'operator': operator,  # AirHam
+            'portable': portable,  # AirHam
+            'isotime': isotime,    # AirHam
+            'year': year,          # SOTA,WWFF
+            'month': month,        # SOTA,WWFF
+            'day': day,            # SOTA,WWFF
+            'hour': hour,          # SOTA,WWFF
+            'minute': minute,      # SOTA,WWFF
+            'timezone': timezone,  # AirHam
+            'rst_sent': cols[3],   # All
+            'rst_rcvd': cols[4],   # All
+            'freq': cols[5],       # None
+            'band': band,          # SOTA
+            'band-wlen': wlen,     # WWFF
+            'mode': cols[6],       # WWFF
+            'mode-airham': mode_to_airhammode(cols[6],cols[5]), #AirHam
+            'mode-sota': mode_to_SOTAmode(cols[6]), #SOTA
+            'code': cols[7],   # None
+            'gl': cols[8],     # None
+            'qsl': cols[9],    # AirHam
+            'name': cols[10],  # None
+            'qth': cols[11],   # None
+            'rmks1': cols[12], # All
+            'rmks2': cols[13]  # All
+        }
     
 def toAirHam(decoder, lcount, row, options):
     if lcount == 0:
@@ -197,35 +238,51 @@ def toAirHam(decoder, lcount, row, options):
         return l
 
     h = decoder(row)
-
-    if options['QTH']=='rmks1':
-        myqth = h['rmks1']
-        comment = h['rmks2']
-    elif options['QTH']=='rmks2':
-        myqth = h['rmks2']
-        comment = h['rmks1']
-    elif options['QTH']=='user_defined':
-        myqth = options['Location']
-        comment = h['rmks1']
+    if h['error']:
+        l = [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "HamLog format error at Line {}. : {}".format(lcount,h['errormsg'])
+        ]
     else:
-        myqth = ''
-        comment = ''
+        if options['QTH']=='rmks1':
+            myqth = h['rmks1']
+            comment = h['rmks2']
+        elif options['QTH']=='rmks2':
+            myqth = h['rmks2']
+            comment = h['rmks1']
+        elif options['QTH']=='user_defined':
+            myqth = options['Location']
+            comment = h['rmks1']
+        else:
+            myqth = ''
+            comment = ''
         
-    l = [
-        "",
-        h['operator'],
-        h['portable'],
-        h['isotime'],
-        h['rst_sent'],
-        h['rst_rcvd'],
-        myqth,
-        h['qth'],
-        h['name'],
-        h['band'],
-        h['mode-airham'],
-        h['qsl'],
-        comment
-    ]
+        l = [
+            "",
+            h['operator'],
+            h['portable'],
+            h['isotime'],
+            h['rst_sent'],
+            h['rst_rcvd'],
+            myqth,
+            h['qth'],
+            h['name'],
+            h['band'],
+            h['mode-airham'],
+            h['qsl'],
+            comment
+        ]
     return l
 
 def get_ref(str):
@@ -347,12 +404,12 @@ def toWWFF(decoder, row, options):
 
 def sendAirHamLog(fp, fname, decoder, options, inchar, outchar):
 
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding=outchar)
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding=outchar, errors="backslashreplace")
     linecount = 0
     writer = csv.writer(sys.stdout,delimiter=',',
                         quoting=csv.QUOTE_MINIMAL)
     print('Content-Disposition: attachment;filename="%s"\n' % fname)
-    with io.TextIOWrapper(fp, encoding=inchar) as f:
+    with io.TextIOWrapper(fp, encoding=inchar,errors="backslashreplace") as f:
         reader = csv.reader(f)
         for row in reader:
             if linecount > 100000:
