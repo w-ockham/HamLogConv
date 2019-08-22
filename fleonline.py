@@ -88,27 +88,27 @@ def tokenizer(line):
             continue
         if w[0] == '#':
             break
-        m = re.match('(\d+)-(\d+)-(\d+)',w)
+        m = re.match('(\d+)-(\d+)-(\d+)$',w)
         if m:
             res.append(('date',(m.group(1),m.group(2),m.group(3)),w))
             continue
-        m = re.match('(\d+)-(\d+)',w)
+        m = re.match('(\d+)-(\d+)$',w)
         if m:
             res.append(('date2',(m.group(1),m.group(2)),w))
             continue
-        m = re.match('(\d+)/(\d+)/(\d+)',w)
+        m = re.match('(\d+)/(\d+)/(\d+)$',w)
         if m:
             res.append(('date',(m.group(1),m.group(2),m.group(3)),w))
             continue
-        m = re.match('(\d+)/(\d+)',w)
+        m = re.match('(\d+)/(\d+)$',w)
         if m:
             res.append(('date2',(m.group(1),m.group(2)),w))
             continue
-        m = re.match('\d+\.\d+',w)
+        m = re.match('\d+\.\d+$',w)
         if m:
             res.append(('freq',freq_to_band(w),w))
             continue
-        m = re.match('-\d+',w)
+        m = re.match('-\d+$',w)
         if m:
             res.append(('snr',w,w))
             continue
@@ -116,15 +116,11 @@ def tokenizer(line):
         if bd:
             res.append(('band',bd,word))
             continue
-        m = re.match('\d+',w)
-        if m:
-            res.append(('dec',len(w),w))
-            continue
-        m = re.match('\w+FF-\d+',w)
+        m = re.match('\w+FF-\d+$',w)
         if m:
             res.append(('wwffref',w,word))
             continue
-        m = re.match('\w+/\w+-\d+',w)
+        m = re.match('\w+/\w+-\d+$',w)
         if m:
             res.append(('sotaref',w,word))
             continue
@@ -141,10 +137,18 @@ def tokenizer(line):
         if md:
             res.append(('md',md,word))
             continue
-        res.append(('id',w.upper(),word))
+        m = re.match('\d+$',w)
+        if m:
+            res.append(('dec',len(w),w))
+            continue
+        m = re.match('[\w|/]+$',w)
+        if m:
+            res.append(('id',w.upper(),word))
+        else:
+            res.append(('unknown',w.upper(),word))
     return(res)
 
-def compileFLE(text,conv_mode):
+def compileFLE(input_text,conv_mode):
     res = []
     (NORM,FREQ,RSTS,RSTR)=(1,2,3,4)
     env = {
@@ -177,8 +181,8 @@ def compileFLE(text,conv_mode):
         'errno':[]
     }
     
-    lines = text.splitlines()
-    lc = 1
+    lines = input_text.splitlines()
+    lc = 0
     qsoc = 0
     sotafl = False
     wwfffl = False
@@ -196,6 +200,7 @@ def compileFLE(text,conv_mode):
         env['c_his_sota']=''
         tl = tokenizer(l)
         if not tl:
+            lc+=1
             continue
         pos = 0
         ml = len(tl) -1
@@ -211,12 +216,16 @@ def compileFLE(text,conv_mode):
                         delta = datetime.timedelta(days=1)
                     elif w == '++':
                         delta = datetime.timedelta(days=2)
+                    else:
+                        env['errno'].append((lc,pos+1,'Unknown operand'))
+                        lc += 1
+                        continue
                     d = d + delta
                     env['c_year'] = d.year
                     env['c_day'] = d.day
                     env['c_month'] = d.month
                 else:
-                    env['errno'].append((lc,pos+1,p2))
+                    env['errno'].append((lc,pos+1,'Missing operand +/++'))
                 lc += 1
                 continue
             if key == 'mycall':
@@ -225,9 +234,9 @@ def compileFLE(text,conv_mode):
                     if id =='id':
                         env['mycall'] = call
                     else:
-                        env['errno'].append((lc,pos+1,w))
+                        env['errno'].append((lc,pos+1,'Invalid callsign'))
                 else:
-                    env['errno'].append((lc,pos,p2))
+                    env['errno'].append((lc,pos,'Missing operand'))
 
                 lc += 1                    
                 continue
@@ -237,9 +246,9 @@ def compileFLE(text,conv_mode):
                     if id =='id':
                         env['operator'] = op
                     else:
-                        env['errno'].append((lc,pos+1,w))
+                        env['errno'].append((lc,pos+1,'Invalid operator'))
                 else:
-                    env['errno'].append((lc,pos,p2))
+                    env['errno'].append((lc,pos,'Missing operand'))
                 lc += 1
                 continue
             if key == 'mywwff':
@@ -249,9 +258,9 @@ def compileFLE(text,conv_mode):
                         env['mywwff'] = ref
                         wwfffl = True
                     else:
-                        env['errno'].append(lc,pos+1,w)
+                        env['errno'].append((lc,pos+1,'Invalid WWFF ref#'))
                 else:
-                    env['errno'].append((lc,pos,p2))
+                    env['errno'].append((lc,pos,'Missing WWFF ref#'))
                 lc += 1
                 continue
             if key == 'mysota':
@@ -261,15 +270,17 @@ def compileFLE(text,conv_mode):
                         env['mysota'] = ref
                         sotafl = True
                     else:
-                        env['errno'].append(lc,pos+1,w)
+                        env['errno'].append((lc,pos+1,'Invalid SOTA ref#'))
                 else:
-                    env['errno'].append((lc,pos,p2))
+                    env['errno'].append((lc,pos,'mywwff','Missing WWFF ref#'))
                 lc += 1
                 continue
             if key == 'nickname':
                 if pos < ml:
                     (_, _, w) = tl[pos+1]
                     env['nickname'] = w
+                else:
+                    env['errno'].append((lc,pos,'Missing operand'))
                 lc += 1
                 continue
             if key == 'qslmsg':
@@ -296,9 +307,9 @@ def compileFLE(text,conv_mode):
                         env['c_day'] = int(d)
                         env['day'] = int(d)
                     else:
-                        env['errno'].append((lc,pos+1,w))
+                        env['errno'].append((lc,pos+1,'Wrong date format.'))
                 else:
-                    env['errno'].append((lc,pos,p2))
+                    env['errno'].append((lc,pos,'Missing operand'))
                 lc += 1
                 continue
         else:
@@ -333,13 +344,15 @@ def compileFLE(text,conv_mode):
                             env['c_hour'] = h
                             env['c_min'] = m
                         else:
-                            env['errno'].append((lc,pos,p2))
+                            env['errno'].append((lc,pos,'Wrong time format.'))
                         pos+=1
                         state = NORM
                         continue
                     if t == 'freq':
                         env['c_freq'] = p2
                         (f,b) =freq_to_band(p2)
+                        if f == 'Out of the band':
+                            env['errno'].append((lc,pos,'Unknown band.'))
                         env['c_band'] = b
                         pos+=1
                         state = NORM
@@ -355,18 +368,24 @@ def compileFLE(text,conv_mode):
                         state = NORM
                         continue
                     if t == 'id':
+                        prev = env['c_call'] 
+                        if  prev != '':
+                            env['errno'].append((lc,pos,'Dupe call?:'+prev+','+p1))
                         env['c_call'] = p1
                         pos+=1
                         qsoc+=1
                         state = RSTS
                         continue
-                    else:
-                        pos+=1
-                        state = NORM
+                    if t == 'unknown':
+                        env['errno'].append((lc,pos,'Unknown literal:'+p1))
+                    pos+=1
+                    state = NORM
                 elif state == FREQ:
                     if t == 'freq':
                         env['c_freq'] = p2
                         (f,b) = freq_to_band(p2)
+                        if f == 'Out of the band':
+                            env['errno'].append((lc,pos,'Out of the band.'))
                         env['c_band'] = b
                         pos+=1
                         state = NORM
@@ -489,12 +508,18 @@ def compileFLE(text,conv_mode):
             res.append(qso)
 
     if conv_mode:
+        if len(env['errno'])>0:
+            print("Content-Type:text/html\n\n")
+            print("<h4><font color=\"#ff0000\">Interpretation Error!</font></h4>")
+            print("<p><input type=\"button\" value=\"back\" onclick=\"history.back()\"></p>")
+            return("")
+        
         now  = datetime.datetime.now()
         fname = "fle-" + now.strftime("%Y-%m-%d-%H-%M")
         aday = '{}{:02}{:02}'.format(env['year'],env['month'],env['day'])
         logname= aday + '@' + env['mysota'].replace('/','-')+env['mywwff']
         files = {
-            "fle-" + logname + ".txt" :text,
+            "fle-" + logname + ".txt" :input_text,
             "hamlog-" + logname + ".csv" : sendHamlog_FLE(res,'hisref',env),
             "airham-" + logname + ".csv" : sendAirHam_FLE(res,env)
         }
@@ -510,18 +535,34 @@ def compileFLE(text,conv_mode):
             files = sendWWFF_FLE(files, res, env['mycall'])
             writeZIP(files,fname+".zip")
     else:
-        status = 'OK'
-        if sotafl and wwfffl:
-            logtype = 'BOTH'
-        elif sotafl:
-            logtype = 'SOTA'
-        elif wwfffl:
-            logtype = 'WWFF'
-        else:
+        if len(env['errno'])>0:
+            status ='ERR'
             logtype = 'NONE'
+            errors = env['errno']
+            lines = input_text.splitlines()
+            lc = 0
+            res = []
+            for l in lines:
+                e = findErrors(lc,errors)
+                if e:
+                    res.append([str(lc),e, l])
+                else:
+                    res.append([str(lc),"", l])
+                lc += 1
+        else:
+            status = 'OK'
+            if sotafl and wwfffl:
+                logtype = 'BOTH'
+            elif sotafl:
+                logtype = 'SOTA'
+            elif wwfffl:
+                logtype = 'WWFF'
+            else:
+                logtype = 'NONE'
 
         logtext = res
-
+        errmsg = env['errno']
+        
         res = {'status': status,
                'logtype': logtype,
                'mycall':env['mycall'],
@@ -529,9 +570,16 @@ def compileFLE(text,conv_mode):
                'mysota':env['mysota'],
                'mywwff':env['mywwff'],
                'qslmsg':env['qslmsg'],
-               'logtext': logtext
+               'logtext': logtext,
         }
         return (res)
+    
+def findErrors(lc,err):
+    for e in err:
+        (l,c,msg) = e
+        if lc == l:
+            return msg
+    return None
 
 def toSOTAFLE(h):
     date = '{day:02}/{month:02}/{year:02}'.format(
@@ -815,4 +863,4 @@ if __name__ == '__main__':
         main()
     else:
         f = open ("sample.fle","r")
-        print(compileFLE(f.read(),True))
+        print(compileFLE(f.read(),False))

@@ -335,7 +335,7 @@
 	      <div id="loglist" class="container loglist-exetend">
 		<div class="table-responsive">
 		  <table class="table table-striped table-condensed text-nowrap" style="font-size:8pt;">
-		    <thead class="thead-light">
+		    <thead id="loglisthead" class="thead-light">
 		      <tr><th>No.</th><th>My Call</th>
 			<th>Date</th><th>Time</th>
 			<th>Call</th><th>Band</th>
@@ -353,6 +353,7 @@
 	    </div>
 	    <div class="button-group d-flex" style="justify-content:flex-end">
 	      <button type="button" class="btn-sm btn-outline-info p-0 bg-light" style="font-size 4px" onClick="setSample()">Sample</button>
+	      <button type="button" class="btn-sm btn-outline-info p-0 bg-light" style="font-size 4px" onClick="setSample('clear')">Clear</button>
 	    </div>
 	    <div class="form-group">
 	      <textarea class="form-control text-monospace" name="edittext" id="edittext" rows="22" style="resize:none;font-size: 9pt;line-height: 10pt;margin-top:2pt;"></textarea>
@@ -377,47 +378,72 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     
-    <script>
+<script>
     
 $('.custom-file-input').on('change',function(){
     $(this).next('.custom-file-label').html($(this)[0].files[0].name);
 });
+
+var textdirty = false;
+
+$('textarea[id=edittext]').keyup(function(){
+    textdirty = true;
+})
+
+$('button[id=generate]').click(function(){
+    textdirty = false;
+})
+				 
 $('input[id=loadfle]').change(function(e){
+    if (textdirty) {
+	if(confirm("FLE log is modified.\nLoad anyway?") == false)
+	    return
+    }
     var result = e.target.files[0];
     var reader = new FileReader();
-    reader.readAsText(result,'Shift_JIS');
+    reader.readAsText(result,'UTF-8');
+    $('input[id=loadfle]').val('');
     reader.addEventListener('load', function() {
 	editor = document.getElementById("edittext")
 	editor.value = reader.result;
+	textdirty = false;
     })
 });
 
-function setSample() {
+function setSample(arg) {
     editor = document.getElementById("edittext")
+    if (textdirty) {
+	if(confirm("FLE log is modified.\nClear anyway?") == false)
+	    return
+    }
+    textdirty = false;
+    if (arg == "clear") {
+	editor.value = ""
+    } else {
     editor.value =
-"#Header\n" +
-"mycall jl1nie/0\n" +
-"operator jl1nie\n" +
-"mywwff jaff-0056\n" +
-"mysota ja/nn-031\n" +
-"qslmsg Tateshinasan $mysota ($mywwff),JCC0914 Rig:KX2 Ant:EFHW 5mH\n"+
-"# Log\n" +
-"date 2019-08-02\n" +
-"40m cw\n" +
-"2302 jg1bok\n" +
-"4 ja4rqo\n" +
-"40m ssb\n" +
-"14 ja4rqo\n" + 
-"40 jp1qec/1 5 3 jaff-0213 ja/st-018\n"+
-"day +\n"+
-"0001 17m cw\n"+
-"zl1byz 41 31\n"+
-"20m ft4\n"+
-"12 zl1tm -18 -19\n"+
-"50.550 am\n"+
-"30 jj1swi/1 3 4\n"
-;
-};
+	    "#Header\n" +
+	    "mycall jl1nie/0\n" +
+	    "operator jl1nie\n" +
+	    "mywwff jaff-0056\n" +
+	    "mysota ja/nn-031\n" +
+	    "qslmsg Tateshinasan $mysota ($mywwff),JCC0914 Rig:KX2 Ant:EFHW 5mH\n"+
+	    "# Log\n" +
+	    "date 2019-08-02\n" +
+	    "40m cw\n" +
+	    "2302 jg1bok\n" +
+	    "4 ja4rqo\n" +
+	    "40m ssb\n" +
+	    "14 ja4rqo\n" + 
+	    "40 jp1qec/1 5 3 jaff-0213 ja/st-018\n"+
+	    "day +\n"+
+	    "0001 17m cw\n"+
+	    "zl1byz 41 31\n"+
+	    "20m ft4\n"+
+	    "12 zl1tm -18 -19\n"+
+	    "50.550 am\n"+
+	    "30 jj1swi/1 3 4\n";
+    }
+}
 
 function clickUpdate() {
     editor = document.getElementById("edittext")
@@ -450,12 +476,35 @@ function clickUpdate() {
 			  wwff.checked = false;
 		      }
 		      tlist = data.logtext;
+		      $('#loglisthead').empty()
+		      $('#loglisthead').append("<tr><th>No.</th><th>My Call</th>"+
+			"<th>Date</th><th>Time</th>"+
+			"<th>Call</th><th>Band</th>"+
+			"<th>Mode</th><th>RSTs</th><th>RSTr</th>"+
+			"<th>My SOTA</th><th>His SOTA</th>"+
+			"<th>My WWFF</th><th>His WWFF</th>"+
+			"<th>Operator</th>"+
+					    "</tr>");
 		      $('#loglisttable').empty()
 		      for(var i = 0, len = tlist.length; i < len; ++i) {
 			  td = "";
 			  for(var j =0,len2 = tlist[i].length; j < len2;++j)
 			      td = td + "<td>" + tlist[i][j] + "</td>";
 			  $('#loglisttable').append('<tr>'+td+'</tr>');
+		      }
+		  } else {
+		      $('#loglisthead').empty()
+		      $('#loglisthead').append("<tr><th>No.</th><th>Text</th></tr>");
+		      tlist = data.logtext;
+		      $('#loglisttable').empty()
+		      for(var i = 0, len = tlist.length; i < len; ++i) {
+			  tr = "<tr>"
+			  tr = tr + "<td>" + tlist[i][0] + "</td>"
+			  tr = tr + "<td>" + tlist[i][2] 
+			  if (tlist[i][1] != '')
+			      tr = tr + "<font color=\"#ff0000\"><b>&nbspError!&nbsp" + tlist[i][1] + "</b></font>"
+			  tr = tr + "</td></tr>"
+			  $('#loglisttable').append(tr);
 		      }
 		  }
 	      });

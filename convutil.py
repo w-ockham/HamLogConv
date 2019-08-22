@@ -462,7 +462,7 @@ def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
     writer_s2s = csv.writer(outstr_s2s,delimiter=',',
                             quoting=csv.QUOTE_MINIMAL)
 
-    with io.TextIOWrapper(fp, encoding=inchar) as f:
+    with io.TextIOWrapper(fp, encoding=inchar, errors="backslashreplace") as f:
         reader = csv.reader(f)
         for row in reader:
             if linecount > 100000:
@@ -518,7 +518,7 @@ def sendSOTA_C(fp, decoder, callsign, options, inchar, outchar):
     writer = csv.writer(outstr,delimiter=',',
                         quoting=csv.QUOTE_MINIMAL)
 
-    with io.TextIOWrapper(fp, encoding=inchar) as f:
+    with io.TextIOWrapper(fp, encoding=inchar,errors="backslashreplace") as f:
         reader = csv.reader(f)
         for row in reader:
             if linecount > 100000:
@@ -552,7 +552,7 @@ def sendWWFF(fp, decoder, options, inchar, outchar):
     linecount = 0
     writer = csv.writer(outstr, delimiter=' ',
                         quoting=csv.QUOTE_MINIMAL)
-    with io.TextIOWrapper(fp, encoding=inchar) as f:
+    with io.TextIOWrapper(fp, encoding=inchar,errors="backslashreplace") as f:
         reader = csv.reader(f)
         for row in reader:
             if linecount > 100000:
