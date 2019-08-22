@@ -210,14 +210,19 @@ def compileFLE(input_text,conv_mode):
             if key == 'day':
                 if pos < ml:
                     (id, inc, w) = tl[pos+1]
-                    d = datetime.datetime(env['c_year'],env['c_month'],env['c_day'])
+                    try:
+                        d = datetime.datetime(env['c_year'],env['c_month'],env['c_day'])
+                    except Exception as e:
+                        env['errno'].append((lc,pos+1,'Date out of range.'))
+                        lc += 1
+                        continue
                     delta = datetime.timedelta(days=0)
                     if w == '+':
                         delta = datetime.timedelta(days=1)
                     elif w == '++':
                         delta = datetime.timedelta(days=2)
                     else:
-                        env['errno'].append((lc,pos+1,'Unknown operand'))
+                        env['errno'].append((lc,pos+1,'Unknown operand.'))
                         lc += 1
                         continue
                     d = d + delta
@@ -225,7 +230,7 @@ def compileFLE(input_text,conv_mode):
                     env['c_day'] = d.day
                     env['c_month'] = d.month
                 else:
-                    env['errno'].append((lc,pos+1,'Missing operand +/++'))
+                    env['errno'].append((lc,pos+1,'Missing operand +/++.'))
                 lc += 1
                 continue
             if key == 'mycall':
@@ -234,9 +239,9 @@ def compileFLE(input_text,conv_mode):
                     if id =='id':
                         env['mycall'] = call
                     else:
-                        env['errno'].append((lc,pos+1,'Invalid callsign'))
+                        env['errno'].append((lc,pos+1,'Invalid callsign.'))
                 else:
-                    env['errno'].append((lc,pos,'Missing operand'))
+                    env['errno'].append((lc,pos,'Missing operand.'))
 
                 lc += 1                    
                 continue
@@ -246,9 +251,9 @@ def compileFLE(input_text,conv_mode):
                     if id =='id':
                         env['operator'] = op
                     else:
-                        env['errno'].append((lc,pos+1,'Invalid operator'))
+                        env['errno'].append((lc,pos+1,'Invalid operator.'))
                 else:
-                    env['errno'].append((lc,pos,'Missing operand'))
+                    env['errno'].append((lc,pos,'Missing operand.'))
                 lc += 1
                 continue
             if key == 'mywwff':
@@ -258,9 +263,9 @@ def compileFLE(input_text,conv_mode):
                         env['mywwff'] = ref
                         wwfffl = True
                     else:
-                        env['errno'].append((lc,pos+1,'Invalid WWFF ref#'))
+                        env['errno'].append((lc,pos+1,'Invalid WWFF ref#.'))
                 else:
-                    env['errno'].append((lc,pos,'Missing WWFF ref#'))
+                    env['errno'].append((lc,pos,'Missing WWFF ref#.'))
                 lc += 1
                 continue
             if key == 'mysota':
@@ -270,9 +275,9 @@ def compileFLE(input_text,conv_mode):
                         env['mysota'] = ref
                         sotafl = True
                     else:
-                        env['errno'].append((lc,pos+1,'Invalid SOTA ref#'))
+                        env['errno'].append((lc,pos+1,'Invalid SOTA ref#.'))
                 else:
-                    env['errno'].append((lc,pos,'mywwff','Missing WWFF ref#'))
+                    env['errno'].append((lc,pos,'mywwff','Missing WWFF ref#.'))
                 lc += 1
                 continue
             if key == 'nickname':
@@ -280,7 +285,7 @@ def compileFLE(input_text,conv_mode):
                     (_, _, w) = tl[pos+1]
                     env['nickname'] = w
                 else:
-                    env['errno'].append((lc,pos,'Missing operand'))
+                    env['errno'].append((lc,pos,'Missing operand.'))
                 lc += 1
                 continue
             if key == 'qslmsg':
@@ -308,8 +313,14 @@ def compileFLE(input_text,conv_mode):
                         env['day'] = int(d)
                     else:
                         env['errno'].append((lc,pos+1,'Wrong date format.'))
+                        lc += 1
+                        continue
+                    if not ((int(y) > 1900) and (int(y) < 2100) and (int(m) > 0) and (int(m)< 13) and (int(d) > 0) and (int(d) < 32)):
+                        env['errno'].append((lc,pos+1,'Date out of range.'))
+                        lc += 1
+                        continue
                 else:
-                    env['errno'].append((lc,pos,'Missing operand'))
+                    env['errno'].append((lc,pos,'Missing operand.'))
                 lc += 1
                 continue
         else:
