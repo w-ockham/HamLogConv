@@ -76,7 +76,66 @@ def modes_sig(key):
     except Exception as e:
         return None
     return(arg)
-    
+
+def parseCallsign(c):
+     pat_call = re.compile(r'\w{1,3}[0-9]\w{0,3}[A-Z]$',re.I)
+     pat_prefix = re.compile(r'\w{1,3}[0-9]$',re.I)
+     pat_num = re.compile(r'[0-9]')
+     pat_p1 = re.compile(r'(\w+)/(\d)$',re.I)
+     pat_p2 = re.compile(r'(\w+)/(\w+)$',re.I)
+     pat_p3 = re.compile(r'(\w+)/(\w+)/P$',re.I)
+     pat_p4 = re.compile(r'(\w+)/(\w+)/QRP$',re.I)
+
+     c = c.upper()
+
+     if pat_call.match(c):
+         return (c,c,'','')
+     else:
+         p = pat_p1.match(c)
+         if p :
+             if pat_call.match(p.group(1)):
+                 return (c,p.group(1),p.group(2),'')
+         else:
+             p = pat_p2.match(c)
+             if p :
+                 if pat_call.match(p.group(1)):
+                     if pat_prefix.match(p.group(2)):
+                         return (c,p.group(1),p.group(2),'')
+                     if p.group(2) == 'QRP':
+                         return (c,p.group(1),'','QRP')
+                     if p.group(2) == 'P':
+                         return (c,p.group(1),'P','')
+                     else:
+                         return None
+                 elif pat_call.match(p.group(2)):
+                     if pat_prefix.match(p.group(1)):
+                         return (c,p.group(2),p.group(1),'')
+                     elif p.group(1) == 'QRP':
+                         return (c,p.group(2),'','QRP')
+                     else:
+                         return None
+             else:
+                 p = pat_p3.match(c)
+                 if p:
+                     if pat_prefix.match(p.group(1)) and pat_call.match(p.group(2)):
+                         return (c,p.group(2),p.group(1),'')
+                     else:
+                         return None
+                 else:
+                     p = pat_p4.match(c)
+                     if p :
+                         if pat_call.match(p.group(1)):
+                             if pat_prefix.match(p.group(2)):
+                                 return (c,p.group(1),p.group(2),'QRP')
+                             elif pat_num.match(p.group(2)):
+                                 return (c,p.group(1),p.group(2),'QRP')
+                         elif pat_prefix.match(p.group(1)) and pat_call.match(p.group(2)):
+                             return (c,p.group(2),p.group(1),'QRP')
+                         else:
+                             return None
+                     else:
+                         return None
+
 def tokenizer(line):
     res = []
     pos = []
@@ -141,9 +200,10 @@ def tokenizer(line):
         if m:
             res.append(('dec',len(w),w))
             continue
-        m = re.match('[\w|/]+$',w)
+        m = parseCallsign(w)
         if m:
-            res.append(('id',w.upper(),word))
+            res.append(('call',w.upper(),word))
+            continue
         else:
             res.append(('unknown',w.upper(),word))
     return(res)
@@ -235,9 +295,11 @@ def compileFLE(input_text,conv_mode):
                 continue
             if key == 'mycall':
                 if pos < ml:
-                    (id, call, w) = tl[pos+1]
-                    if id =='id':
-                        env['mycall'] = call
+                    (id, p, w) = tl[pos+1]
+                    if id =='call':
+                        (_,op,_,_) = parseCallsign(p) 
+                        env['mycall'] = p
+                        env['operator'] = op
                     else:
                         env['errno'].append((lc,pos+1,'Invalid callsign.'))
                 else:
@@ -248,7 +310,7 @@ def compileFLE(input_text,conv_mode):
             if key == 'operator':
                 if pos < ml:
                     (id, op, w) = tl[pos+1]
-                    if id =='id':
+                    if id =='call':
                         env['operator'] = op
                     else:
                         env['errno'].append((lc,pos+1,'Invalid operator.'))
@@ -378,17 +440,17 @@ def compileFLE(input_text,conv_mode):
                         pos+=1
                         state = NORM
                         continue
-                    if t == 'id':
+                    if t == 'call':
                         prev = env['c_call'] 
                         if  prev != '':
-                            env['errno'].append((lc,pos,'Dupe call?:'+prev+','+p1))
+                            env['errno'].append((lc,pos,'Each line must contains exact one callsign.: '+p1))
                         env['c_call'] = p1
                         pos+=1
                         qsoc+=1
                         state = RSTS
                         continue
                     if t == 'unknown':
-                        env['errno'].append((lc,pos,'Unknown literal:'+p1))
+                        env['errno'].append((lc,pos,'Unknown literal: '+p1))
                     pos+=1
                     state = NORM
                 elif state == FREQ:
@@ -875,3 +937,4 @@ if __name__ == '__main__':
     else:
         f = open ("sample.fle","r")
         print(compileFLE(f.read(),False))
+
