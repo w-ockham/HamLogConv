@@ -518,32 +518,35 @@ def sendSOTA_C(fp, decoder, callsign, options, inchar, outchar):
     writer = csv.writer(outstr,delimiter=',',
                         quoting=csv.QUOTE_MINIMAL)
 
+    outstr_nonsota = io.StringIO()
+    writer_nonsota = csv.writer(outstr_nonsota,delimiter=',',
+                              quoting=csv.QUOTE_MINIMAL)
+    nonsota_fl = False
+    
     with io.TextIOWrapper(fp, encoding=inchar,errors="backslashreplace") as f:
         reader = csv.reader(f)
         for row in reader:
             if linecount > 100000:
                 break
             else:
-                (fn,s2s,l) = toSOTA(decoder, row, callsign, options)
+                (fn,his_summit,l) = toSOTA(decoder, row, callsign, options)
                 if linecount == 0:
                     fname = fn
                     
-                if fn == fname:
+                if his_summit:
                     writer.writerow(l)
-                    linecount += 1
                 else:
-                    name = prefix + fname + '.csv'
-                    files.update({name : outstr.getvalue()})
+                    writer_nonsota.writerow(l)
+                    nonsota_fl = True
 
-                    outstr = io.StringIO()
-                    writer = csv.writer(outstr,delimiter=',',
-                                        quoting=csv.QUOTE_MINIMAL)
-                    writer.writerow(l)
-                    fname = fn
+                linecount += 1
 
         name = prefix + fname + '.csv'
         files.update({name : outstr.getvalue()})
-
+        if nonsota_fl :
+            name = 'other'+ fname + '.csv'
+            files.update({name : outstr_nonsota.getvalue()})
+        
     return(files)
 
 def sendWWFF(fp, decoder, options, inchar, outchar):
