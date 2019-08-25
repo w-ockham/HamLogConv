@@ -19,7 +19,6 @@ def writeTXT(files):
     for k,v in files.items():
         print('Content-Disposition: attachment;filename="%s"\n' % k)
         print(v)
-        break;
 
 freq_table = [
     (0.1357,0.1378,'135kHz','2190m'),

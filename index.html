@@ -320,7 +320,7 @@
 
       <div class="tab-pane fade" id="FLEOnline" role="tabpanel" aria-labelledby="FLEOnline-tab">
 	<div class="container">
-	  <form name="FLEEdit" method="post" action='/cgi-bin/fleonline.py'>
+	  <form name="FLEEdit" method="post" onsubmit="return checkLog()" action='/cgi-bin/fleonline.py'>
 	    <div class="form-group" style="margin-bottom:-3px;">
 	      <div class="form-check form-check-inline" style="font-size:8pt">
 		<input class="form-check-input" disabled="disabled" type="checkbox" id="checkSOTA">
@@ -385,18 +385,20 @@ $('.custom-file-input').on('change',function(){
 });
 
 var textdirty = false;
+var textinterpreted = false;
 
 $('textarea[id=edittext]').keyup(function(){
     textdirty = true;
+    textinterpreted = false;
 })
 
-$('button[id=generate]').click(function(){
-    textdirty = false;
-})
+//$('button[id=generate]').click(function(){
+//   textdirty = false;
+//})
 				 
 $('input[id=loadfle]').change(function(e){
     if (textdirty) {
-	if(confirm("FLE log is modified.\nLoad anyway?") == false)
+	if(confirm("Abandon modified FLE Log?") == false)
 	    return
     }
     var result = e.target.files[0];
@@ -410,12 +412,23 @@ $('input[id=loadfle]').change(function(e){
     })
 });
 
+function checkLog() {
+    if (!textinterpreted) {
+	if(confirm("Not interpreted.\nGenerate anyway?") == false)
+	    return false;
+    }
+    textdirty = false;
+    textinterpreted = true;
+    return true;
+}
+
 function setSample(arg) {
     editor = document.getElementById("edittext")
     if (textdirty) {
-	if(confirm("FLE log is modified.\nClear anyway?") == false)
+	if(confirm("Clear modified FLE log?") == false)
 	    return
     }
+
     textdirty = false;
     clearLog();
 
@@ -452,6 +465,7 @@ function clearLog() {
     sota.checked = false;
     wwff = document.getElementById("checkWWFF");
     wwff.checked = false;
+    textinterpreted = false;
     $('#loglisthead').empty()
     $('#loglisthead').append("<tr><th>No.</th><th>My Call</th>"+
                              "<th>Date</th><th>Time</th>"+
@@ -474,6 +488,7 @@ function clickUpdate() {
 	      function(data, status, xhr) {
 		  if (data.status == "OK") {
 		      clearLog()
+		      textinterpreted = true;
 		      if (data.logtype == "SOTA") {
 			  sota = document.getElementById("checkSOTA");
 			  sota.checked = true;
@@ -503,6 +518,7 @@ function clickUpdate() {
 			  $('#loglisttable').append('<tr>'+td+'</tr>');
 		      }
 		  } else {
+		      textinterpreted = false;
 		      $('#loglisthead').empty()
 		      $('#loglisthead').append("<tr><th>Line#</th><th>Text</th></tr>");
 		      tlist = data.logtext;

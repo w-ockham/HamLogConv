@@ -10,6 +10,7 @@ import re
 import sys
 from convutil import (
     writeZIP,
+    writeTXT,
     freq_to_band,
     band_to_freq,
     splitCallsign,
@@ -443,7 +444,7 @@ def compileFLE(input_text,conv_mode):
                     if t == 'call':
                         prev = env['c_call'] 
                         if  prev != '':
-                            env['errno'].append((lc,pos,'Each line must contains exact one callsign.: '+p1))
+                            env['errno'].append((lc,pos,'Each line must contains only one callsign: '+p1))
                         env['c_call'] = p1
                         pos+=1
                         qsoc+=1
@@ -582,31 +583,45 @@ def compileFLE(input_text,conv_mode):
 
     if conv_mode:
         if len(env['errno'])>0:
-            print("Content-Type:text/html\n\n")
-            print("<h4><font color=\"#ff0000\">Interpretation Error!</font></h4>")
-            print("<p><input type=\"button\" value=\"back\" onclick=\"history.back()\"></p>")
-            return("")
-        
-        now  = datetime.datetime.now()
-        fname = "fle-" + now.strftime("%Y-%m-%d-%H-%M")
-        aday = '{}{:02}{:02}'.format(env['year'],env['month'],env['day'])
-        logname= aday + '@' + env['mysota'].replace('/','-')+env['mywwff']
-        files = {
-            "fle-" + logname + ".txt" :input_text,
-            "hamlog-" + logname + ".csv" : sendHamlog_FLE(res,'hisref',env),
-            "airham-" + logname + ".csv" : sendAirHam_FLE(res,env)
-        }
-        
-        if sotafl and wwfffl:
-            files = sendSOTA_FLE(files,res)
-            files = sendWWFF_FLE(files, res, env['mycall'])
-            writeZIP(files,fname+".zip")
-        elif sotafl:
-            files = sendSOTA_FLE(files,res)
-            writeZIP(files,fname+".zip")
-        elif wwfffl:
-            files = sendWWFF_FLE(files, res, env['mycall'])
-            writeZIP(files,fname+".zip")
+            now  = datetime.datetime.now()
+            fname = "fle-" + now.strftime("%Y-%m-%d-%H-%M")
+            logname= now.strftime("%Y-%m-%d-%H-%M")
+            err_log = "####FLE Interpretation Error####\n"
+            errors = env['errno']
+            lines = input_text.splitlines()
+            lc = 0
+            for l in lines:
+                e = findErrors(lc,errors)
+                if e:
+                    err_log = err_log + l + " #--- Error! "+ e + "\n"
+                else:
+                    err_log = err_log + l + "\n"
+                lc += 1
+            files = {
+                "fle-error-" + logname + ".txt" : err_log
+            }
+            writeTXT(files)
+        else:
+            now  = datetime.datetime.now()
+            fname = "fle-" + now.strftime("%Y-%m-%d-%H-%M")
+            aday = '{}{:02}{:02}'.format(env['year'],env['month'],env['day'])
+            logname= aday + '@' + env['mysota'].replace('/','-')+env['mywwff']
+            files = {
+                "fle-" + logname + ".txt" :input_text,
+                "hamlog-" + logname + ".csv" : sendHamlog_FLE(res,'hisref',env),
+                "airham-" + logname + ".csv" : sendAirHam_FLE(res,env)
+            }
+            
+            if sotafl and wwfffl:
+                files = sendSOTA_FLE(files,res)
+                files = sendWWFF_FLE(files, res, env['mycall'])
+                writeZIP(files,fname+".zip")
+            elif sotafl:
+                files = sendSOTA_FLE(files,res)
+                writeZIP(files,fname+".zip")
+            elif wwfffl:
+                files = sendWWFF_FLE(files, res, env['mycall'])
+                writeZIP(files,fname+".zip")
     else:
         if len(env['errno'])>0:
             status ='ERR'
