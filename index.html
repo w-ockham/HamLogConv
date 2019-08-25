@@ -417,10 +417,12 @@ function setSample(arg) {
 	    return
     }
     textdirty = false;
+    clearLog();
+
     if (arg == "clear") {
 	editor.value = ""
     } else {
-    editor.value =
+	editor.value =
 	    "#Header\n" +
 	    "mycall jl1nie/0\n" +
 	    "operator jl1nie\n" +
@@ -445,6 +447,23 @@ function setSample(arg) {
     }
 }
 
+function clearLog() {
+    sota = document.getElementById("checkSOTA");
+    sota.checked = false;
+    wwff = document.getElementById("checkWWFF");
+    wwff.checked = false;
+    $('#loglisthead').empty()
+    $('#loglisthead').append("<tr><th>No.</th><th>My Call</th>"+
+                             "<th>Date</th><th>Time</th>"+
+                             "<th>Call</th><th>Band</th>"+
+                             "<th>Mode</th><th>RSTs</th><th>RSTr</th>"+
+                             "<th>My SOTA</th><th>His SOTA</th>"+
+                             "<th>My WWFF</th><th>His WWFF</th>"+
+                             "<th>Operator</th>"+
+                             "</tr>");
+    $('#loglisttable').empty()
+}
+
 function clickUpdate() {
     editor = document.getElementById("edittext")
     txt = editor.value
@@ -454,6 +473,7 @@ function clickUpdate() {
 	      },
 	      function(data, status, xhr) {
 		  if (data.status == "OK") {
+		      clearLog()
 		      if (data.logtype == "SOTA") {
 			  sota = document.getElementById("checkSOTA");
 			  sota.checked = true;
@@ -476,16 +496,6 @@ function clickUpdate() {
 			  wwff.checked = false;
 		      }
 		      tlist = data.logtext;
-		      $('#loglisthead').empty()
-		      $('#loglisthead').append("<tr><th>No.</th><th>My Call</th>"+
-			"<th>Date</th><th>Time</th>"+
-			"<th>Call</th><th>Band</th>"+
-			"<th>Mode</th><th>RSTs</th><th>RSTr</th>"+
-			"<th>My SOTA</th><th>His SOTA</th>"+
-			"<th>My WWFF</th><th>His WWFF</th>"+
-			"<th>Operator</th>"+
-					    "</tr>");
-		      $('#loglisttable').empty()
 		      for(var i = 0, len = tlist.length; i < len; ++i) {
 			  td = "";
 			  for(var j =0,len2 = tlist[i].length; j < len2;++j)

@@ -342,7 +342,10 @@ def toSOTA(decoder, row, callsign, options):
 
     date2 = '{year:02}{month:02}{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year'])
-    
+
+    if h['band'] == '430MHz':
+        h['band'] = '432MHz'
+        
     l = [
         "V2",
         callsign,
