@@ -344,7 +344,7 @@ def toSOTA(decoder, row, callsign, options):
         day=h['day'], month=h['month'], year=h['year'])
 
     if h['band'] == '430MHz':
-        h['band'] = '432MHz'
+        h['band'] = '433MHz'
         
     l = [
         "V2",
