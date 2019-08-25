@@ -582,31 +582,46 @@ def compileFLE(input_text,conv_mode):
 
     if conv_mode:
         if len(env['errno'])>0:
-            print("Content-Type:text/html\n\n")
-            print("<h4><font color=\"#ff0000\">Interpretation Error!</font></h4>")
-            print("<p><input type=\"button\" value=\"back\" onclick=\"history.back()\"></p>")
-            return("")
-        
-        now  = datetime.datetime.now()
-        fname = "fle-" + now.strftime("%Y-%m-%d-%H-%M")
-        aday = '{}{:02}{:02}'.format(env['year'],env['month'],env['day'])
-        logname= aday + '@' + env['mysota'].replace('/','-')+env['mywwff']
-        files = {
-            "fle-" + logname + ".txt" :input_text,
-            "hamlog-" + logname + ".csv" : sendHamlog_FLE(res,'hisref',env),
-            "airham-" + logname + ".csv" : sendAirHam_FLE(res,env)
-        }
-        
-        if sotafl and wwfffl:
-            files = sendSOTA_FLE(files,res)
-            files = sendWWFF_FLE(files, res, env['mycall'])
+            now  = datetime.datetime.now()
+            fname = "fle-" + now.strftime("%Y-%m-%d-%H-%M")
+            logname= now.strftime("%Y-%m-%d-%H-%M")
+            err_log = "FLE Interpretaion Error:\n"
+            errors = env['errno']
+            lines = input_text.splitlines()
+            lc = 0
+            for l in lines:
+                e = findErrors(lc,errors)
+                if e:
+                    err_log = err_log + str(lc) + ":" + l + " --- Error! "+ e + "\n"
+                else:
+                    err_log = err_log +str(lc) + ":" + l + "\n"
+                lc += 1
+            files = {
+                "fle-" + logname + ".txt" :input_text,
+                "err-" + logname + ".txt" :err_log,
+            }
             writeZIP(files,fname+".zip")
-        elif sotafl:
-            files = sendSOTA_FLE(files,res)
-            writeZIP(files,fname+".zip")
-        elif wwfffl:
-            files = sendWWFF_FLE(files, res, env['mycall'])
-            writeZIP(files,fname+".zip")
+        else:
+            now  = datetime.datetime.now()
+            fname = "fle-" + now.strftime("%Y-%m-%d-%H-%M")
+            aday = '{}{:02}{:02}'.format(env['year'],env['month'],env['day'])
+            logname= aday + '@' + env['mysota'].replace('/','-')+env['mywwff']
+            files = {
+                "fle-" + logname + ".txt" :input_text,
+                "hamlog-" + logname + ".csv" : sendHamlog_FLE(res,'hisref',env),
+                "airham-" + logname + ".csv" : sendAirHam_FLE(res,env)
+            }
+            
+            if sotafl and wwfffl:
+                files = sendSOTA_FLE(files,res)
+                files = sendWWFF_FLE(files, res, env['mycall'])
+                writeZIP(files,fname+".zip")
+            elif sotafl:
+                files = sendSOTA_FLE(files,res)
+                writeZIP(files,fname+".zip")
+            elif wwfffl:
+                files = sendWWFF_FLE(files, res, env['mycall'])
+                writeZIP(files,fname+".zip")
     else:
         if len(env['errno'])>0:
             status ='ERR'
