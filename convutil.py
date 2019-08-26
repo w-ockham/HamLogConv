@@ -20,6 +20,11 @@ def writeTXT(files):
         print('Content-Disposition: attachment;filename="%s"\n' % k)
         print(v)
 
+def emitError(txt):
+    print("Content-Type:text/html\n\n")
+    print("<h4><font color=\"#ff0000\"> Error: {}</font></h4>".format(txt))
+    print("<p><input type=\"button\" value=\"back\" onclick=\"history.back()\"></p>")
+            
 freq_table = [
     (0.1357,0.1378,'135kHz','2190m'),
     (0.472,0.479,'475kHz','630m'),

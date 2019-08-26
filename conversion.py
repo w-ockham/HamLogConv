@@ -10,7 +10,8 @@ from convutil import (
     sendAirHamLog,
     decodeHamlog,
     writeZIP,
-    writeTXT
+    writeTXT,
+    emitError
 )
 
 debug = False
@@ -44,8 +45,13 @@ def main():
         options['WWFFRef']= 'JAFF-0123'
         wwffoperator=''
     else:
-        fileitem = form['filename']
+        try:
+            fileitem = form['filename']
+        except KeyError as e:
+            emitError("Please input HAMLOG csv file.")
+            return
         fp = fileitem.file
+        
         
     now  = datetime.datetime.now()
     fname = now.strftime("%Y-%m-%d-%H-%M")
