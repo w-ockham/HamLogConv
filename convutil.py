@@ -26,44 +26,47 @@ def emitError(txt):
     print("<p><input type=\"button\" value=\"back\" onclick=\"history.back()\"></p>")
             
 freq_table = [
-    (0.1357,0.1378,'135kHz','2190m'),
-    (0.472,0.479,'475kHz','630m'),
-    (1.810,1.825,'1.9MHz','160m'),
-    (1.9075,1.9125,'1.9MHz','160m'),
-    (3.5,3.575,'3.5MHz','80m'),
-    (3.599,3.612,'3.5MHz','80m'),
-    (3.680,3.687,'3.5MHz','80m'),
-    (3.702,3.716,'3.8MHz','80m'),
-    (3.745,3.770,'3.8MHz','80m'),
-    (3.791,3.805,'3.8MHz','80m'),
-    (7.0,7.2,'7MHz','40m'),
-    (10.000,10.150,'10MHz','30m'),
-    (14.0,14.350,'14MHz','20m'),
-    (18.0,18.168,'18MHz','17m'),
-    (21.0,21.450,'21MHz','15m'),
-    (24.0,24.990,'24MHz','12m'),
-    (28.0,29.7,'28MHz','10m'),
-    (50.0,54.0,'50MHz','6m'),
-    (144.0,146.0,'144MHz','2m'),
-    (430.0,440.0,'430MHz','70cm'),
-    (1200.0,1300.0,'1200MHz','23cm'),
-    (2400.0,2450.0,'2400MHz','13cm'),
-    (5650.0,5850.0,'5600MHz','6cm'),
-    (10000.0,10250.0,'10.1GHz','3cm'),
-    (10450.0,10500.0,'10.4GHz','3cm'),
-    (351.0,351.38125,'デジタル簡易(351MHz)',''),
-    (421.0,454.19375,'特定小電力(422MHz)',''),
-    (26.968,27.144,'CB(27MHz)',''),
-    (26.968,27.144,'CB(27MHz)',''),
-    (142.0,147.0,'デジタル小電力コミュニティ(142/146MHz)','')
+    (0.1357,0.1378,'135kHz','VLF','2190m'),
+    (0.472,0.479,'475kHz','VLF','630m'),
+    (1.810,1.825,'1.9MHz','1.8MHz','160m'),
+    (1.9075,1.9125,'1.9MHz','1.8MHz','160m'),
+    (3.5,3.575,'3.5MHz','3.5MHz','80m'),
+    (3.599,3.612,'3.5MHz','3.5MHz','80m'),
+    (3.680,3.687,'3.5MHz','3.5MHz','80m'),
+    (3.702,3.716,'3.8MHz','3.5MHz','80m'),
+    (3.745,3.770,'3.8MHz','3.5MHz','80m'),
+    (3.791,3.805,'3.8MHz','3.5MHz','80m'),
+    (7.0,7.2,'7MHz','7MHz','40m'),
+    (10.000,10.150,'10MHz','10MHz','30m'),
+    (14.0,14.350,'14MHz','14MHz','20m'),
+    (18.0,18.168,'18MHz','18MHz','17m'),
+    (21.0,21.450,'21MHz','21MHz','15m'),
+    (24.0,24.990,'24MHz','24MHz','12m'),
+    (28.0,29.7,'28MHz','28MHz','10m'),
+    (50.0,54.0,'50MHz','50MHz','6m'),
+    (144.0,146.0,'144MHz','144MHz','2m'),
+    (430.0,440.0,'430MHz','433MHz','70cm'),
+    (1200.0,1300.0,'1200MHz','1240MHz','23cm'),
+    (2400.0,2450.0,'2400MHz','2.3GHz','13cm'),
+    (5650.0,5850.0,'5600MHz','5.6GHz','6cm'),
+    (10000.0,10250.0,'10.1GHz','10GHz','3cm'),
+    (10450.0,10500.0,'10.4GHz','10GHz','3cm'),
+    (351.0,351.38125,'デジタル簡易(351MHz)','',''),
+    (421.0,454.19375,'特定小電力(422MHz)','',''),
+    (26.968,27.144,'CB(27MHz)','',''),
+    (26.968,27.144,'CB(27MHz)','',''),
+    (142.0,147.0,'デジタル小電力コミュニティ(142/146MHz)','','')
 ]
 
-def band_to_freq(band_str):
-    for (_, _, f, b) in freq_table:
+def band_to_freq(band_str, is_sota = False):
+    for (_, _, f_air, f_sota, b) in freq_table:
         b1 = b.upper()
         b2 = band_str.upper()
         if b1 == b2:
-            return f
+            if is_sota:
+                return f_sota
+            else:
+                return f_air
     return(None)
     
 def freq_to_band(freq_str):
@@ -73,11 +76,11 @@ def freq_to_band(freq_str):
     except Exception as e:
         freq = 0.0
         
-    for (lower,upper,band,wlen) in freq_table:
+    for (lower,upper,band_air,band_sota,wlen) in freq_table:
         if freq >= lower and freq <= upper:
-            return (band,wlen)
+            return (band_air,band_sota,wlen)
         
-    return ('Out of the band','Out of the band')
+    return ('Out of the band','Out of the band','Out of the band')
 
 def mode_to_airhammode(mode,freq_str):
     try:
@@ -207,7 +210,7 @@ def decodeHamlog(cols):
         hour = utime.hour
         minute = utime.minute
 
-        (band,wlen) = freq_to_band(cols[5])
+        (band_air,band_sota,wlen) = freq_to_band(cols[5])
 
         qsl_sent = 0
         qsl_rcvd = 0
@@ -244,7 +247,8 @@ def decodeHamlog(cols):
             'rst_sent': cols[3],   # All
             'rst_rcvd': cols[4],   # All
             'freq': cols[5],       # None
-            'band': band,          # SOTA
+            'band': band_air,      # AirHam
+            'band-sota': band_sota,# SOTA
             'band-wlen': wlen,     # WWFF
             'mode': cols[6],       # WWFF
             'mode-airham': mode_to_airhammode(cols[6],cols[5]), #AirHam
@@ -347,16 +351,13 @@ def toSOTA(decoder, row, callsign, options):
     date2 = '{year:02}{month:02}{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year'])
 
-    if h['band'] == '430MHz':
-        h['band'] = '433MHz'
-        
     l = [
         "V2",
         callsign,
         options['Summit'],
         date,
         '{hour:02}:{minute:02}'.format(hour=h['hour'], minute=h['minute']),
-        h['band'],
+        h['band-sota'],
         h['mode-sota'],
         h['callsign'],
         hisqth['SOTA'],

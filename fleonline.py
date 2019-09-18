@@ -172,7 +172,7 @@ def tokenizer(line):
         if m:
             res.append(('snr',w,w))
             continue
-        bd = band_to_freq(w)
+        bd = band_to_freq(w,is_sota=True)
         if bd:
             res.append(('band',bd,word))
             continue
@@ -424,7 +424,7 @@ def compileFLE(input_text,conv_mode):
                         continue
                     if t == 'freq':
                         env['c_freq'] = p2
-                        (f,b) =freq_to_band(p2)
+                        (f,_,b) =freq_to_band(p2)
                         if f == 'Out of the band':
                             env['errno'].append((lc,pos,'Unknown band.'))
                         env['c_band'] = b
@@ -457,7 +457,7 @@ def compileFLE(input_text,conv_mode):
                 elif state == FREQ:
                     if t == 'freq':
                         env['c_freq'] = p2
-                        (f,b) = freq_to_band(p2)
+                        (f,_,b) = freq_to_band(p2)
                         if f == 'Out of the band':
                             env['errno'].append((lc,pos,'Out of the band.'))
                         env['c_band'] = b
@@ -676,7 +676,7 @@ def toSOTAFLE(h):
     date2 = '{year:02}{month:02}{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year'])
 
-    f =band_to_freq(h['band'])
+    f =band_to_freq(h['band'],is_sota = True)
 
     l = [
         "V2",
