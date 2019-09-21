@@ -6,7 +6,8 @@ import sys
 import zipfile
 
 def writeZIP(files,zipfname):
-    print('Content-Disposition: attachment;filename="%s"\n' % zipfname)
+    print('Content-type:application/octet-stream; name="{}"'.format(zipfname))
+    print('Content-Disposition:attachment; filename="{}"\r\n'.format(zipfname))
     buff = io.BytesIO()
     z = zipfile.ZipFile(buff, 'w', zipfile.ZIP_DEFLATED)
     for k,v in files.items():
@@ -17,7 +18,7 @@ def writeZIP(files,zipfname):
 
 def writeTXT(files):
     for k,v in files.items():
-        print('Content-Disposition: attachment;filename="%s"\n' % k)
+        print('Content-Disposition:attachment; filename="{}"\r\n'.format(k))
         print(v)
 
 def emitError(txt):
