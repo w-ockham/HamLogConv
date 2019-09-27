@@ -34,11 +34,11 @@
       gtag('config', 'UA-139463065-3');
     </script>
 
-    <title>File Conversion Tools for HamLog</title>
+    <title>File Conversion Tools.</title>
   </head>
   <body>
     <div class="header clearfix">
-      <div class="text-muted"><h4> File Conversion Tools for HamLog.</h4>
+      <div class="text-muted"><h4> File Conversion Tools.</h4>
       </div>
     </div>
     <ul class="nav nav-tabs nav-pills" role="tablist">
@@ -56,6 +56,9 @@
       </li>
       <li class="nav-item">
 	<a class="nav-link" id="FLEOnline-tab" data-toggle="tab" href="#FLEOnline" role="tab" aria-controls="FLEOnline" aria-selected="false">FLE Online</a>
+      </li>
+      <li class="nav-item">
+	<a class="nav-link" id="GPXTrim-tab" data-toggle="tab" href="#GPXTrim" role="tab" aria-controls="GPXTrim" aria-selected="false">GPX for SOTAmap(beta)</a>
       </li>
     </ul>
 
@@ -369,8 +372,33 @@
 		<button type="submit" id="generate" class="btn-primary btn-sm">Generate Logs</button>
 	      </div>
 	    </div>
+	  </form>
 	</div>
       </div><!-- end of tab-pane -->
+
+      <div class="tab-pane fade" id="GPXTrim" role="tabpanel" aria-labelledby="GPXTrim-tab">	
+	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
+	  <div class="form-row">
+	    <div class ="form-group col-sm-6">
+	      <div class="text-muted"><h6>Generate trimmed GPX file for <a href="https://sotamaps.org/" target="_blank">SOTA mapping project.</a></h6></div>
+	      <label for="gpx_trk_interval">Minimum Track point Interval(sec).</label>
+	      <input type="text" id="gpx_trk_interval" name="gpx_trk_interval" class="form-control" value="60" required>
+	    </div>
+	  </div>
+	  <div class="form-group">
+	    <div class="custom-file">
+	      <input type="file" class="custom-file-input" id="filename" name="filename" required>
+	      <label class="custom-file-label" for="filename">Select GPX file.</label>
+	      <div class="invalid-feedback">Please select GPX file.</div>
+	    </div>
+	  </div>
+
+	  <div class="form-group">
+	    <button type="submit" class="btn btn-primary">Send</button>
+	  </div>
+	</form>
+      </div><!-- end of tab-pane -->
+
     </div>
     <!-- Option Javascript -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>

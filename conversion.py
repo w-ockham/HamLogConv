@@ -14,6 +14,10 @@ from convutil import (
     emitError
 )
 
+from trimgpx import (
+    sendGPX
+)
+
 debug = False
 #debug = True
 
@@ -26,6 +30,7 @@ def main():
     activation_call = form.getvalue('activation_call',None)
     chaser_call = form.getvalue('chaser_call',None)
     wwffoperator = form.getvalue('wwffoperator',None)
+    gpx_trk_interval = form.getvalue('gpx_trk_interval',None)
     
     options = {
         'QTH': form.getvalue('QTH',''),
@@ -37,13 +42,15 @@ def main():
     }
 
     if debug:
-        fp = open('sample.csv','rb')
-        wwffoperator = 'JL1NIE'
-        options['QTH']='rmks1'
-        options['WWFFOperator']= wwffoperator
-        options['WWFFActivator']=wwffoperator+'/1'
-        options['WWFFRef']= 'JAFF-0123'
-        wwffoperator=''
+        #fp = open('sample.csv','rb')
+        #wwffoperator = 'JL1NIE'
+        #options['QTH']='rmks1'
+        #options['WWFFOperator']= wwffoperator
+        #options['WWFFActivator']=wwffoperator+'/1'
+        #options['WWFFRef']= 'JAFF-0123'
+        #wwffoperator=''
+        fp = open('tmp/test.gpx','rb')
+        gpx_trk_interval = '60'
     else:
         try:
             fileitem = form['filename']
@@ -78,6 +85,11 @@ def main():
         outchar = "utf-8"
         files = sendWWFF(fp, decodeHamlog, options, inchar, outchar)
         writeTXT(files)
+    elif gpx_trk_interval:
+        inchar = "utf-8"
+        outchar = "utf-8"
+        fname = "sotagpx-" + fname + ".gpx"
+        res = sendGPX(fp, fname, gpx_trk_interval, inchar, outchar)
     else:
         outchar = "utf-8"
         fname = "airhamlog-" + fname + ".csv"

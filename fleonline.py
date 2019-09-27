@@ -51,7 +51,7 @@ mode_table = {
     'rty':'rst',
     'psk':'rst',
     'psk31':'rst',
-    'data':'snr',
+#    'data':'snr',
     'jt9':'snr',
     'jt65':'snr',
     'ft8':'snr',
@@ -612,16 +612,15 @@ def compileFLE(input_text,conv_mode):
                 "airham-" + logname + ".csv" : sendAirHam_FLE(res,env)
             }
             
-            if sotafl and wwfffl:
+            if sotafl:
                 files = sendSOTA_FLE(files,res)
+            if wwfffl:
                 files = sendWWFF_FLE(files, res, env['mycall'])
-                writeZIP(files,fname+".zip")
-            elif sotafl:
+
+            if (not sotafl) and (not wwfffl):
                 files = sendSOTA_FLE(files,res)
-                writeZIP(files,fname+".zip")
-            elif wwfffl:
-                files = sendWWFF_FLE(files, res, env['mycall'])
-                writeZIP(files,fname+".zip")
+                
+            writeZIP(files,fname+".zip")
     else:
         if len(env['errno'])>0:
             status ='ERR'
@@ -690,7 +689,7 @@ def toSOTAFLE(h):
         h['hissota'],
         ''
     ]
-    return (date2,h['hissota']!='',l)
+    return (date2,h['mysota']!=''and h['hissota']!='',l)
 
 def sendSOTA_FLE(files, loginput):
     prefix = 'sota'
@@ -805,7 +804,7 @@ def sendWWFF_FLE(files, loginput, callsign):
 def toHamlog_FLE(h,rmksfl,env):
     date = '{year:02}/{month:02}/{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year']%100)
-    f = re.sub(r'[MHz|KHz|GHz]','',band_to_freq(h['band']))
+    f = re.sub(r'MHz','',band_to_freq(h['band']))
 
     hisref = h['hissota']
 
@@ -845,7 +844,7 @@ def sendHamlog_FLE(loginput, rmksfl, env):
                              encoding='cp932',errors="backslashreplace")
     linecount = 0
     writer = csv.writer(outstr, delimiter=',',
-                        quoting=csv.QUOTE_MINIMAL)
+                        quoting=csv.QUOTE_NONNUMERIC)
     for row in loginput:
         if linecount > 100000:
             break
@@ -951,5 +950,5 @@ if __name__ == '__main__':
         main()
     else:
         f = open ("sample.fle","r")
-        print(compileFLE(f.read(),False))
+        print(compileFLE(f.read(),True))
 

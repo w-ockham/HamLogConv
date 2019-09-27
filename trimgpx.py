@@ -3,14 +3,17 @@
 from datetime import datetime,timedelta
 import io
 import sys
-import xml.etree.ElementTree as ET
+from lxml import etree as ET
 
 ns = {
     'gpx0':"http://www.topografix.com/GPX/1/0",
     'gpx1':"http://www.topografix.com/GPX/1/1",
-    'ks':"http://www.kashmir3d.com/namespace/kashmir3d"
     }
-
+nsmap = {
+    None: "http://www.topografix.com/GPX/1/1",
+    'xsi':"http://www.w3.org/2001/XMLSchema-instance",
+    }
+    
 def iso2dt(iso_str):
     dt = None
     try:
@@ -31,65 +34,45 @@ def trim_trk(root,interval):
     else:
         gpxver = None
 
-    if not 'version' in root.attrib:
-        if gpxver == 'GPX1.1':
-            root.attrib['version'] = '1.1'
-        else:
-            root.attrib['version'] = '1.0'
-
     prev = datetime(1900,1,1,0,0,0)
     delta = timedelta(seconds = interval)
     
-    if gpxver == 'GPX1.1':
-    #for Garmin Instinct and ohter.
-        for trk in root.findall('./gpx1:trk',ns):
-            for ext in trk.findall('./gpx1:extensions',ns):
-                trk.remove(ext)
-
-        for trkseg in trk.findall('./gpx1:trkseg',ns):
-            for trkpt in trkseg.findall('./gpx1:trkpt',ns):
-                now = iso2dt(trkpt.find('gpx1:time',ns).text)
+    if gpxver == 'GPX1.0':
+        prfx = './gpx0:'
+    elif gpxver == 'GPX1.1':
+        prfx = './gpx1:'
+    else:
+        prfx = './'
+        
+    gpx = ET.Element('gpx',nsmap = nsmap)
+    xsins = "{%s}" % nsmap['xsi']
+    gpx.attrib['creator'] = "GPX for SOTAmap"
+    gpx.attrib[xsins+'schemaLocation'] = "http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd"                               
+    gpx.attrib['version'] = "1.1"
+    
+    for trk in root.findall(prfx+'trk',ns):
+        new_trk = ET.SubElement(gpx,'trk')
+        new_name = ET.SubElement(new_trk,'name')
+        new_name.text = trk.find(prfx+'name',ns).text
+        
+        for trkseg in trk.findall(prfx+'trkseg',ns):
+            new_trkseg = ET.SubElement(new_trk,'trkseg')
+            for trkpt in trkseg.findall(prfx+'trkpt',ns):
+                now = iso2dt(trkpt.find(prfx+'time',ns).text)
                 if now - prev > delta:
-                    for ext in trkpt.findall('./gpx1:extensions',ns):
-                        trkpt.remove(ext)
+                    new_trkpt = ET.SubElement(new_trkseg,'trkpt')
+                    new_trkpt.attrib['lat'] = trkpt.attrib.get('lat','')
+                    new_trkpt.attrib['lon'] = trkpt.attrib.get('lon','')
+                    new_ele = ET.SubElement(new_trkpt,'ele')
+                    new_ele.text = trkpt.find(prfx+'ele',ns).text
+                    new_time = ET.SubElement(new_trkpt,'time')
+                    new_time.text = trkpt.find(prfx+'time',ns).text
                     prev = now
-                else:
-                    trkseg.remove(trkpt)
-
-        ET.register_namespace('',ns['gpx1'])
-                
-    elif gpxver == 'GPX1.0':
-    #for Geographica
-        for trk in root.findall('./gpx0:trk',ns):
-            for trkseg in trk.findall('./gpx0:trkseg',ns):
-                for trkpt in trkseg.findall('./gpx0:trkpt',ns):
-                    now = iso2dt(trkpt.find('gpx0:time',ns).text)
-                    if now - prev > delta:
-                        for r in trkpt.findall('./gpx0:speed',ns):
-                            trkpt.remove(r)
-                        for r in trkpt.findall('./gpx0:trueHeading',ns):
-                            trkpt.remove(r)
-                        for r in trkpt.findall('./gpx0:magneticHeading',ns):
-                            trkpt.remove(r)
-                        for r in trkpt.findall('./gpx0:gpsHeading',ns):
-                            trkpt.remove(r)
-                        for r in trkpt.findall('./gpx0:haccuracy',ns):
-                            trkpt.remove(r)
-                        for r in trkpt.findall('./gpx0:vaccuracy',ns):
-                            trkpt.remove(r)
-                        for r in trkpt.findall('./gpx0:internetconnect',ns):
-                            trkpt.remove(r)
-                        prev = now
-                    else:
-                        trkseg.remove(trkpt)
-        ET.register_namespace('',ns['gpx0'])
-
-    return gpxver
+    return gpx
 
 def sendGPX(fp, fname, interval, inchar, outchar):
     ET.register_namespace('gpx0',ns['gpx0'])
     ET.register_namespace('gpx1',ns['gpx1'])
-    ET.register_namespace('kashmir3d',ns['ks'])
 
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding=outchar, errors="backslashreplace")
     print('Content-Disposition: attachment;filename="%s"\n' % fname)
@@ -103,8 +86,8 @@ def sendGPX(fp, fname, interval, inchar, outchar):
             print(lines)
             return
         
-        gpxver = trim_trk(root,int(interval))
-        sys.stdout.write(ET.tostring(root,encoding = outchar).decode(outchar))
+        gpx = trim_trk(root,int(interval))
+        sys.stdout.write(ET.tostring(gpx,encoding = outchar).decode(outchar))
         print('')
         
 if __name__ == '__main__':
