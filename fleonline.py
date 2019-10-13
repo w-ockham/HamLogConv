@@ -137,17 +137,49 @@ def parseCallsign(c):
                      else:
                          return None
 
+def get_token(pos,line):
+    res = ''
+    while pos < len(line):
+        c = line[pos]
+        if c == ' ':
+            if res != '':
+                return (pos+1,res)
+            else:
+                pos += 1
+        elif c in '#<[{':
+            return (pos+1,c)
+        else:
+            res = res + c
+            pos += 1
+    return (pos,res)
+
+def get_comment(pos,line):
+    res = ""
+    while pos < len(line):
+        c = line[pos]
+        if c in '>]}':
+            return (pos+1,res)
+        else:
+            res = res + c
+            pos += 1
+    return (pos,res)
+    
+
 def tokenizer(line):
     res = []
-    pos = []
-    words = re.split('\s',line)
-    for word in words:
+    pos = 0
+    
+    while pos < len(line):
+        pos,word = get_token(pos,line)
         w = word.upper()
-
-        if len(w) == 0:
-            continue
-        if w[0] == '#':
+        if w == '#':
             break
+        if w == '':
+            continue
+        if w in '<[{':
+            pos,comment = get_comment(pos,line)
+            res.append(('comment',w,comment))
+            continue
         m = re.match('(\d+)-(\d+)-(\d+)$',w)
         if m:
             res.append(('date',(m.group(1),m.group(2),m.group(3)),w))
@@ -213,8 +245,8 @@ def compileFLE(input_text,conv_mode):
     res = []
     (NORM,FREQ,RSTS,RSTR)=(1,2,3,4)
     env = {
-        'mycall':'JL1NIE',
-        'operator':'JL1NIE',
+        'mycall':'',
+        'operator':'',
         'qslmsg':'',
         'mywwff':'',
         'mysota':'',
@@ -227,9 +259,9 @@ def compileFLE(input_text,conv_mode):
         'c_day':1,
         'c_hour':0,
         'c_min':0,
-        'c_mode':'cw',
-        'c_band':'20m',
-        'c_freq':'14.062',
+        'c_mode':'',
+        'c_band':'',
+        'c_freq':'',
         'c_call':'',
         'c_his_wwff':'',
         'c_his_sota':'',
@@ -259,6 +291,9 @@ def compileFLE(input_text,conv_mode):
         env['c_snr_r']='-10'
         env['c_his_wwff']=''
         env['c_his_sota']=''
+        env['c_qso_msg']=''
+        env['c_qso_rmks']=''
+
         tl = tokenizer(l)
         if not tl:
             lc+=1
@@ -391,6 +426,15 @@ def compileFLE(input_text,conv_mode):
             state = NORM
             while pos < length:
                 (t,p1,p2) = tl[pos]
+                if t == 'comment':
+                    if p1 == '<':
+                        env['c_qso_msg'] = p2
+                    elif p1 == '{':
+                        env['c_qso_rmks'] = p2
+                    elif p1 == '[':
+                        env['c_qsl_msg'] = p2
+                    pos += 1
+                    continue
                 if state == NORM:
                     if t == 'md':
                         env['c_mode'] = p1
@@ -546,6 +590,7 @@ def compileFLE(input_text,conv_mode):
                     'min':env['c_min'],
                     'callsign':env['c_call'],
                     'band':env['c_band'],
+                    'freq':env['c_freq'],
                     'mode':env['c_mode'],
                     'rst_sent': rsts,
                     'rst_rcvd': rstr,
@@ -553,7 +598,9 @@ def compileFLE(input_text,conv_mode):
                     'hissota':env['c_his_sota'],
                     'mywwff':env['mywwff'],
                     'hiswwff':env['c_his_wwff'],
-                    'operator':env['operator']
+                    'operator':env['operator'],
+                    'qsomsg':env['c_qso_msg'],
+                    'qsormks':env['c_qso_rmks']
                 }
             else: #Online
                 mycall = env['mycall']
@@ -687,7 +734,7 @@ def toSOTAFLE(h):
         mode_to_SOTAmode(h['mode']),
         h['callsign'],
         h['hissota'],
-        ''
+        '',
     ]
     return (date2,h['mysota']!=''and h['hissota']!='',l)
 
@@ -804,7 +851,11 @@ def sendWWFF_FLE(files, loginput, callsign):
 def toHamlog_FLE(h,rmksfl,env):
     date = '{year:02}/{month:02}/{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year']%100)
-    f = re.sub(r'MHz','',band_to_freq(h['band']))
+
+    if h['freq'] != '':
+        f = h['freq']
+    else:
+        f = re.sub(r'MHz','',band_to_freq(h['band']))
 
     hisref = h['hissota']
 
@@ -817,7 +868,13 @@ def toHamlog_FLE(h,rmksfl,env):
     else:
         rmks2 = hisref
         rmks1 = env['qslmsg']
-        
+
+    if h['qsormks'] != '':
+        if rmks1 != '':
+            rmks1 = rmks1 + ' ' + h['qsormks']
+        else:
+            rmks1 = h['qsormks']
+
     l = [
         h['callsign'],
         date,
@@ -829,8 +886,8 @@ def toHamlog_FLE(h,rmksfl,env):
         '',
         '',
         '',
-        '',
-        '',
+        h['qsomsg'],
+        '',#QTH
         rmks1,
         rmks2,
         '0'
@@ -890,11 +947,11 @@ def toAirHamFLE(lcount, h, env):
          h['rst_rcvd'],
          env['qslmsg'],
          ",".join(hisref),
-         "",
+         h['qsomsg'],
          freq,
          mode,
          "",
-         ""
+         h['qsormks']
         ]
     return l
 
