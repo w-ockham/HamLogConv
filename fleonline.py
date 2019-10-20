@@ -259,9 +259,9 @@ def compileFLE(input_text,conv_mode):
         'c_day':1,
         'c_hour':0,
         'c_min':0,
-        'c_mode':'',
-        'c_band':'',
-        'c_freq':'',
+        'c_mode':'cw',
+        'c_band':'20m',
+        'c_freq':'14.062',
         'c_call':'',
         'c_his_wwff':'',
         'c_his_sota':'',
@@ -495,9 +495,15 @@ def compileFLE(input_text,conv_mode):
                         state = RSTS
                         continue
                     if t == 'unknown':
-                        env['errno'].append((lc,pos,'Unknown literal: '+p1))
-                    pos+=1
-                    state = NORM
+                        env['c_qso_msg'] = p2
+                        pos+=1
+                        if pos < length:
+                            (t, p1, p2) = tl[pos]
+                            if t == 'unknown':
+                                env['c_qso_rmks'] = p2
+                                pos+=1
+                        state = NORM
+                        continue
                 elif state == FREQ:
                     if t == 'freq':
                         env['c_freq'] = p2
@@ -870,10 +876,9 @@ def toHamlog_FLE(h,rmksfl,env):
         rmks1 = env['qslmsg']
 
     if h['qsormks'] != '':
-        if rmks1 != '':
-            rmks1 = rmks1 + ' ' + h['qsormks']
-        else:
-            rmks1 = h['qsormks']
+        qth = h['qsormks']
+    else:
+        qth = ''
 
     l = [
         h['callsign'],
@@ -887,7 +892,7 @@ def toHamlog_FLE(h,rmksfl,env):
         '',
         '',
         h['qsomsg'],
-        '',#QTH
+        qth,
         rmks1,
         rmks2,
         '0'
@@ -946,12 +951,12 @@ def toAirHamFLE(lcount, h, env):
          h['rst_sent'],
          h['rst_rcvd'],
          env['qslmsg'],
-         ",".join(hisref),
+         ",".join(hisref)+' '+h['qsormks'],
          h['qsomsg'],
          freq,
          mode,
          "",
-         h['qsormks']
+         ""
         ]
     return l
 
