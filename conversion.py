@@ -38,7 +38,8 @@ def main():
         'Summit': form.getvalue('summit',''),
         'WWFFOperator': form.getvalue('wwffoperator',''),
         'WWFFActivator': form.getvalue('wwffact_call',''),
-        'WWFFRef': form.getvalue('wwffref','')
+        'WWFFRef': form.getvalue('wwffref',''),
+        'SOTAActivator': activation_call
     }
 
     if debug:

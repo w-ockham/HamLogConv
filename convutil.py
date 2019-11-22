@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# coding: utf-8
 import csv
 import datetime
 import io
@@ -368,7 +370,7 @@ def toSOTA(decoder, row, callsign, options):
 
 def adif(key, value):
     adif_fields = [
-        ('STATION_CALLSIGN','WWFFActivator'),
+        ('STATION_CALLSIGN','activator'),
         ('CALL','callsign'),
         ('QSO_DATE','date'),
         ('TIME_ON','time'),
@@ -380,8 +382,9 @@ def adif(key, value):
         ('MY_SIG_INFO','mysiginfo'),
         ('SIG','sig'),
         ('SIG_INFO','siginfo'),
+        ('SOTA_REF', 'sotaref'),
         ('MY_SOTA_REF','mysotaref'),
-        ('OPERATOR','WWFFOperator'),
+        ('OPERATOR','operator'),
         ('PROGRAMID','programid'),
         ('ADIF_VER','adifver')
     ]
@@ -392,7 +395,7 @@ def adif(key, value):
     f ='<COMMENT:' + str(len(value)) + '>' + value
     return f
         
-def toWWFF(decoder, row, options):
+def toADIF(decoder, mode, row, options):
     h = decodeHamlog(row)
 
     if options['QTH']=='rmks1':
@@ -411,10 +414,15 @@ def toWWFF(decoder, row, options):
     date2 = '{year:02}-{month:02}-{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year'])
     
-    wwffref = options['WWFFRef']
-
+    if mode == 'SOTA':
+        activator = options['SOTAActivator']
+        wwffref = ''
+    else:
+        activator = options['WWFFActivator']
+        wwffref = options['WWFFRef']
+        
     l = [
-        adif('WWFFActivator',options['WWFFActivator']),
+        adif('activator',activator),
         adif('callsign',h['callsign']),
         adif('date',date),
         adif('time',
@@ -424,17 +432,19 @@ def toWWFF(decoder, row, options):
         adif('mode',h['mode']),
         adif('rst_sent',h['rst_sent']),
         adif('rst_rcvd',h['rst_rcvd']),
-        adif('mysig','WWFF'),
-        adif('mysiginfo',options['WWFFRef'])
         ]
     
-    if hisref['WWFF'] != '':
-        l+= [adif('sig','WWFF'),adif('siginfo',hisref['WWFF'])]
+    if mode == 'SOTA':
+        l += [ adif('mysotaref',options['Summit']) ]
+        if  hisref['SOTA'] != '':
+            l+= [adif('sotaref',hisref['SOTA'])]
+    else:
+        l += [ adif('mysig','WWFF'),
+               adif('mysiginfo',options['WWFFRef'])]
+        if hisref['WWFF'] != '':
+            l+= [adif('sig','WWFF'),adif('siginfo',hisref['WWFF'])]
 
-    if None and hisref['SOTA'] != '':
-        l+= [adif('mysotaref',hisref['SOTA'])]
-
-    l+= [adif('WWFFOperator',options['WWFFOperator']),'<EOR>']
+    l+= ['<EOR>']
     
     return (date2,wwffref,l)
 
@@ -470,23 +480,35 @@ def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
     outstr_s2s = io.StringIO()
     writer_s2s = csv.writer(outstr_s2s,delimiter=',',
                             quoting=csv.QUOTE_MINIMAL)
+    outstr_adif = io.StringIO()
+    writer_adif = csv.writer(outstr_adif, delimiter=' ',
+                             quoting=csv.QUOTE_MINIMAL)
 
     with io.TextIOWrapper(fp, encoding=inchar, errors="backslashreplace") as f:
         reader = csv.reader(f)
         for row in reader:
             if linecount > 100000:
-                break
+               break
             else:
-                (fn,s2s,l) = toSOTA(decoder, row, callsign, options)
-                if linecount == 0:
-                    fname = fn
-                    
-                if fn == fname:
+               (fn, s2s, l) = toSOTA(decoder, row, callsign, options)
+               (d2,ref,ladif) = toADIF(decoder, 'SOTA', row, options)
+
+               if linecount==0:
+                   fname = fn
+                   fname_adi = d2
+                   outstr_adif.write('ADIF Export from HAMLOG by JL1NIE\n')
+                   outstr_adif.write(adif('programid','FCTH')+'\n')
+                   outstr_adif.write(adif('adifver','3.0.6')+'\n')
+                   outstr_adif.write('<EOH>\n')
+                   
+               writer_adif.writerow(ladif)
+               
+               if fn == fname:
                     writer.writerow(l)
                     if s2s:
                         writer_s2s.writerow(l)
                     linecount += 1
-                else:
+               else:
                     name = prefix + fname + '.csv'
                     files.update({name : outstr.getvalue()})
 
@@ -514,6 +536,9 @@ def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
         if len(s2sbuff) >0:
             name2 = prefix2 + fname + '.csv'
             files.update({name2 : s2sbuff})
+
+        name = prefix + fname_adi + '.adi'
+        files.update({name : outstr_adif.getvalue()})
 
     return(files)
 
@@ -570,7 +595,7 @@ def sendWWFF(fp, decoder, options, inchar, outchar):
             if linecount > 100000:
                 break
             else:
-                (date,ref,l) = toWWFF(decoder,row,options)
+                (date,ref,l) = toADIF(decoder, 'WWFF', row, options)
                 if linecount == 0:
                     act_call = options['WWFFActivator']
                     fname = act_call.replace('/','-') + '@' + ref + ' '+ date +'.adi'
