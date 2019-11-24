@@ -338,6 +338,16 @@ def get_ref(str):
 def toSOTA(decoder, row, callsign, options):
     h = decoder(row)
 
+    if options['myQTH']=='rmks1':
+        myref = get_ref(h['rmks1'])
+        comment = h['rmks2']
+    elif options['myQTH']=='rmks2':
+        myref = get_ref(h['rmks2'])
+        comment = h['rmks1']
+    else:
+        myref = {'SOTA': options['Summit']}
+        comment = ''
+
     if options['QTH']=='rmks1':
         hisqth = get_ref(h['rmks1'])
         comment = h['rmks2']
@@ -354,10 +364,13 @@ def toSOTA(decoder, row, callsign, options):
     date2 = '{year:02}{month:02}{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year'])
 
+    if myref['SOTA'] == '':
+        return (date2,False,[])
+    
     l = [
         "V2",
         callsign,
-        options['Summit'],
+        myref['SOTA'],
         date,
         '{hour:02}:{minute:02}'.format(hour=h['hour'], minute=h['minute']),
         h['band-sota'],
@@ -499,8 +512,6 @@ def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
     writer_adif = csv.writer(outstr_adif, delimiter=' ',
                              quoting=csv.QUOTE_MINIMAL)
 
-    csvmode = options['myQTH'] == 'form'
-        
     with io.TextIOWrapper(fp, encoding=inchar, errors="backslashreplace") as f:
         reader = csv.reader(f)
         for row in reader:
@@ -508,8 +519,7 @@ def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
                 break
             else:
                 (d2,ref,ladif) = toADIF(decoder, 'SOTA', row, options)
-                if csvmode:
-                    (fn, s2s, l) = toSOTA(decoder, row, callsign, options)
+                (fn, s2s, lcsv) = toSOTA(decoder, row, callsign, options)
 
                 if ladif:
                     if linecount==0:
@@ -520,14 +530,14 @@ def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
                         outstr_adif.write('<EOH>\n')
                     writer_adif.writerow(ladif)
 
-                if csvmode:
+                if lcsv:
                     if linecount==0:
                         fname = fn
 
                     if fn == fname:
-                        writer.writerow(l)
+                        writer.writerow(lcsv)
                         if s2s:
-                            writer_s2s.writerow(l)
+                            writer_s2s.writerow(lcsv)
                     else:
                         name = prefix + fname + '.csv'
                         files.update({name : outstr.getvalue()})
@@ -540,13 +550,13 @@ def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
                         outstr = io.StringIO()
                         writer = csv.writer(outstr,delimiter=',',
                                             quoting=csv.QUOTE_MINIMAL)
-                        writer.writerow(l)
+                        writer.writerow(lcsv)
 
                         outstr_s2s = io.StringIO()
                         writer_s2s = csv.writer(outstr_s2s,delimiter=',',
                                                 quoting=csv.QUOTE_MINIMAL)
                         if s2s:
-                            writer_s2s.writerow(l)
+                            writer_s2s.writerow(lcsv)
                         fname = fn
 
                 if ladif:
@@ -556,12 +566,12 @@ def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
             name = prefix + fname_adi + '.adi'
             files.update({name : outstr_adif.getvalue()})
 
-        if csvmode:
+        if fname != '':
             name = prefix + fname + '.csv'
             files.update({name : outstr.getvalue()})
 
             s2sbuff = outstr_s2s.getvalue()
-            if len(s2sbuff) >0:
+            if len(s2sbuff) > 0:
                 name2 = prefix2 + fname + '.csv'
                 files.update({name2 : s2sbuff})
 
