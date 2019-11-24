@@ -327,10 +327,10 @@ def get_ref(str):
     r = { 'SOTA':'', 'WWFF':'' }
     l = re.split('[,\s]', str)
     for ref in l:
-        m = re.match('(\w+FF-\d+)',ref)
+        m = re.match('.*?([a-zA-Z0-9]+FF-\d+).*',ref)
         if m:
             r['WWFF'] = m.group(1)
-        m = re.match('(\w+/\w+-\d+)',ref)
+        m = re.match('.*?([a-zA-Z0-9]+/[a-zA-Z0-9]+-\d+).*',ref)
         if m:
             r['SOTA'] = m.group(1)
     return r
@@ -366,6 +366,7 @@ def toSOTA(decoder, row, callsign, options):
         hisqth['SOTA'],
         ''
     ]
+    
     return (date2,hisqth['SOTA']!='',l)
 
 def adif(key, value):
@@ -398,6 +399,16 @@ def adif(key, value):
 def toADIF(decoder, mode, row, options):
     h = decodeHamlog(row)
 
+    if options['myQTH']=='rmks1':
+        myref = get_ref(h['rmks1'])
+        comment = h['rmks2']
+    elif options['myQTH']=='rmks2':
+        myref = get_ref(h['rmks2'])
+        comment = h['rmks1']
+    else:
+        myref = {'SOTA': options['Summit']}
+        comment = ''
+
     if options['QTH']=='rmks1':
         hisref = get_ref(h['rmks1'])
         comment = h['rmks2']
@@ -421,6 +432,9 @@ def toADIF(decoder, mode, row, options):
         activator = options['WWFFActivator']
         wwffref = options['WWFFRef']
         
+    if mode == 'SOTA' and myref['SOTA']=='':
+        return (date2,'',[])
+    
     l = [
         adif('activator',activator),
         adif('callsign',h['callsign']),
@@ -435,7 +449,7 @@ def toADIF(decoder, mode, row, options):
         ]
     
     if mode == 'SOTA':
-        l += [ adif('mysotaref',options['Summit']) ]
+        l += [ adif('mysotaref',myref['SOTA']) ]
         if  hisref['SOTA'] != '':
             l+= [adif('sotaref',hisref['SOTA'])]
     else:
@@ -471,6 +485,7 @@ def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
     prefix = 'sota'
     prefix2 = 'sota-s2s-'
     fname = ''
+    fname_adi = ''
     files = {}
     linecount = 0
 
@@ -484,61 +499,71 @@ def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
     writer_adif = csv.writer(outstr_adif, delimiter=' ',
                              quoting=csv.QUOTE_MINIMAL)
 
+    csvmode = options['myQTH'] == 'form'
+        
     with io.TextIOWrapper(fp, encoding=inchar, errors="backslashreplace") as f:
         reader = csv.reader(f)
         for row in reader:
             if linecount > 100000:
-               break
+                break
             else:
-               (fn, s2s, l) = toSOTA(decoder, row, callsign, options)
-               (d2,ref,ladif) = toADIF(decoder, 'SOTA', row, options)
+                (d2,ref,ladif) = toADIF(decoder, 'SOTA', row, options)
+                if csvmode:
+                    (fn, s2s, l) = toSOTA(decoder, row, callsign, options)
 
-               if linecount==0:
-                   fname = fn
-                   fname_adi = d2
-                   outstr_adif.write('ADIF Export from HAMLOG by JL1NIE\n')
-                   outstr_adif.write(adif('programid','FCTH')+'\n')
-                   outstr_adif.write(adif('adifver','3.0.6')+'\n')
-                   outstr_adif.write('<EOH>\n')
-                   
-               writer_adif.writerow(ladif)
-               
-               if fn == fname:
-                    writer.writerow(l)
-                    if s2s:
-                        writer_s2s.writerow(l)
-                    linecount += 1
-               else:
-                    name = prefix + fname + '.csv'
-                    files.update({name : outstr.getvalue()})
+                if ladif:
+                    if linecount==0:
+                        fname_adi = d2
+                        outstr_adif.write('ADIF Export from HAMLOG by JL1NIE\n')
+                        outstr_adif.write(adif('programid','FCTH')+'\n')
+                        outstr_adif.write(adif('adifver','3.0.6')+'\n')
+                        outstr_adif.write('<EOH>\n')
+                    writer_adif.writerow(ladif)
 
-                    s2sbuff = outstr_s2s.getvalue()
-                    if len(s2sbuff) >0:
-                        name2 = prefix2 + fname + '.csv'
-                        files.update({name2 : s2sbuff})
+                if csvmode:
+                    if linecount==0:
+                        fname = fn
+
+                    if fn == fname:
+                        writer.writerow(l)
+                        if s2s:
+                            writer_s2s.writerow(l)
+                    else:
+                        name = prefix + fname + '.csv'
+                        files.update({name : outstr.getvalue()})
                         
-                    outstr = io.StringIO()
-                    writer = csv.writer(outstr,delimiter=',',
-                                        quoting=csv.QUOTE_MINIMAL)
-                    writer.writerow(l)
-
-                    outstr_s2s = io.StringIO()
-                    writer_s2s = csv.writer(outstr_s2s,delimiter=',',
+                        s2sbuff = outstr_s2s.getvalue()
+                        if len(s2sbuff) >0:
+                            name2 = prefix2 + fname + '.csv'
+                            files.update({name2 : s2sbuff})
+                        
+                        outstr = io.StringIO()
+                        writer = csv.writer(outstr,delimiter=',',
                                             quoting=csv.QUOTE_MINIMAL)
-                    if s2s:
-                        writer_s2s.writerow(l)
-                    fname = fn
+                        writer.writerow(l)
 
-        name = prefix + fname + '.csv'
-        files.update({name : outstr.getvalue()})
+                        outstr_s2s = io.StringIO()
+                        writer_s2s = csv.writer(outstr_s2s,delimiter=',',
+                                                quoting=csv.QUOTE_MINIMAL)
+                        if s2s:
+                            writer_s2s.writerow(l)
+                        fname = fn
 
-        s2sbuff = outstr_s2s.getvalue()
-        if len(s2sbuff) >0:
-            name2 = prefix2 + fname + '.csv'
-            files.update({name2 : s2sbuff})
+                if ladif:
+                    linecount += 1
 
-        name = prefix + fname_adi + '.adi'
-        files.update({name : outstr_adif.getvalue()})
+        if fname_adi != '': 
+            name = prefix + fname_adi + '.adi'
+            files.update({name : outstr_adif.getvalue()})
+
+        if csvmode:
+            name = prefix + fname + '.csv'
+            files.update({name : outstr.getvalue()})
+
+            s2sbuff = outstr_s2s.getvalue()
+            if len(s2sbuff) >0:
+                name2 = prefix2 + fname + '.csv'
+                files.update({name2 : s2sbuff})
 
     return(files)
 

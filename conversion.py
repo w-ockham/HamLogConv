@@ -34,8 +34,9 @@ def main():
     
     options = {
         'QTH': form.getvalue('QTH',''),
-        'Location': form.getvalue('location',''),
+        'myQTH': form.getvalue('myQTH',''),
         'Summit': form.getvalue('summit',''),
+        'Location': form.getvalue('location',''),
         'WWFFOperator': form.getvalue('wwffoperator',''),
         'WWFFActivator': form.getvalue('wwffact_call',''),
         'WWFFRef': form.getvalue('wwffref',''),
