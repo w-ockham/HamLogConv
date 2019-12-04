@@ -335,7 +335,7 @@ def get_ref(str):
             r['SOTA'] = m.group(1)
     return r
 
-def toSOTA(decoder, row, callsign, options):
+def toSOTA(decoder, actp, row, callsign, options):
     h = decoder(row)
 
     if options['myQTH']=='rmks1':
@@ -364,7 +364,7 @@ def toSOTA(decoder, row, callsign, options):
     date2 = '{year:02}{month:02}{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year'])
 
-    if myref['SOTA'] == '':
+    if actp and myref['SOTA'] == '':
         return (date2,False,[])
     
     l = [
@@ -519,7 +519,7 @@ def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
                 break
             else:
                 (d2,ref,ladif) = toADIF(decoder, 'SOTA', row, options)
-                (fn, s2s, lcsv) = toSOTA(decoder, row, callsign, options)
+                (fn, s2s, lcsv) = toSOTA(decoder, True, row, callsign, options)
 
                 if ladif:
                     if linecount==0:
@@ -598,7 +598,7 @@ def sendSOTA_C(fp, decoder, callsign, options, inchar, outchar):
             if linecount > 100000:
                 break
             else:
-                (fn,his_summit,l) = toSOTA(decoder, row, callsign, options)
+                (fn,his_summit,l) = toSOTA(decoder, False, row, callsign, options)
                 if linecount == 0:
                     fname = fn
                     
