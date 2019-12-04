@@ -67,7 +67,7 @@
 	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
 	  <div class="form-row">
 	    <div class="form-group col-sm-6">
-	      <h6>自分のQTHの指定</h6>
+	      <h6><b>自分のQTHの指定</b></h6>
 	      <div class="form-check">
 		<input class="form-check-input" type="radio" name="QTH" id="QTHNone" value="none" checked>
 		<label class="form-check-label" for="QTHNone">
@@ -94,7 +94,7 @@
 	      </div>
 	    </div>
 	    <div class ="form-group col-sm-6">
-	      <label for="location">運用地</label>
+	      <label for="location"><b>運用地</b></label>
 	      <input type="text" id="location" name="location" class="form-control" placeholder="JCC/JCG etc.">
 	    </div>
 	  </div>
@@ -268,15 +268,12 @@
       </script>
       <div class="tab-pane fade" id="SOTAChaser" role="tabpanel" aria-labelledby="SOTAChaser-tab">	
 	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
-	  <div class="form-row">
-	    <div class ="form-group col-sm-6">
-	      <label for="chaser_call">運用時のコールサイン</label>
+	  <div class ="form-group">
+	      <label for="chaser_call"><b>運用時のコールサイン</b></label>
 	      <input type="text" id="chaser_call" name="chaser_call" class="form-control" placeholder="コールサイン" required>
-	    </div>
 	  </div>
-
-	  <div class="form-group col-sm-6">
-	    <h6>相手局のSOTA山岳ID</h6>
+	  <div class="form-group">
+	    <h6><b>相手局のSOTA山岳ID</b></h6>
 	    <div class="form-check">
 	      <input class="form-check-input" type="radio" name="QTH" id="QTH1" value="rmks1" checked>
 	      <label class="form-check-label" for="QTH1">
@@ -306,18 +303,16 @@
       </div><!-- end of tab-pane -->
       <div class="tab-pane fade" id="JAFFActivator" role="tabpanel" aria-labelledby="JAFFActivator-tab">
 	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
-	  <div class="form-row">
-	    <div class ="form-group col-sm-6">
-	      <label for="operator">運用時のオペレータ</label>
-	      <input type="text" id="wwffoperator" name="wwffoperator" class="form-control" placeholder="オペレータ(e.g. JL1NIE)" required>
-	      <label for="wwffact_call">運用時のコールサイン</label>
-	      <input type="text" id="wwffact_call" name="wwffact_call" class="form-control" placeholder="コールサイン(e.g. JL1NIE/1)" required>
-	      <label for="wwffref">運用したWWFFリファレンス</label>
-	      <input type="text" id="wwffref" name="wwffref" class="form-control" placeholder="e.g. JAFF-0202" required>
-	    </div>
+	  <div class ="form-group">
+	    <label for="operator"><b>運用時のオペレータ</b></label>
+	    <input type="text" id="wwffoperator" name="wwffoperator" class="form-control" placeholder="オペレータ(e.g. JL1NIE)" required>
+	    <label for="wwffact_call"><b>運用時のコールサイン</b></label>
+	    <input type="text" id="wwffact_call" name="wwffact_call" class="form-control" placeholder="コールサイン(e.g. JL1NIE/1)" required>
+	    <label for="wwffref"><b>運用したWWFFリファレンス</b></label>
+	    <input type="text" id="wwffref" name="wwffref" class="form-control" placeholder="e.g. JAFF-0202" required>
 	  </div>
-	  <div class="form-group col-sm-6">
-	    <h6>P2P交信局のWWFFリファレンス</h6>
+	  <div class="form-group">
+	    <h6><b>P2P交信局のWWFFリファレンス</b></h6>
 	    <div class="form-check">
 	      <input class="form-check-input" type="radio" name="QTH" id="QTHNone" value="none" checked>
 	      <label class="form-check-label" for="QTHNone">
@@ -411,7 +406,7 @@
 	  <div class="form-row">
 	    <div class ="form-group col-sm-6">
 	      <div class="text-muted"><h6>Generate trimmed GPX file for <a href="https://sotamaps.org/" target="_blank">SOTA mapping project.</a></h6></div>
-	      <label for="gpx_trk_interval">Minimum Track point Interval(sec).</label>
+	      <label for="gpx_trk_interval"><b>Minimum Track point Interval(sec).</b></label>
 	      <input type="text" id="gpx_trk_interval" name="gpx_trk_interval" class="form-control" value="60" required>
 	    </div>
 	  </div>
