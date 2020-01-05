@@ -205,7 +205,11 @@ def decodeHamlog(cols):
             isotime = atime.isoformat()
         except Exception as e:
             errorfl = True
-            errormsg.append("Wrong time format:{}".format(tstr))
+            errormsg.append("Wrong time format:{}".format(operator+ ":"+tstr))
+            atime = datetime.datetime.strptime("1900/1/1 0:0 +0000",'%Y/%m/%d %H:%M %z')
+            utime = atime.astimezone(datetime.timezone(datetime.timedelta(hours=0)))
+            isotime = atime.isoformat()
+        
 
         year = utime.year
         month = utime.month
