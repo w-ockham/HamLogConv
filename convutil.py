@@ -488,15 +488,18 @@ def sendAirHamLog(fp, fname, decoder, options, inchar, outchar):
     print('Content-Disposition: attachment;filename="%s"\n' % fname)
     with io.TextIOWrapper(fp, encoding=inchar,errors="backslashreplace") as f:
         reader = csv.reader(f)
-        for row in reader:
-            if linecount > 100000:
-                break
-            else:
-                if linecount == 0:
+        try:
+            for row in reader:
+                if linecount > 100000:
+                    break
+                else:
+                    if linecount == 0:
+                        writer.writerow(toAirHam(decoder, linecount, row, options))
+                        linecount += 1
                     writer.writerow(toAirHam(decoder, linecount, row, options))
-                    linecount += 1
-                writer.writerow(toAirHam(decoder, linecount, row, options))
                 linecount += 1
+        except Exception as e:
+            print('Line:{} Error{}'.format(linecount, e))
                 
 def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
     prefix = 'sota'
