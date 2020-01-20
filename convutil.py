@@ -381,7 +381,7 @@ def toSOTA(decoder, actp, row, callsign, options):
         h['mode-sota'],
         h['callsign'],
         hisqth['SOTA'],
-        ''
+        ' '
     ]
     
     return (date2,hisqth['SOTA']!='',l)

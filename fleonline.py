@@ -740,7 +740,7 @@ def toSOTAFLE(h):
         mode_to_SOTAmode(h['mode']),
         h['callsign'],
         h['hissota'],
-        '',
+        ' '
     ]
     return (date2,h['mysota']!=''and h['hissota']!='',l)
 
