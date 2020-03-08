@@ -606,7 +606,8 @@ def compileFLE(input_text,conv_mode):
                     'hiswwff':env['c_his_wwff'],
                     'operator':env['operator'],
                     'qsomsg':env['c_qso_msg'],
-                    'qsormks':env['c_qso_rmks']
+                    'qsormks':env['c_qso_rmks'],
+                    'qslmsg':env['qslmsg']
                 }
             else: #Online
                 mycall = env['mycall']
@@ -870,10 +871,10 @@ def toHamlog_FLE(h,rmksfl,env):
 
     if rmksfl == 'hisref' :
         rmks1 = hisref
-        rmks2 = env['qslmsg']
+        rmks2 = h['qslmsg']
     else:
         rmks2 = hisref
-        rmks1 = env['qslmsg']
+        rmks1 = h['qslmsg']
 
     if h['qsormks'] != '':
         qth = h['qsormks']
