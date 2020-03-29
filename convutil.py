@@ -231,7 +231,7 @@ def decodeHamlog(cols):
             elif qslflag[0] == 'J':
                 qsl_via = 'JARL (Bureau)'
             else:
-                qsl_via = qslflag[0]
+                qsl_via = qslflag
 
             if qslflag[1] != ' ':
                 qsl_sent = 1
