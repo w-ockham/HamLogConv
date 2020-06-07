@@ -189,7 +189,7 @@
       </div><!-- end of tab-pane -->
 
       <div class="tab-pane fade" id="SOTAActivator" role="tabpanel" aria-labelledby="SOTAActivator-tab">	
-	<form name = "SOTAActivator" method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' onsubmit="return formCheckSOTA()" style="padding:10px">
+	<form id="SOTAActivator" method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' onsubmit="return formCheckSOTA()" style="padding:10px">
 	  <div class="form-group">
 	    <label for="activation_call"><b> 運用時のコールサイン</b></label>
 	    <input type="text" id="activation_call" name="activation_call" class="form-control" placeholder="コールサイン" required>
@@ -263,11 +263,12 @@
 		window . alert ( 'Remarks2の指定が重複しています。');
 		return false;
 	    }
+	    saveCookie();
 	    return true;
         }
       </script>
       <div class="tab-pane fade" id="SOTAChaser" role="tabpanel" aria-labelledby="SOTAChaser-tab">	
-	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
+	<form id="SOTAChaser" method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
 	  <div class ="form-group">
 	      <label for="chaser_call"><b>運用時のコールサイン</b></label>
 	      <input type="text" id="chaser_call" name="chaser_call" class="form-control" placeholder="コールサイン" required>
@@ -427,10 +428,8 @@
     </div>
     <!-- Option Javascript -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-<!--
-    <script src="https://code.jquery.com/jquery-3.4.0.min.js" integrity="sha256-BJeo0qm959uMBGb65z40ejJYGSgR7REI4+CW1fNKwOg=" crossorigin="anonymous"> </script>
-    -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     
 <script>
@@ -446,10 +445,6 @@ $('textarea[id=edittext]').keyup(function(){
     textdirty = true;
     textinterpreted = false;
 })
-
-//$('button[id=generate]').click(function(){
-//   textdirty = false;
-//})
 				 
 $('input[id=loadfle]').change(function(e){
     if (textdirty) {
@@ -466,6 +461,49 @@ $('input[id=loadfle]').change(function(e){
 	textdirty = false;
     })
 });
+
+loadCookie();
+$('#SOTAChaser').submit(function() { saveCookie(); });
+
+function saveCookie() {
+    var aform = document.forms.SOTAActivator;
+    var cform = document.forms.SOTAChaser
+    var act_call = $('#activation_call').val();
+    var chsr_call = $('#chaser_call').val();
+    var myQTH = $('#SOTAActivator [name="myQTH"]').filter(':checked').val();
+    var actQTH = $('#SOTAActivator [name="QTH"]').filter(':checked').val();
+    var hisQTH = $('#SOTAChaser [name="QTH"]').filter(':checked').val();
+    
+    $.cookie('act_call', act_call, {expires: 180});
+    $.cookie('chsr_call', chsr_call, {expires: 180});
+    $.cookie('myQTH', myQTH, {expires: 180});
+    $.cookie('actQTH', actQTH, {expires: 180});
+    $.cookie('hisQTH', hisQTH, {expires: 180});
+}
+
+function loadCookie() {
+    $('#activation_call').val([$.cookie('act_call')]);
+    $('#chaser_call').val([$.cookie('chsr_call')]);
+
+    var myQTH = $.cookie('myQTH');
+    var aQTH = $.cookie('actQTH');
+    var cQTH = $.cookie('hisQTH');
+
+    if ( myQTH == undefined )
+	$('#SOTAActivator [name="myQTH"]').val(["form"]);
+    else
+	$('#SOTAActivator [name="myQTH"]').val([myQTH]);
+
+    if ( aQTH == undefined )
+	$('#SOTAActivator [name="QTH"]').val(["none"]);
+    else
+	$('#SOTAActivator [name="QTH"]').val([aQTH]);
+
+    if ( cQTH == undefined )
+	$('#SOTAChaser [name="QTH"]').val(["rmks1"]);
+    else
+	$('#SOTAChaser [name="QTH"]').val([cQTH]);
+}
 
 function checkLog() {
     if (!textinterpreted) {
