@@ -328,15 +328,24 @@ def toAirHam(decoder, lcount, row, options):
     return l
 
 def get_ref(str):
-    r = { 'SOTA':'', 'WWFF':'' }
+    r = { 'SOTA':'', 'WWFF':'' , 'LOC':' '}
+    m = re.match(r'.*?(-?\d+(\.\d+)?[nsNS]?\s*,\s*\-?\d+(\.\d+)?[ewEW]?).*',
+                 str)
+    if m:
+        r['LOC'] = '%QTH%' + m.group(1) + '% '
+ 
     l = re.split('[,\s]', str)
     for ref in l:
-        m = re.match('.*?([a-zA-Z0-9]+FF-\d+).*',ref)
+        m = re.match(r'.*?([a-zA-Z0-9]+FF-\d+).*',ref)
         if m:
             r['WWFF'] = m.group(1)
-        m = re.match('.*?([a-zA-Z0-9]+/[a-zA-Z0-9]+-\d+).*',ref)
+        m = re.match(r'.*?([a-zA-Z0-9]+/[a-zA-Z0-9]+-\d+).*',ref)
         if m:
             r['SOTA'] = m.group(1)
+        m = re.match(r'.*?([a-zA-Z]{2}\d{2}[a-zA-Z]{2}).*',ref)
+        if m:
+            r['LOC'] = '%QRA%' + m.group(1) + '% '
+
     return r
 
 def toSOTA(decoder, actp, row, callsign, options):
@@ -354,14 +363,20 @@ def toSOTA(decoder, actp, row, callsign, options):
 
     if options['QTH']=='rmks1':
         hisqth = get_ref(h['rmks1'])
-        comment = h['rmks2']
+        if actp:
+            comment = hisqth
+        else:
+            comment = get_ref(h['rmks2'])
     elif options['QTH']=='rmks2':
         hisqth = get_ref(h['rmks2'])
-        comment = h['rmks1']
+        if actp:
+            comment = hisqth
+        else:
+            comment = get_ref(h['rmks1'])
     else:
-        hisqth = {'SOTA':''}
-        comment = ''
-    
+        hisqth = {'SOTA':'', 'LOC': ' '}
+        comment = hisqth 
+
     date = '{day:02}/{month:02}/{year:02}'.format(
         day=h['day'], month=h['month'], year=h['year'])
 
@@ -381,7 +396,7 @@ def toSOTA(decoder, actp, row, callsign, options):
         h['mode-sota'],
         h['callsign'],
         hisqth['SOTA'],
-        ' '
+        comment['LOC']
     ]
     
     return (date2,hisqth['SOTA']!='',l)
