@@ -372,6 +372,7 @@
 			<th>Mode</th><th>RSTs</th><th>RSTr</th>
 			<th>My SOTA</th><th>His SOTA</th>
 			<th>My WWFF</th><th>His WWFF</th>
+			<th>Comment</th>
 			<th>Operator</th>
 		      </tr>
 		    </thead>
@@ -539,11 +540,13 @@ function setSample(arg) {
 	    "date 2019-08-02\n" +
 	    "40m cw\n" +
 	    "2302 jg1bok\n" +
-	    "4 ja4rqo <Hay> {vy strong}\n" +
+	    "4 ja4rqo <vy strong>\n" +
 	    "ssb\n" +
 	    "14 ja4rqo\n" + 
-	    "40 jp1qec/1 5 3 <Abu> {new ant.} jaff-0213 ja/st-018\n"+
-	    "day +\n"+
+            "40 jp1qec/1 5 3 <Abu> jaff-0213 ja/st-018\n"+
+            "70cm fm\n"+
+            "55 jg0awe/0 9 9 <%SAT%AO-91% FM/144MHz> ja/nn-001\n"+
+            "day +\n"+
 	    "0001 17m cw\n"+
 	    "zl1byz 41 31\n"+
 	    "20m ft4\n"+
@@ -566,6 +569,7 @@ function clearLog() {
                              "<th>Mode</th><th>RSTs</th><th>RSTr</th>"+
                              "<th>My SOTA</th><th>His SOTA</th>"+
                              "<th>My WWFF</th><th>His WWFF</th>"+
+	                     "<th>Comment</th>"+
                              "<th>Operator</th>"+
                              "</tr>");
     $('#loglisttable').empty()

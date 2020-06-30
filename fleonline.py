@@ -631,8 +631,9 @@ def compileFLE(input_text,conv_mode):
                 hissota = env['c_his_sota']
                 mywwff = env['mywwff']
                 hiswwff = env['c_his_wwff']
+                qsomsg = env['c_qso_msg']
                 operator = env['operator']
-                qso = [ str(qsoc), mycall, date, time, call, band, mode, rsts, rstr, mysota, hissota,mywwff, hiswwff ,operator]
+                qso = [ str(qsoc), mycall, date, time, call, band, mode, rsts, rstr, mysota, hissota,mywwff, hiswwff , qsomsg, operator]
             res.append(qso)
 
     if conv_mode:
@@ -741,7 +742,7 @@ def toSOTAFLE(h):
         mode_to_SOTAmode(h['mode']),
         h['callsign'],
         h['hissota'],
-        ' '
+        h['qsomsg']
     ]
     return (date2,h['mysota']!=''and h['hissota']!='',l)
 
