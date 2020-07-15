@@ -259,9 +259,9 @@ def compileFLE(input_text,conv_mode):
         'c_day':1,
         'c_hour':0,
         'c_min':0,
+        'c_band':'',
+        'c_freq':'',
         'c_mode':'cw',
-        'c_band':'20m',
-        'c_freq':'14.062',
         'c_call':'',
         'c_his_wwff':'',
         'c_his_sota':'',
@@ -443,6 +443,7 @@ def compileFLE(input_text,conv_mode):
                         continue
                     if t == 'band':
                         env['c_band'] =p2
+                        env['c_freq'] = band_to_freq(p2, True)
                         state = FREQ
                         pos += 1
                         continue
@@ -489,6 +490,8 @@ def compileFLE(input_text,conv_mode):
                         prev = env['c_call'] 
                         if  prev != '':
                             env['errno'].append((lc,pos,'Each line must contains only one callsign: '+p1))
+                        if env['c_band'] == '' and env['c_freq'] == '':
+                            env['errno'].append((lc,pos,'Band or frequency must be specified before QSO.'))
                         env['c_call'] = p1
                         pos+=1
                         qsoc+=1
@@ -631,9 +634,9 @@ def compileFLE(input_text,conv_mode):
                 hissota = env['c_his_sota']
                 mywwff = env['mywwff']
                 hiswwff = env['c_his_wwff']
-                qsomsg = env['c_qso_msg']
+                qsormks = env['c_qso_rmks']
                 operator = env['operator']
-                qso = [ str(qsoc), mycall, date, time, call, band, mode, rsts, rstr, mysota, hissota,mywwff, hiswwff , qsomsg, operator]
+                qso = [ str(qsoc), mycall, date, time, call, band, mode, rsts, rstr, mysota, hissota,mywwff, hiswwff , qsormks, operator]
             res.append(qso)
 
     if conv_mode:
@@ -742,7 +745,7 @@ def toSOTAFLE(h):
         mode_to_SOTAmode(h['mode']),
         h['callsign'],
         h['hissota'],
-        h['qsomsg']
+        h['qsormks']
     ]
     return (date2,h['mysota']!=''and h['hissota']!='',l)
 
@@ -861,7 +864,7 @@ def toHamlog_FLE(h,rmksfl,env):
         day=h['day'], month=h['month'], year=h['year']%100)
 
     if h['freq'] != '':
-        f = h['freq']
+        f = re.sub(r'MHz','',h['freq'])
     else:
         f = re.sub(r'MHz','',band_to_freq(h['band']))
 
