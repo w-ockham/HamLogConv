@@ -348,58 +348,71 @@ def get_ref(str):
 
     return r
 
-def toSOTA(decoder, actp, row, callsign, options):
+def toSOTA(decoder, lcount, actp, row, callsign, options):
     h = decoder(row)
-
-    if options['myQTH']=='rmks1':
-        myref = get_ref(h['rmks1'])
-        comment = h['rmks2']
-    elif options['myQTH']=='rmks2':
-        myref = get_ref(h['rmks2'])
-        comment = h['rmks1']
+    if h['error']:
+        l = [
+            "HamLog format error at Line {}. : {}".format(lcount,h['errormsg']),
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+        ]
+        return ("000000", False, l)
     else:
-        myref = {'SOTA': options['Summit']}
-        comment = ''
-
-    if options['QTH']=='rmks1':
-        hisqth = get_ref(h['rmks1'])
-        if actp:
-            comment = hisqth
+        if options['myQTH']=='rmks1':
+            myref = get_ref(h['rmks1'])
+            comment = h['rmks2']
+        elif options['myQTH']=='rmks2':
+            myref = get_ref(h['rmks2'])
+            comment = h['rmks1']
         else:
-            comment = get_ref(h['rmks2'])
-    elif options['QTH']=='rmks2':
-        hisqth = get_ref(h['rmks2'])
-        if actp:
-            comment = hisqth
+            myref = {'SOTA': options['Summit']}
+            comment = ''
+
+        if options['QTH']=='rmks1':
+            hisqth = get_ref(h['rmks1'])
+            if actp:
+                comment = hisqth
+            else:
+                comment = get_ref(h['rmks2'])
+        elif options['QTH']=='rmks2':
+            hisqth = get_ref(h['rmks2'])
+            if actp:
+                comment = hisqth
+            else:
+                comment = get_ref(h['rmks1'])
         else:
-            comment = get_ref(h['rmks1'])
-    else:
-        hisqth = {'SOTA':'', 'LOC': ' '}
-        comment = hisqth 
+            hisqth = {'SOTA':'', 'LOC': ' '}
+            comment = hisqth
 
-    date = '{day:02}/{month:02}/{year:02}'.format(
-        day=h['day'], month=h['month'], year=h['year'])
+        date = '{day:02}/{month:02}/{year:02}'.format(
+            day=h['day'], month=h['month'], year=h['year'])
 
-    date2 = '{year:02}{month:02}{day:02}'.format(
-        day=h['day'], month=h['month'], year=h['year'])
+        date2 = '{year:02}{month:02}{day:02}'.format(
+            day=h['day'], month=h['month'], year=h['year'])
 
-    if actp and myref['SOTA'] == '':
-        return (date2,False,[])
+        if actp and myref['SOTA'] == '':
+            return (date2, True, [])
     
-    l = [
-        "V2",
-        callsign,
-        myref['SOTA'],
-        date,
-        '{hour:02}:{minute:02}'.format(hour=h['hour'], minute=h['minute']),
-        h['band-sota'],
-        h['mode-sota'],
-        h['callsign'],
-        hisqth['SOTA'],
-        comment['LOC']
-    ]
-    
-    return (date2,hisqth['SOTA']!='',l)
+        l = [
+            "V2",
+            callsign,
+            myref['SOTA'],
+            date,
+            '{hour:02}:{minute:02}'.format(hour=h['hour'], minute=h['minute']),
+            h['band-sota'],
+            h['mode-sota'],
+            h['callsign'],
+            hisqth['SOTA'],
+            comment['LOC']
+        ]
+        return (date2,hisqth['SOTA']!='',l)
 
 def adif(key, value):
     adif_fields = [
@@ -428,7 +441,7 @@ def adif(key, value):
     f ='<COMMENT:' + str(len(value)) + '>' + value
     return f
         
-def toADIF(decoder, mode, row, options):
+def toADIF(decoder, lcount, mode, row, options):
     h = decodeHamlog(row)
 
     if options['myQTH']=='rmks1':
@@ -539,9 +552,9 @@ def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
         for row in reader:
             if linecount > 100000:
                 break
-            else:
-                (d2,ref,ladif) = toADIF(decoder, 'SOTA', row, options)
-                (fn, s2s, lcsv) = toSOTA(decoder, True, row, callsign, options)
+            elif row:
+                (d2,ref,ladif) = toADIF(decoder, linecount, 'SOTA', row, options)
+                (fn, s2s, lcsv) = toSOTA(decoder, linecount, True, row, callsign, options)
 
                 if ladif:
                     if linecount==0:
@@ -581,8 +594,7 @@ def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
                             writer_s2s.writerow(lcsv)
                         fname = fn
 
-                if ladif:
-                    linecount += 1
+            linecount += 1
 
         if fname_adi != '': 
             name = prefix + fname_adi + '.adi'
@@ -619,8 +631,8 @@ def sendSOTA_C(fp, decoder, callsign, options, inchar, outchar):
         for row in reader:
             if linecount > 100000:
                 break
-            else:
-                (fn,his_summit,l) = toSOTA(decoder, False, row, callsign, options)
+            elif row:
+                (fn,his_summit,l) = toSOTA(decoder, linecount, False, row, callsign, options)
                 if linecount == 0:
                     fname = fn
                     
@@ -629,8 +641,7 @@ def sendSOTA_C(fp, decoder, callsign, options, inchar, outchar):
                 else:
                     writer_nonsota.writerow(l)
                     nonsota_fl = True
-
-                linecount += 1
+            linecount += 1
 
         name = prefix + fname + '.csv'
         files.update({name : outstr.getvalue()})
