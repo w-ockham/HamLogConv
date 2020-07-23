@@ -61,6 +61,70 @@ freq_table = [
     (142.0,147.0,'デジタル小電力コミュニティ(142/146MHz)','','')
 ]
 
+JA_region_table = {
+    'JA/NI':'0',
+    'JA/NN':'0',
+    'JA/TK':'1',
+    'JA/KN':'1',
+    'JA/CB':'1',
+    'JA/ST':'1',
+    'JA/IB':'1',
+    'JA/TG':'1',
+    'JA/GM':'1',
+    'JA/YN':'1',
+    'JA/SO':'2',
+    'JA/GF':'2',
+    'JA/AC':'2',
+    'JA/ME':'2',
+    'JA/KT':'3',
+    'JA/SI':'3',
+    'JA/NR':'3',
+    'JA/OS':'3',
+    'JA/WK':'3',
+    'JA/HG':'3',
+    'JA/OY':'4',
+    'JA/SN':'4',
+    'JA/YG':'4',
+    'JA/TT':'4',
+    'JA/HS':'4',
+    'JA5/KA':'5',
+    'JA5/TS':'5',
+    'JA5/EH':'5',
+    'JA5/KC':'5',
+    'JA6/FO':'6',
+    'JA6/SG':'6',
+    'JA6/NS':'6',
+    'JA6/KM':'6',
+    'JA6/OT':'6',
+    'JA6/MZ':'6',
+    'JA6/KG':'6',
+    'JA6/ON':'6',
+    'JA/AM':'7',
+    'JA/IT':'7',
+    'JA/AT':'7',
+    'JA/YM':'7',
+    'JA/MG':'7',
+    'JA/FS':'7',
+    'JA8/SY':'8',
+    'JA8/RM':'8',
+    'JA8/KK':'8',
+    'JA8/OH':'8',
+    'JA8/SC':'8',
+    'JA8/IS':'8',
+    'JA8/NM':'8',
+    'JA8/SB':'8',
+    'JA8/TC':'8',
+    'JA8/KR':'8',
+    'JA8/HD':'8',
+    'JA8/IR':'8',
+    'JA8/HY':'8',
+    'JA8/OM':'8',
+    'JA/TY':'9',
+    'JA/FI':'9',
+    'JA/IK':'9'
+}
+    
+    
 def band_to_freq(band_str, is_sota = False):
     for (_, _, f_air, f_sota, b) in freq_table:
         b1 = b.upper()
@@ -83,7 +147,7 @@ def freq_to_band(freq_str):
         if freq >= lower and freq <= upper:
             return (band_air,band_sota,wlen)
         
-    return ('Out of the band','Out of the band','Out of the band')
+    return (freq_str, freq_str, freq_str)
 
 def mode_to_airhammode(mode,freq_str):
     try:
@@ -261,12 +325,12 @@ def decodeHamlog(cols):
             'mode-airham': mode_to_airhammode(cols[6],cols[5]), #AirHam
             'mode-sota': mode_to_SOTAmode(cols[6]), #SOTA
             'code': cols[7],   # None
-            'gl': cols[8],     # None
+            'gl': cols[8],     # SOTA
             'qsl': qsl_via,    # AirHam
             'qsl_sent':qsl_sent, #AirHam
             'qsl_rcvd':qsl_rcvd, #AirHam
             'name': cols[10],  # None
-            'qth': cols[11],   # None
+            'qth': cols[11],   # SOTA
             'rmks1': cols[12], # All
             'rmks2': cols[13]  # All
         }
@@ -328,7 +392,10 @@ def toAirHam(decoder, lcount, row, options):
     return l
 
 def get_ref(str):
-    r = { 'SOTA':'', 'WWFF':'' , 'LOC':' '}
+    r = {'SOTA':'', 'PORT':'', 'WWFF':'' ,
+         'LOC':'', 'LOC_org':'',
+         'SAT':'','SAT_oscar':'','SAT_org':'','SAT_down':'',
+         'ORG':'' }
     m = re.match(r'.*?(-?\d+(\.\d+)?[nsNS]?\s*,\s*\-?\d+(\.\d+)?[ewEW]?).*',
                  str)
     if m:
@@ -338,14 +405,35 @@ def get_ref(str):
     for ref in l:
         m = re.match(r'.*?([a-zA-Z0-9]+FF-\d+).*',ref)
         if m:
-            r['WWFF'] = m.group(1)
-        m = re.match(r'.*?([a-zA-Z0-9]+/[a-zA-Z0-9]+-\d+).*',ref)
+            r['WWFF'] = m.group(1).upper()
+            continue
+
+        m = re.match(r'.*?(([a-zA-Z0-9]+/[a-zA-Z0-9]+)-\d+).*',ref)
         if m:
-            r['SOTA'] = m.group(1)
+            r['SOTA'] = m.group(1).upper()
+            p = m.group(2).upper()
+            if p in JA_region_table:
+                r['PORT'] = JA_region_table[p]
+            else:
+                r['PORT'] = 'P'
+            continue
+
         m = re.match(r'.*?([a-zA-Z]{2}\d{2}[a-zA-Z]{2}).*',ref)
         if m:
             r['LOC'] = '%QRA%' + m.group(1) + '% '
-
+            r['LOC_org'] = m.group(1)
+            continue
+        
+        m = re.match(r'.*?(([a-zA-Z]+-\d+)/([a-zA-Z]+/(\w+))).*',ref)
+        if m:
+            r['SAT'] = '%SAT%' + m.group(2).upper() + '%,'+ m.group(3)
+            r['SAT_oscar'] = m.group(2).upper()
+            r['SAT_org'] = m.group(1)
+            r['SAT_down'] = m.group(4)
+            continue
+        
+        r['ORG'] += ref + ' '
+    r['ORG'] = r['ORG'].strip()
     return r
 
 def toSOTA(decoder, lcount, actp, row, callsign, options):
@@ -410,9 +498,80 @@ def toSOTA(decoder, lcount, actp, row, callsign, options):
             h['mode-sota'],
             h['callsign'],
             hisqth['SOTA'],
-            comment['LOC']
+            comment['LOC']+' '
         ]
         return (date2,hisqth['SOTA']!='',l)
+
+def toSOTA_Both(decoder, lcount, row, callsign, options):
+    h = decoder(row)
+    if h['error']:
+        l = [
+            "HamLog format error at Line {}. : {}".format(lcount,h['errormsg']),
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+        ]
+        return ("000000", False, l)
+    else:
+        if options['myQTH']=='rmks1':
+            myref = get_ref(h['rmks1'])
+        else:
+            myref = get_ref(h['rmks2'])
+
+        if myref['SOTA'] != '':
+            if options['Portable'] == 'fromsummit':
+                callsign = callsign.upper() + '/' + myref['PORT']
+            elif options['Portable'] == 'portable':
+                callsign = callsign.upper() + '/P'
+                
+        if options['QTH']=='qth':
+            hisqth = get_ref(h['qth'])
+        elif options['QTH']=='rmks1':
+            hisqth = get_ref(h['rmks1'])
+        else:
+            hisqth = get_ref(h['rmks2'])
+
+        if options['Note']=='rmks1':
+            comment = get_ref(h['rmks1'])
+        else:
+            comment = get_ref(h['rmks2'])
+
+        gl = get_ref(h['gl'])
+        
+        date = '{day:02}/{month:02}/{year:02}'.format(
+            day=h['day'], month=h['month'], year=h['year'])
+
+        date2 = '{year:02}{month:02}{day:02}'.format(
+            day=h['day'], month=h['month'], year=h['year'])
+
+        l = [
+            "V2",
+            callsign,
+            myref['SOTA'],
+            date,
+            '{hour:02}:{minute:02}'.format(hour=h['hour'], minute=h['minute']),
+            h['band-sota'],
+            h['mode-sota'],
+            h['callsign'],
+            hisqth['SOTA'],
+            gl['LOC'] + comment['SAT'] + ' '
+        ]
+
+        if myref['SOTA'] == '':
+            if hisqth['SOTA'] == '':
+                state = 0 #Other
+            else:
+                state = 1 #Chaser
+        else:
+            state = 2 #Activator
+            
+        return (date2, state, l)
 
 def adif(key, value):
     adif_fields = [
@@ -529,6 +688,82 @@ def sendAirHamLog(fp, fname, decoder, options, inchar, outchar):
         except Exception as e:
             print('Line:{} Error{}'.format(linecount, e))
                 
+def sendSOTA_Both(fp, decoder, callsign, options, inchar, outchar):
+    prefix = 'sotaActivation-'
+    prefix2 = 'sotaChaser-'
+    prefix3 = 'other-'
+    fname_act = ''
+    fname_chs = ''
+    files = {}
+    linecount = 0
+
+    outstr_act = io.StringIO()
+    writer_act = csv.writer(outstr_act,delimiter=',',
+                            quoting=csv.QUOTE_MINIMAL)
+
+    outstr_chs = io.StringIO()
+    writer_chs = csv.writer(outstr_chs,delimiter=',',
+                            quoting=csv.QUOTE_MINIMAL)
+
+    outstr_other = io.StringIO()
+    writer_other = csv.writer(outstr_other,delimiter=',',
+                            quoting=csv.QUOTE_MINIMAL)
+
+    with io.TextIOWrapper(fp, encoding=inchar, errors="backslashreplace") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            if linecount > 100000:
+                break
+            elif row:
+                (fn, state, lcsv) = toSOTA_Both(decoder, linecount, row, callsign, options)
+                if linecount==0:
+                    fname_act = fn
+                    fname_chs = fn
+                        
+                if fn == fname_act:
+                    if state == 0:
+                        writer_other.writerow(lcsv)
+                    elif state == 1:
+                        writer_chs.writerow(lcsv)
+                    else:
+                        writer_act.writerow(lcsv)
+                else:
+                    buff = outstr_act.getvalue()
+                    if len(buff) > 0:
+                        name = prefix + fname_act + '.csv'
+                        files.update({name : buff})
+                        
+                    outstr_act = io.StringIO()
+                    writer_act = csv.writer(outstr_act,delimiter=',',
+                                            quoting=csv.QUOTE_MINIMAL)
+                    if state == 0:
+                        writer_other.writerow(lcsv)
+                    elif state == 1:
+                        writer_chs.writerow(lcsv)
+                    else:
+                        writer_act.writerow(lcsv)
+
+                    fname_act = fn
+
+            linecount += 1
+
+        buff = outstr_act.getvalue()
+        if len(buff) > 0:
+            name = prefix + fname_act + '.csv'
+            files.update({name : buff})
+
+        buff = outstr_chs.getvalue()
+        if len(buff) > 0:
+            name = prefix2 + fname_chs + '.csv'
+            files.update({name : buff})
+
+        buff = outstr_other.getvalue()
+        if len(buff) > 0:
+            name = prefix3 + fname_chs + '.csv'
+            files.update({name : buff})
+
+    return(files)
+
 def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
     prefix = 'sota'
     prefix2 = 'sota-s2s-'

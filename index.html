@@ -46,6 +46,9 @@
 	<a class="nav-link active" id="AirHamLog-tab" data-toggle="tab" href="#AirHamLog" role="tab" aria-controls="AirHamLog" aria-selected="true">AirHamLog</a>
       </li>
       <li class="nav-item">
+	<a class="nav-link" id="SOTABoth-tab" data-toggle="tab" href="#SOTABoth" role="tab" aria-controls="SOTABoth" aria-selected="false">SOTA Activator/Chaser</a>
+      </li>
+      <li class="nav-item">
 	<a class="nav-link" id="SOTAActivator-tab" data-toggle="tab" href="#SOTAActivator" role="tab" aria-controls="SOTAActivator" aria-selected="false">SOTA Activator</a>
       </li>
       <li class="nav-item">
@@ -187,6 +190,124 @@
 	  </div>
 	</div>
       </div><!-- end of tab-pane -->
+
+      <div class="tab-pane fade" id="SOTABoth" role="tabpanel" aria-labelledby="SOTABoth-tab">	
+	<form id="SOTABoth" method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
+	  <div class="form-group">
+	    <label for="activation_call_both"><b> 運用時のコールサイン</b></label>
+	    <input type="text" id="activation_call_both" name="activation_call_both" class="form-control" placeholder="コールサイン" required>
+	  </div>
+	  <div class="form-group">
+	    <h6><b>コールサインに付与するポータブル表記</b></h6>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="portable" id="fromsummit" value="fromsummit">
+	      <label class="form-check-label" for="fromsummit">
+		運用したSOTA山岳IDから自動付与
+	      </label>
+	    </div>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="portable" id="portable" value="portable">
+	      <label class="form-check-label" for="portable">
+		/P
+	      </label>
+	    </div>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="portable" id="none" value="none" checked>
+	      <label class="form-check-label" for="myQTH2">
+		付与しない
+	      </label>
+	    </div>
+	  </div>
+	  <div class="form-group">
+	    <h6><b>運用したSOTA山岳ID</b></h6>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="myQTH" id="myQTH1" value="rmks1" onchange="btnChk1()">
+	      <label class="form-check-label" for="myQTH1">
+		Remarks1で指定する
+	      </label>
+	    </div>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="myQTH" id="myQTH2" value="rmks2" onchange="btnChk1()" checked>
+	      <label class="form-check-label" for="myQTH2">
+		Remarks2で指定する
+	      </label>
+	    </div>
+	  </div>
+	  <div class="form-group">
+	    <h6><b>相手局のSOTA山岳ID</b></h6>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="QTH" id="QTH0" value="qth" onchange="btnChk2()" checked>
+	      <label class="form-check-label" for="QTH0">
+		QTHで指定する
+	      </label>
+	    </div>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="QTH" id="QTH1" value="rmks1" onchange="btnChk2()" checked>
+	      <label class="form-check-label" for="QTH1">
+		Remarks1で指定する
+	      </label>
+	    </div>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="QTH" id="QTH2" onchange="btnChk2()" value="rmks2">
+	      <label class="form-check-label" for="QTH2">
+		Remarks2で指定する
+	      </label>
+	    </div>
+	  </div>
+	  <div class="form-group">
+	    <h6><b>衛星運用情報</b><span class="font-weight-light"><small>(入力例: AO-92/FM/144MHz)</small></span></h6>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="Note" id="Note1" value="rmks1" checked>
+	      <label class="form-check-label" for="Note1">
+		Remarks1で指定する
+	      </label>
+	    </div>
+	    <div class="form-check">
+	      <input class="form-check-input" type="radio" name="Note" id="Note2" value="rmks2">
+	      <label class="form-check-label" for="Note2">
+		Remarks2で指定する
+	      </label>
+	    </div>
+	  </div>
+	  
+	  <div class="form-group">
+	    <div class="custom-file">
+	      <input type="file" class="custom-file-input" id="filename" name="filename" required>
+	      <label class="custom-file-label" for="filename">HamLog CSVファイルを選択</label>
+	      <div class="invalid-feedback">ファイルを指定してください</div>
+	    </div>
+	  </div>
+	  <div class="form-group">
+	    <button type="submit" class="btn btn-primary">変換</button>
+	    <a href="https://www.sotadata.org.uk/" target="_blank" class="btn btn-outline-info" role="button">sotadata.org.uk</a>
+	  </div>
+      	</form>
+      </div><!-- end of tab-pane -->
+      <script>
+        function btnChk1() {
+	    var form = document.forms.SOTABoth;
+ 	    if( form.myQTH.value == "rmks1" && form.QTH.value == "rmks1") {
+		form.QTH.value = "rmks2";
+		form.QTH.QTH2.checked = true;
+	    }
+	    if( form.myQTH.value == "rmks2" && form.QTH.value == "rmks2") {
+		form.QTH.value = "rmks1";
+		form.QTH.QTH1.checked = true;
+	    }
+	}
+
+        function btnChk2() {
+	    var form = document.forms.SOTABoth;
+ 	    if( form.myQTH.value == "rmks1" && form.QTH.value == "rmks1") {
+		form.myQTH.value = "rmks2";
+		form.myQTH.myQTH2.checked = true;
+	    }
+	    if( form.myQTH.value == "rmks2" && form.QTH.value == "rmks2") {
+		form.myQTH.value = "rmks1";
+		form.myQTH.myQTH1.checked = true;
+	    }
+	}
+      </script>
 
       <div class="tab-pane fade" id="SOTAActivator" role="tabpanel" aria-labelledby="SOTAActivator-tab">	
 	<form id="SOTAActivator" method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' onsubmit="return formCheckSOTA()" style="padding:10px">
@@ -464,16 +585,27 @@ $('input[id=loadfle]').change(function(e){
 });
 
 loadCookie();
+$('#SOTABoth').submit(function() { saveCookie(); });
 $('#SOTAChaser').submit(function() { saveCookie(); });
 
 function saveCookie() {
-    var aform = document.forms.SOTAActivator;
-    var cform = document.forms.SOTAChaser
+
+    var act_call_b = $('#activation_call_both').val();
     var act_call = $('#activation_call').val();
     var chsr_call = $('#chaser_call').val();
+    var portable = $('#SOTABoth [name="portable"]').filter(':checked').val();
+    var myQTH_b = $('#SOTABoth [name="myQTH"]').filter(':checked').val();
+    var actQTH_b = $('#SOTABoth [name="QTH"]').filter(':checked').val();
+    var note_b = $('#SOTABoth [name="Note"]').filter(':checked').val();
     var myQTH = $('#SOTAActivator [name="myQTH"]').filter(':checked').val();
     var actQTH = $('#SOTAActivator [name="QTH"]').filter(':checked').val();
     var hisQTH = $('#SOTAChaser [name="QTH"]').filter(':checked').val();
+
+    $.cookie('act_call_b', act_call_b, {expires: 180});
+    $.cookie('portable', portable, {expires: 180});
+    $.cookie('myQTH_b', myQTH_b, {expires: 180});
+    $.cookie('actQTH_b', actQTH_b, {expires: 180});
+    $.cookie('note_b', note_b, {expires: 180});
     
     $.cookie('act_call', act_call, {expires: 180});
     $.cookie('chsr_call', chsr_call, {expires: 180});
@@ -483,6 +615,7 @@ function saveCookie() {
 }
 
 function loadCookie() {
+    $('#activation_call_both').val([$.cookie('act_call_b')]);
     $('#activation_call').val([$.cookie('act_call')]);
     $('#chaser_call').val([$.cookie('chsr_call')]);
 
@@ -504,6 +637,32 @@ function loadCookie() {
 	$('#SOTAChaser [name="QTH"]').val(["rmks1"]);
     else
 	$('#SOTAChaser [name="QTH"]').val([cQTH]);
+
+    var myQTH_b = $.cookie('myQTH_b');
+    var aQTH_b = $.cookie('actQTH_b');
+    var portable = $.cookie('portable');
+    var note_b = $.cookie('note_b');
+    
+    if ( myQTH_b == undefined )
+	$('#SOTABoth [name="myQTH"]').val(["rmks1"]);
+    else
+	$('#SOTABoth [name="myQTH"]').val([myQTH_b]);
+
+    if ( aQTH_b == undefined )
+	$('#SOTABoth [name="QTH"]').val(["rmks2"]);
+    else
+	$('#SOTABoth [name="QTH"]').val([aQTH_b]);
+
+    if ( portable == undefined )
+	$('#SOTABoth [name="portable"]').val(["none"]);
+    else
+	$('#SOTABoth [name="portable"]').val([portable]);
+
+    if ( note_b == undefined )
+	$('#SOTABoth [name="Note"]').val(["rmks2"]);
+    else
+	$('#SOTABoth [name="Note"]').val([note_b]);
+
 }
 
 function checkLog() {
@@ -540,12 +699,12 @@ function setSample(arg) {
 	    "date 2019-08-02\n" +
 	    "40m cw\n" +
 	    "2302 jg1bok\n" +
-	    "4 ja4rqo <Hay>{vy strong}\n" +
+	    "4 ja4rqo <Hay>{島根}\n" +
 	    "ssb\n" +
 	    "14 ja4rqo\n" + 
-            "40 jp1qec/1 5 3 <Abu> {new antenna.}jaff-0213 ja/st-018\n"+
+            "40 jp1qec/1 5 3 <Abu> {飯能市}jaff-0213 ja/st-018\n"+
             "70cm fm\n"+
-            "55 jg0awe/0 9 9 <Waka> {%SAT%AO-91% FM/144MHz} ja/nn-001\n"+
+            "55 jg0awe/0 9 9 <Waka> {松本市 PM86tg AO-91/FM/144MHz} ja/nn-001\n"+
             "day +\n"+
 	    "0001 17m cw\n"+
 	    "zl1byz 41 31\n"+

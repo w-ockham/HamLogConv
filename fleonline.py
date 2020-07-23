@@ -9,6 +9,7 @@ import json
 import re
 import sys
 from convutil import (
+    get_ref,
     writeZIP,
     writeTXT,
     freq_to_band,
@@ -32,6 +33,7 @@ keyword_table = {
     'nickname':1,
     'date':1,
     'day':1,
+    'rigset':1,
 }
 
 def keyword(key):
@@ -251,6 +253,7 @@ def compileFLE(input_text,conv_mode):
         'mywwff':'',
         'mysota':'',
         'nickname':'',
+        'rigset':0,
         'year':2000,
         'month':1,
         'day':1,
@@ -263,6 +266,7 @@ def compileFLE(input_text,conv_mode):
         'c_freq':'',
         'c_mode':'cw',
         'c_call':'',
+        'c_rigset':0,
         'c_his_wwff':'',
         'c_his_sota':'',
         'c_r_s':5,
@@ -382,6 +386,18 @@ def compileFLE(input_text,conv_mode):
                 if pos < ml:
                     (_, _, w) = tl[pos+1]
                     env['nickname'] = w
+                else:
+                    env['errno'].append((lc,pos,'Missing operand.'))
+                lc += 1
+                continue
+            if key == 'rigset':
+                if pos < ml:
+                    (id, _, w) = tl[pos+1]
+                    if id == 'dec':
+                        env['c_rigset'] = int(w)
+                        env['rigset'] = int(w)
+                    else:
+                        env['errno'].append((lc,pos+1,'Invalid Rig set#.'))
                 else:
                     env['errno'].append((lc,pos,'Missing operand.'))
                 lc += 1
@@ -589,7 +605,6 @@ def compileFLE(input_text,conv_mode):
                 elif rt == 'snr':
                     rsts = env['c_snr_s']
                     rstr = env['c_snr_r']
-
                 qso = {
                     'mycall': env['mycall'],
                     'year':env['c_year'],
@@ -601,6 +616,7 @@ def compileFLE(input_text,conv_mode):
                     'band':env['c_band'],
                     'freq':env['c_freq'],
                     'mode':env['c_mode'],
+                    'rigset':env['c_rigset'],
                     'rst_sent': rsts,
                     'rst_rcvd': rstr,
                     'mysota':env['mysota'],
@@ -634,9 +650,9 @@ def compileFLE(input_text,conv_mode):
                 hissota = env['c_his_sota']
                 mywwff = env['mywwff']
                 hiswwff = env['c_his_wwff']
-                qsormks = env['c_qso_rmks']
+                qsormks = get_ref(env['c_qso_rmks'])
                 operator = env['operator']
-                qso = [ str(qsoc), mycall, date, time, call, band, mode, rsts, rstr, mysota, hissota,mywwff, hiswwff , qsormks, operator]
+                qso = [ str(qsoc), mycall, date, time, call, band, mode, rsts, rstr, mysota, hissota,mywwff, hiswwff , qsormks['LOC']+qsormks['SAT'], operator]
             res.append(qso)
 
     if conv_mode:
@@ -666,7 +682,7 @@ def compileFLE(input_text,conv_mode):
             logname= aday + '@' + env['mysota'].replace('/','-')+env['mywwff']
             files = {
                 "fle-" + logname + ".txt" :input_text,
-                "hamlog-" + logname + ".csv" : sendHamlog_FLE(res,'hisref',env),
+                "hamlog-" + logname + ".csv" : sendHamlog_FLE(res,env),
                 "airham-" + logname + ".csv" : sendAirHam_FLE(res,env)
             }
             
@@ -734,7 +750,7 @@ def toSOTAFLE(h):
         day=h['day'], month=h['month'], year=h['year'])
 
     f =band_to_freq(h['band'],is_sota = True)
-
+    rmks = get_ref(h['qsormks'])
     l = [
         "V2",
         h['mycall'],
@@ -745,7 +761,7 @@ def toSOTAFLE(h):
         mode_to_SOTAmode(h['mode']),
         h['callsign'],
         h['hissota'],
-        h['qsormks']
+        rmks['LOC']+rmks['SAT']
     ]
     return (date2,h['mysota']!=''and h['hissota']!='',l)
 
@@ -859,7 +875,7 @@ def sendWWFF_FLE(files, loginput, callsign):
 
     return files
 
-def toHamlog_FLE(h,rmksfl,env):
+def toHamlog_FLE(h,env):
     date = '{year:02}/{month:02}/{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year']%100)
 
@@ -873,18 +889,29 @@ def toHamlog_FLE(h,rmksfl,env):
     if h['hiswwff'] != '':
         hisref = hisref + "," + h['hiswwff']
 
-    if rmksfl == 'hisref' :
-        rmks1 = hisref
-        rmks2 = h['qslmsg']
-    else:
-        rmks2 = hisref
-        rmks1 = h['qslmsg']
+    rmks = get_ref(h['qsormks'])
 
-    if h['qsormks'] != '':
-        qth = h['qsormks']
-    else:
-        qth = ''
+    qslmsg = h['qslmsg']
 
+    if rmks['SAT_oscar'] != '':
+        qslmsg = qslmsg.replace('$sat','via '+rmks['SAT_oscar'])
+        antsat='-SOTASAT'
+    else:
+        qslmsg = qslmsg.replace('$sat','')
+        antsat='-SOTA'
+    if rmks['SAT_down'] != '':
+        f = f + '/' + re.sub(r'MHz', '',rmks['SAT_down'])
+        
+    if '$rig' in qslmsg:
+        qslmsg = qslmsg.replace('$rig','')    
+        rig = 'Rig='+ h['band'] + antsat
+        if h['rigset'] > 0:
+            rig += str(h['rigset'])
+    else:
+        rig = ''
+
+    qthstr = rmks['ORG']+ ' '+ hisref
+    
     l = [
         h['callsign'],
         date,
@@ -894,18 +921,18 @@ def toHamlog_FLE(h,rmksfl,env):
         f,
         h['mode'],
         '',
-        '',
+        rmks['LOC_org'],
         '',
         h['qsomsg'],
-        qth,
-        rmks1,
-        rmks2,
+        qthstr.strip(),
+        '',
+        '%'+ qslmsg + '%' + rig,
         '0'
         ]
     
     return (l)
 
-def sendHamlog_FLE(loginput, rmksfl, env):
+def sendHamlog_FLE(loginput, env):
     raw = io.BytesIO()
     outstr =io.TextIOWrapper(io.BufferedWriter(raw),
                              encoding='cp932',errors="backslashreplace")
@@ -916,7 +943,7 @@ def sendHamlog_FLE(loginput, rmksfl, env):
         if linecount > 100000:
             break
         else:
-            l = toHamlog_FLE(row, rmksfl, env)
+            l = toHamlog_FLE(row, env)
             writer.writerow(l)
             linecount += 1
 

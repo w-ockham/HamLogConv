@@ -4,6 +4,7 @@ import cgi
 import cgitb
 import datetime
 from convutil import (
+    sendSOTA_Both,
     sendSOTA_A,
     sendSOTA_C,
     sendWWFF,
@@ -27,14 +28,17 @@ def main():
 
     form = cgi.FieldStorage()
 
+    activation_call_both = form.getvalue('activation_call_both',None)
     activation_call = form.getvalue('activation_call',None)
     chaser_call = form.getvalue('chaser_call',None)
     wwffoperator = form.getvalue('wwffoperator',None)
     gpx_trk_interval = form.getvalue('gpx_trk_interval',None)
     
     options = {
+        'Portable': form.getvalue('portable',''),
         'QTH': form.getvalue('QTH',''),
         'myQTH': form.getvalue('myQTH',''),
+        'Note': form.getvalue('Note',''),
         'Summit': form.getvalue('summit',''),
         'Location': form.getvalue('location',''),
         'WWFFOperator': form.getvalue('wwffoperator',''),
@@ -44,15 +48,18 @@ def main():
     }
 
     if debug:
-        #fp = open('sample.csv','rb')
-        #wwffoperator = 'JL1NIE'
-        #options['QTH']='rmks1'
+        fp = open('sample.csv','rb')
+        activation_call_both = 'JL1NIE'
+        options['QTH']='rmks1'
+        options['myQTH']='rmks2'
+        options['Portable']='portable'
+        options['Note']='rmks1'
         #options['WWFFOperator']= wwffoperator
         #options['WWFFActivator']=wwffoperator+'/1'
         #options['WWFFRef']= 'JAFF-0123'
         #wwffoperator=''
-        fp = open('tmp/test.gpx','rb')
-        gpx_trk_interval = '60'
+        #fp = open('tmp/test.gpx','rb')
+        #gpx_trk_interval = '60'
     else:
         try:
             fileitem = form['filename']
@@ -67,7 +74,15 @@ def main():
 
     inchar = 'cp932'
 
-    if activation_call:
+    if activation_call_both:
+        outchar = "utf-8"
+        callsign = activation_call_both
+        fname = "sota-" + fname + ".zip"
+        files = sendSOTA_Both(fp, decodeHamlog, callsign, options,
+                              inchar, outchar)
+        writeZIP(files,fname)
+                
+    elif activation_call:
         outchar = "utf-8"
         callsign = activation_call
         fname = "sota-" + fname + ".zip"
@@ -87,11 +102,13 @@ def main():
         outchar = "utf-8"
         files = sendWWFF(fp, decodeHamlog, options, inchar, outchar)
         writeTXT(files)
+
     elif gpx_trk_interval:
         inchar = "utf-8"
         outchar = "utf-8"
         fname = "sotagpx-" + fname + ".gpx"
         res = sendGPX(fp, fname, gpx_trk_interval, inchar, outchar)
+
     else:
         outchar = "utf-8"
         fname = "airhamlog-" + fname + ".csv"
