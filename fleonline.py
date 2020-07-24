@@ -329,6 +329,8 @@ def compileFLE(input_text,conv_mode):
                     env['c_year'] = d.year
                     env['c_day'] = d.day
                     env['c_month'] = d.month
+                    env['c_hour'] = 0
+                    env['c_min'] = 0
                 else:
                     env['errno'].append((lc,pos+1,'Missing operand +/++.'))
                 lc += 1
@@ -433,6 +435,8 @@ def compileFLE(input_text,conv_mode):
                         env['errno'].append((lc,pos+1,'Date out of range.'))
                         lc += 1
                         continue
+                    env['c_hour'] = 0
+                    env['c_min'] = 0
                 else:
                     env['errno'].append((lc,pos,'Missing operand.'))
                 lc += 1
@@ -895,10 +899,10 @@ def toHamlog_FLE(h,env):
 
     if rmks['SAT_oscar'] != '':
         qslmsg = qslmsg.replace('$sat','via '+rmks['SAT_oscar'])
-        antsat='-SOTASAT'
+        antsat='STS'
     else:
         qslmsg = qslmsg.replace('$sat','')
-        antsat='-SOTA'
+        antsat='ST'
     if rmks['SAT_down'] != '':
         f = f + '/' + re.sub(r'MHz', '',rmks['SAT_down'])
         
@@ -906,7 +910,7 @@ def toHamlog_FLE(h,env):
         qslmsg = qslmsg.replace('$rig','')    
         rig = 'Rig='+ h['band'] + antsat
         if h['rigset'] > 0:
-            rig += str(h['rigset'])
+            rig = rig + str(h['rigset'])
     else:
         rig = ''
 
