@@ -143,7 +143,7 @@ def get_token(pos,line):
     res = ''
     while pos < len(line):
         c = line[pos]
-        if c == ' ':
+        if c == ' ' or c == '　':
             if res != '':
                 return (pos+1,res)
             else:
@@ -239,8 +239,13 @@ def tokenizer(line):
         if m:
             res.append(('call',w.upper(),word))
             continue
+        m = re.match('.*[/\-]+.*',w)
+        if m:
+            res.append(('unknown',w,word))
+            continue
         else:
-            res.append(('unknown',w.upper(),word))
+            res.append(('literal',w.upper(),word))
+            continue
     return(res)
 
 def compileFLE(input_text,conv_mode):
@@ -517,16 +522,20 @@ def compileFLE(input_text,conv_mode):
                         qsoc+=1
                         state = RSTS
                         continue
-                    if t == 'unknown':
+                    if t == 'literal':
                         env['c_qso_msg'] = p2
                         pos+=1
                         if pos < length:
                             (t, p1, p2) = tl[pos]
-                            if t == 'unknown':
+                            if t == 'literal':
                                 env['c_qso_rmks'] = p2
                                 pos+=1
                         state = NORM
                         continue
+                    env['errno'].append((lc,pos,'Unknown literal: '+p2))
+                    pos+=1
+                    state = NORM
+                    continue
                 elif state == FREQ:
                     if t == 'freq':
                         env['c_freq'] = p2
@@ -632,6 +641,12 @@ def compileFLE(input_text,conv_mode):
                     'qsormks':env['c_qso_rmks'],
                     'qslmsg':env['qslmsg']
                 }
+                (_, _, qth, qsl) = compose_qsl_msg(qso, env);
+                if len(qth)> 28:
+                    env['errno'].append((lc-2,pos,'QTH too long: ' + qth))
+                if len(qsl)> 54:
+                    env['errno'].append((lc-1,pos,'Remarks2 too long: ' + qsl))
+                
             else: #Online
                 mycall = env['mycall']
                 call = env['c_call']
@@ -649,6 +664,35 @@ def compileFLE(input_text,conv_mode):
                 elif rt == 'snr':
                     rsts = env['c_snr_s']
                     rstr = env['c_snr_r']
+
+                qsotmp = {
+                    'mycall': env['mycall'],
+                    'year':env['c_year'],
+                    'month':env['c_month'],
+                    'day':env['c_day'],
+                    'hour':env['c_hour'],
+                    'min':env['c_min'],
+                    'callsign':env['c_call'],
+                    'band':env['c_band'],
+                    'freq':env['c_freq'],
+                    'mode':env['c_mode'],
+                    'rigset':env['c_rigset'],
+                    'rst_sent': rsts,
+                    'rst_rcvd': rstr,
+                    'mysota':env['mysota'],
+                    'hissota':env['c_his_sota'],
+                    'mywwff':env['mywwff'],
+                    'hiswwff':env['c_his_wwff'],
+                    'operator':env['operator'],
+                    'qsomsg':env['c_qso_msg'],
+                    'qsormks':env['c_qso_rmks'],
+                    'qslmsg':env['qslmsg']
+                }
+                (_, _, qth, qsl) = compose_qsl_msg(qsotmp, env);
+                if len(qth)> 28:
+                    env['errno'].append((lc-2,pos,'QTH too long: ' + qth))
+                if len(qsl)> 54:
+                    env['errno'].append((lc-1,pos,'Remarks2 too long: ' + qsl))
                     
                 mysota = env['mysota']
                 hissota = env['c_his_sota']
@@ -656,6 +700,7 @@ def compileFLE(input_text,conv_mode):
                 hiswwff = env['c_his_wwff']
                 qsormks = get_ref(env['c_qso_rmks'])
                 operator = env['operator']
+                
                 qso = [ str(qsoc), mycall, date, time, call, band, mode, rsts, rstr, mysota, hissota,mywwff, hiswwff , qsormks['LOC']+qsormks['SAT'], operator]
             res.append(qso)
 
@@ -879,9 +924,7 @@ def sendWWFF_FLE(files, loginput, callsign):
 
     return files
 
-def toHamlog_FLE(h,env):
-    date = '{year:02}/{month:02}/{day:02}'.format(
-        day=h['day'], month=h['month'], year=h['year']%100)
+def compose_qsl_msg(h,env):
 
     if h['freq'] != '':
         f = re.sub(r'MHz','',h['freq'])
@@ -915,7 +958,19 @@ def toHamlog_FLE(h,env):
         rig = ''
 
     qthstr = rmks['ORG']+ ' '+ hisref
-    
+
+    qthstr = qthstr.strip()
+    qslmsg = '%'+ qslmsg + '%' + rig
+        
+    return (rmks, f, qthstr, qslmsg)
+            
+def toHamlog_FLE(h,env):
+    date = '{year:02}/{month:02}/{day:02}'.format(
+        day=h['day'], month=h['month'], year=h['year']%100)
+
+
+    (rmks ,f , qthstr, qslmsg) = compose_qsl_msg(h, env)
+        
     l = [
         h['callsign'],
         date,
@@ -928,9 +983,9 @@ def toHamlog_FLE(h,env):
         rmks['LOC_org'],
         '',
         h['qsomsg'],
-        qthstr.strip(),
+        qthstr,
         '',
-        '%'+ qslmsg + '%' + rig,
+        qslmsg,
         '0'
         ]
     
