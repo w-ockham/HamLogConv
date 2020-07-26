@@ -34,11 +34,11 @@
       gtag('config', 'UA-139463065-3');
     </script>
 
-    <title>File Conversion Tools.</title>
+    <title>ファイル変換ツールfor SOTA</title>
   </head>
   <body>
     <div class="header clearfix">
-      <div class="text-muted"><h4> File Conversion Tools.</h4>
+      <div class="text-muted"><h4>ファイル変換ツールfor SOTA</h4>
       </div>
     </div>
     <ul class="nav nav-tabs nav-pills" role="tablist">
@@ -46,22 +46,22 @@
 	<a class="nav-link active" id="AirHamLog-tab" data-toggle="tab" href="#AirHamLog" role="tab" aria-controls="AirHamLog" aria-selected="true">AirHamLog</a>
       </li>
       <li class="nav-item">
-	<a class="nav-link" id="SOTABoth-tab" data-toggle="tab" href="#SOTABoth" role="tab" aria-controls="SOTABoth" aria-selected="false">SOTA Activator/Chaser</a>
-      </li>
-      <li class="nav-item">
-	<a class="nav-link" id="SOTAActivator-tab" data-toggle="tab" href="#SOTAActivator" role="tab" aria-controls="SOTAActivator" aria-selected="false">SOTA Activator</a>
-      </li>
-      <li class="nav-item">
-	<a class="nav-link" id="SOTAChaser-tab" data-toggle="tab" href="#SOTAChaser" role="tab" aria-controls="SOTAChaser" aria-selected="false">SOTA Chaser</a>
-      </li>
-      <li class="nav-item">
-	<a class="nav-link" id="JAFFActivator-tab" data-toggle="tab" href="#JAFFActivator" role="tab" aria-controls="JAFFActivator" aria-selected="false">JAFF Activator</a>
+	<a class="nav-link" id="SOTABoth-tab" data-toggle="tab" href="#SOTABoth" role="tab" aria-controls="SOTABoth" aria-selected="false">SOTA CSV（統合版)</a>
       </li>
       <li class="nav-item">
 	<a class="nav-link" id="FLEOnline-tab" data-toggle="tab" href="#FLEOnline" role="tab" aria-controls="FLEOnline" aria-selected="false">FLE Online</a>
       </li>
       <li class="nav-item">
-	<a class="nav-link" id="GPXTrim-tab" data-toggle="tab" href="#GPXTrim" role="tab" aria-controls="GPXTrim" aria-selected="false">GPX for SOTAmap(beta)</a>
+	<a class="nav-link" id="SOTAActivator-tab" data-toggle="tab" href="#SOTAActivator" role="tab" aria-controls="SOTAActivator" aria-selected="false">SOTA Activator CSV</a>
+      </li>
+      <li class="nav-item">
+	<a class="nav-link" id="SOTAChaser-tab" data-toggle="tab" href="#SOTAChaser" role="tab" aria-controls="SOTAChaser" aria-selected="false">SOTA Chaser CSV</a>
+      </li>
+      <li class="nav-item">
+	<a class="nav-link" id="JAFFActivator-tab" data-toggle="tab" href="#JAFFActivator" role="tab" aria-controls="JAFFActivator" aria-selected="false">JAFF ADIF</a>
+      </li>
+      <li class="nav-item">
+	<a class="nav-link" id="GPXTrim-tab" data-toggle="tab" href="#GPXTrim" role="tab" aria-controls="GPXTrim" aria-selected="false">GPX for SMP</a>
       </li>
     </ul>
 
@@ -213,7 +213,7 @@
 	    </div>
 	    <div class="form-check">
 	      <input class="form-check-input" type="radio" name="portable" id="none" value="none" checked>
-	      <label class="form-check-label" for="myQTH2">
+	      <label class="form-check-label" for="none">
 		付与しない
 	      </label>
 	    </div>
@@ -236,23 +236,23 @@
 	  <div class="form-group">
 	    <h6><b>相手局のSOTA山岳ID</b></h6>
 	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="QTH" id="QTH0" value="qth" onchange="btnChk2()" checked>
-	      <label class="form-check-label" for="QTH0">
-		QTHで指定する
-	      </label>
-	    </div>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="QTH" id="QTH1" value="rmks1" onchange="btnChk2()" checked>
+	      <input class="form-check-input" type="radio" name="hisQTH" id="QTH1" value="rmks1" onchange="btnChk2()" checked>
 	      <label class="form-check-label" for="QTH1">
 		Remarks1で指定する
 	      </label>
 	    </div>
 	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="QTH" id="QTH2" onchange="btnChk2()" value="rmks2">
+	      <input class="form-check-input" type="radio" name="hisQTH" id="QTH2" value="rmks2" onchange="btnChk2()">
 	      <label class="form-check-label" for="QTH2">
 		Remarks2で指定する
 	      </label>
 	    </div>
+	    <div class="form-check">
+	      <input class="form-check-input" type="checkbox" name="hisQTHopt" id="hisQTHopt" value="yes"">
+	      <label class="form-check-label" for="hisQTHopt">
+		QTHも参照する<small>(重複時はRemarksの山岳IDを優先)</small>
+	      </label>
+	    </div>	    
 	  </div>
 	  <div class="form-group">
 	    <h6><b>衛星運用情報</b><span class="font-weight-light"><small>(入力例: AO-92/FM/144MHz)</small></span></h6>
@@ -269,7 +269,6 @@
 	      </label>
 	    </div>
 	  </div>
-	  
 	  <div class="form-group">
 	    <div class="custom-file">
 	      <input type="file" class="custom-file-input" id="filename" name="filename" required>
@@ -286,23 +285,23 @@
       <script>
         function btnChk1() {
 	    var form = document.forms.SOTABoth;
- 	    if( form.myQTH.value == "rmks1" && form.QTH.value == "rmks1") {
-		form.QTH.value = "rmks2";
-		form.QTH.QTH2.checked = true;
+ 	    if( form.myQTH.value == "rmks1" && form.hisQTH.value == "rmks1") {
+		form.hisQTH.value = "rmks2";
+		form.hisQTH.QTH2.checked = true;
 	    }
-	    if( form.myQTH.value == "rmks2" && form.QTH.value == "rmks2") {
-		form.QTH.value = "rmks1";
-		form.QTH.QTH1.checked = true;
+	    if( form.myQTH.value == "rmks2" && form.hisQTH.value == "rmks2") {
+		form.hisQTH.value = "rmks1";
+		form.hisQTH.QTH1.checked = true;
 	    }
 	}
 
         function btnChk2() {
 	    var form = document.forms.SOTABoth;
- 	    if( form.myQTH.value == "rmks1" && form.QTH.value == "rmks1") {
+ 	    if( form.myQTH.value == "rmks1" && form.hisQTH.value == "rmks1") {
 		form.myQTH.value = "rmks2";
 		form.myQTH.myQTH2.checked = true;
 	    }
-	    if( form.myQTH.value == "rmks2" && form.QTH.value == "rmks2") {
+	    if( form.myQTH.value == "rmks2" && form.hisQTH.value == "rmks2") {
 		form.myQTH.value = "rmks1";
 		form.myQTH.myQTH1.checked = true;
 	    }
@@ -595,7 +594,7 @@ function saveCookie() {
     var chsr_call = $('#chaser_call').val();
     var portable = $('#SOTABoth [name="portable"]').filter(':checked').val();
     var myQTH_b = $('#SOTABoth [name="myQTH"]').filter(':checked').val();
-    var actQTH_b = $('#SOTABoth [name="QTH"]').filter(':checked').val();
+    var actQTH_b = $('#SOTABoth [name="hisQTH"]').filter(':checked').val();
     var note_b = $('#SOTABoth [name="Note"]').filter(':checked').val();
     var myQTH = $('#SOTAActivator [name="myQTH"]').filter(':checked').val();
     var actQTH = $('#SOTAActivator [name="QTH"]').filter(':checked').val();
@@ -629,9 +628,9 @@ function loadCookie() {
 	$('#SOTAActivator [name="myQTH"]').val([myQTH]);
 
     if ( aQTH == undefined )
-	$('#SOTAActivator [name="QTH"]').val(["none"]);
+	$('#SOTAActivator [name="hisQTH"]').val(["none"]);
     else
-	$('#SOTAActivator [name="QTH"]').val([aQTH]);
+	$('#SOTAActivator [name="hisQTH"]').val([aQTH]);
 
     if ( cQTH == undefined )
 	$('#SOTAChaser [name="QTH"]').val(["rmks1"]);
@@ -649,9 +648,9 @@ function loadCookie() {
 	$('#SOTABoth [name="myQTH"]').val([myQTH_b]);
 
     if ( aQTH_b == undefined )
-	$('#SOTABoth [name="QTH"]').val(["rmks2"]);
+	$('#SOTABoth [name="hisQTH"]').val(["rmks2"]);
     else
-	$('#SOTABoth [name="QTH"]').val([aQTH_b]);
+	$('#SOTABoth [name="hisQTH"]').val([aQTH_b]);
 
     if ( portable == undefined )
 	$('#SOTABoth [name="portable"]').val(["none"]);
@@ -694,24 +693,28 @@ function setSample(arg) {
 	    "operator jl1nie\n" +
 	    "mywwff jaff-0056\n" +
 	    "mysota ja/nn-031\n" +
-	    "qslmsg Tateshinasan $mysota ($mywwff),JCC0914 Rig:KX2 Ant:EFHW 5mH\n"+
-	    "# Log\n" +
+	    "qslmsg $sat蓼科山$mysota,$mywwff JCC0914 $rig\n"+
+	    "#Log\n" +
 	    "date 2019-08-02\n" +
 	    "40m cw\n" +
-	    "2302 jg1bok\n" +
-	    "4 ja4rqo <Hay>{島根}\n" +
+	    "2302 ja1aaa \n" +
+	    "4 ja4bbb 6 7 {島根市}\n" +
+	    "4 ja8bbb 4 {札幌市}\n" +
 	    "ssb\n" +
-	    "14 ja4rqo\n" + 
-            "40 jp1qec/1 5 3 <Abu> {飯能市}jaff-0213 ja/st-018\n"+
+	    "14 ja4bbb\n" + 
+            "40 jp1qqq/1 5 3 <ソタ> {飯能市}jaff-0213 ja/st-018\n"+
             "70cm fm\n"+
-            "55 jg0awe/0 9 9 <Waka> {松本市 PM86tg AO-91/FM/144MHz} ja/nn-001\n"+
+            "55 jg0zzz/0 9 9 ja/nn-001 {松本市AO-91/FM/144MHz} \n"+
+            "58 jk2zzz 9 9 {PM85rl AO-91/FM/144MHz} \n"+
             "day +\n"+
-	    "0001 17m cw\n"+
-	    "zl1byz 41 31\n"+
+	    "17m cw\n"+
+            "rigset 1\n"+
+	    "04 zl1zzz 41 31\n"+
 	    "20m ft4\n"+
-	    "12 zl1tm -18 -19\n"+
+	    "45 zl1aaa -18 -19\n"+
+            "rigset 0\n"+
 	    "50.550 am\n"+
-	    "30 jj1swi/1 3 4\n";
+	    "0130 jj1zzz/1 3 4\n";
     }
 }
 

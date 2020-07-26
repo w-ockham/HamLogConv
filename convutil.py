@@ -519,23 +519,31 @@ def toSOTA_Both(decoder, lcount, row, callsign, options):
         ]
         return ("000000", False, l)
     else:
+        date = '{day:02}/{month:02}/{year:02}'.format(
+            day=h['day'], month=h['month'], year=h['year'])
+
+        date2 = '{year:02}{month:02}{day:02}'.format(
+            day=h['day'], month=h['month'], year=h['year'])
+
         if options['myQTH']=='rmks1':
             myref = get_ref(h['rmks1'])
         else:
             myref = get_ref(h['rmks2'])
 
         if myref['SOTA'] != '':
+            date2 = date2 + '-' + re.sub('.+/', '', myref['SOTA'])
             if options['Portable'] == 'fromsummit':
                 callsign = callsign.upper() + '/' + myref['PORT']
             elif options['Portable'] == 'portable':
                 callsign = callsign.upper() + '/P'
                 
-        if options['QTH']=='qth':
-            hisqth = get_ref(h['qth'])
-        elif options['QTH']=='rmks1':
+        if options['hisQTH']=='rmks1':
             hisqth = get_ref(h['rmks1'])
         else:
             hisqth = get_ref(h['rmks2'])
+
+        if hisqth['SOTA'] == '' and options['hisQTHopt']:
+            hisqth = get_ref(h['qth'])
 
         if options['Note']=='rmks1':
             comment = get_ref(h['rmks1'])
@@ -544,12 +552,7 @@ def toSOTA_Both(decoder, lcount, row, callsign, options):
 
         gl = get_ref(h['gl'])
         
-        date = '{day:02}/{month:02}/{year:02}'.format(
-            day=h['day'], month=h['month'], year=h['year'])
-
-        date2 = '{year:02}{month:02}{day:02}'.format(
-            day=h['day'], month=h['month'], year=h['year'])
-
+    
         l = [
             "V2",
             callsign,

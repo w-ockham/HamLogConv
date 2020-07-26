@@ -37,6 +37,8 @@ def main():
     options = {
         'Portable': form.getvalue('portable',''),
         'QTH': form.getvalue('QTH',''),
+        'hisQTH': form.getvalue('hisQTH',''),
+        'hisQTHopt': form.getfirst('hisQTHopt',''),
         'myQTH': form.getvalue('myQTH',''),
         'Note': form.getvalue('Note',''),
         'Summit': form.getvalue('summit',''),
