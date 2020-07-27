@@ -3,8 +3,16 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link href="/font/css/open-iconic-bootstrap.css" rel="stylesheet">
+<!------------------------------------------------------------------>
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+<!-- Google Fonts -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+<!-- Bootstrap core CSS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
+<!-- Material Design Bootstrap -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/css/mdb.min.css" rel="stylesheet">
+<!------------------------------------------------------------------>
     <style>
       .loglist-exetend {
       position: relative;
@@ -38,7 +46,7 @@
   </head>
   <body>
     <div class="header clearfix">
-      <div class="text-muted"><h4>ファイル変換ツールfor SOTA</h4>
+      <div class="text-muted"><h5>ファイル変換ツールfor SOTA</h5>
       </div>
     </div>
     <ul class="nav nav-tabs nav-pills" role="tablist">
@@ -198,7 +206,7 @@
 	    <input type="text" id="activation_call_both" name="activation_call_both" class="form-control" placeholder="コールサイン" required>
 	  </div>
 	  <div class="form-group">
-	    <h6><b>コールサインに付与するポータブル表記</b></h6>
+	    <h6><b>コールサインに付与するポータブル表記</b><small>(アクティベーション時のみ)</small></h6>
 	    <div class="form-check">
 	      <input class="form-check-input" type="radio" name="portable" id="fromsummit" value="fromsummit">
 	      <label class="form-check-label" for="fromsummit">
@@ -467,11 +475,59 @@
 	  </div>
 	</form>
       </div><!-- end of tab-pane -->
-
       <div class="tab-pane fade" id="FLEOnline" role="tabpanel" aria-labelledby="FLEOnline-tab">
 	<div class="container">
 	  <form name="FLEEdit" method="post" onsubmit="return checkLog()" action='/cgi-bin/fleonline.py'>
-	    <div class="form-group" style="margin-bottom:-3px;">
+	    <div class="form-group">
+	      <ul class="nav nav-tabs nav-pills" role="tablist">
+		<li class="nav-item">
+		  <a class="nav-link active p-1" id="SOTAJAFF-tab" data-toggle="tab" href="#SOTAJAFF" role="tab" aria-controls="SOTAJAFF" aria-selected="true"><small>SOTA/JAFF</small></a>
+		</li>
+		<li class="nav-item">
+		  <a class="nav-link p-1" id="HAMLOG-tab" data-toggle="tab" href="#HAMLOG" role="tab" aria-controls="HAMLOG" aria-selected="false"><small>HAMLOG</small></a>
+		</li>
+	      </ul>
+	      <div class="tab-content">
+		<div class="tab-pane show active" id="SOTAJAFF" role="tabpanel" aria-labelledby="SOTAJAFF-tab">
+		  <div id="loglist" class="container loglist-exetend">	
+		    <div class="table-responsive">
+		      <table class="table table-striped table-condensed text-nowrap" style="font-size:8pt;">
+			<thead id="loglisthead" class="thead-light">
+			  <tr><th>No.</th><th>My Call</th>
+			    <th>Date</th><th>Time</th>
+			    <th>Call</th><th>Band</th>
+			    <th>Mode</th><th>RSTs</th><th>RSTr</th>
+			    <th>My SOTA</th><th>His SOTA</th>
+			    <th>My WWFF</th><th>His WWFF</th>
+			    <th>Comment</th>
+			    <th>Operator</th>
+			  </tr>
+			</thead>
+    			<tbody id="loglisttable">
+		      </table>
+		    </div>
+		  </div>
+		</div>
+		<div class="tab-pane" id="HAMLOG" role="tabpanel" aria-labelledby="HAMLOG-tab">	
+		  <div id="hamloglist" class="container loglist-exetend">
+		    <div class="table-responsive">
+		      <table class="table table-striped table-condensed text-nowrap" style="font-size:8pt;">
+			<thead id="hamloglisthead" class="thead-light">
+			  <tr>
+			    <th>No.</th><th>Call</th><th>Date</th><th>Time</th>
+			    <th>His</th><th>My</th><th>Freq</th>
+			    <th>Mode</th><th>GL</th><th>Name</th>
+			    <th>QTH</th><th>Remarks2</th>
+			  </tr>
+			</thead>
+			<tbody id="hamloglisttable">
+		      </table>
+		    </div>
+		  </div>
+		</div>  
+	      </div>
+	    </div>
+    	    <div class="form-group d-flex" style="justify-content:flex-end;margin-bottom:-1px;">
 	      <div class="form-check form-check-inline" style="font-size:8pt">
 		<input class="form-check-input" disabled="disabled" type="checkbox" id="checkSOTA">
 		<label class="form-check-label" for="checkSOTA"><strong>SOTA</strong></label>
@@ -480,32 +536,11 @@
 		<input class="form-check-input" disabled="disabled" type="checkbox" id="checkWWFF">
 		<label class="form-check-label" for="checWWFF"><strong>WWFF</strong></label>
 	      </div>
-	    </div>
-	    <div class="form-group">
-	      <div id="loglist" class="container loglist-exetend">
-		<div class="table-responsive">
-		  <table class="table table-striped table-condensed text-nowrap" style="font-size:8pt;">
-		    <thead id="loglisthead" class="thead-light">
-		      <tr><th>No.</th><th>My Call</th>
-			<th>Date</th><th>Time</th>
-			<th>Call</th><th>Band</th>
-			<th>Mode</th><th>RSTs</th><th>RSTr</th>
-			<th>My SOTA</th><th>His SOTA</th>
-			<th>My WWFF</th><th>His WWFF</th>
-			<th>Comment</th>
-			<th>Operator</th>
-		      </tr>
-		    </thead>
-    		    <tbody id="loglisttable">
-		    </tbody>
-		  </table>
-		</div>
+	      <div class="button-group">
+		<a role="button" class="btn-sm btn-outline-info p-1 bg-light" style="font-size 4px" href="https://jl1nie.wordpress.com/2019/08/21/2019-08-21-203013/" target="_blank">Help</a>
+		<button type="button" class="btn-sm btn-info p-1 bg-light" style="font-size 4px" onClick="setSample()">FLE Sample</button>
+		<button type="button" class="btn-sm btn-info p-1 bg-light" style="font-size 4px" onClick="setSample('clear')">Clear</button>
 	      </div>
-	    </div>
-	    <div class="button-group d-flex" style="justify-content:flex-end">
-	      <a role="button" class="btn-sm oi oi-info p-1 bg-light" style="font-size 4px" href="https://jl1nie.wordpress.com/2019/08/21/2019-08-21-203013/" target="_blank"></a>
-	      <button type="button" class="btn-sm btn-outline-info p-0 bg-light" style="font-size 4px" onClick="setSample()">Sample</button>
-	      <button type="button" class="btn-sm btn-outline-info p-0 bg-light" style="font-size 4px" onClick="setSample('clear')">Clear</button>
 	    </div>
 	    <div class="form-group">
 	      <textarea class="form-control text-monospace" name="edittext" id="edittext" style="resize:none;font-size: 9pt;line-height: 10pt;margin-top:2pt;height:40vh"></textarea>
@@ -514,9 +549,9 @@
 	      <div class="button-group d-flex" style="justify-content:space-around">
 		<input id="loadfle" type="file" style="display:none">
 		<button type="button" class="btn-sm btn-primary" 
-			  onClick="$('input[id=loadfle]').click()">Load FLE log</button>
-		<button type="button" id="update" class="btn-info btn-sm" onClick="clickUpdate()">Interpret</button>
-		<button type="submit" id="generate" class="btn-primary btn-sm">Generate Logs</button>
+			  onClick="$('input[id=loadfle]').click()">FLEログ読込</button>
+		<button type="button" id="update" class="btn-info btn-sm" onClick="clickUpdate()">変換</button>
+		<button type="submit" id="generate" class="btn-primary btn-sm">CSVファイル生成</button>
 	      </div>
 	    </div>
 	  </form>
@@ -547,12 +582,20 @@
       </div><!-- end of tab-pane -->
 
     </div>
-    <!-- Option Javascript -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-    
+
+<!-- Optional JavaScript -->
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
+<!---------------------------------------------------------------------->
+<!-- JQuery -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<!-- Bootstrap tooltips -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
+<!-- Bootstrap core JavaScript -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.min.js"></script>
+<!-- MDB core JavaScript -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/js/mdb.min.js"></script>
+<!------------------------------------------------------------------------>
 <script>
     
 $('.custom-file-input').on('change',function(){
@@ -569,7 +612,7 @@ $('textarea[id=edittext]').keyup(function(){
 				 
 $('input[id=loadfle]').change(function(e){
     if (textdirty) {
-	if(confirm("Abandon modified FLE Log?") == false)
+	if(confirm("修正されたFLEログがクリアされます") == false)
 	    return
     }
     var result = e.target.files[0];
@@ -588,7 +631,6 @@ $('#SOTABoth').submit(function() { saveCookie(); });
 $('#SOTAChaser').submit(function() { saveCookie(); });
 
 function saveCookie() {
-
     var act_call_b = $('#activation_call_both').val();
     var act_call = $('#activation_call').val();
     var chsr_call = $('#chaser_call').val();
@@ -666,7 +708,7 @@ function loadCookie() {
 
 function checkLog() {
     if (!textinterpreted) {
-	if(confirm("Not interpreted.\nGenerate anyway?") == false)
+	if(confirm("変換されていません\nCSV生成しますか？") == false)
 	    return false;
     }
     textdirty = false;
@@ -677,7 +719,7 @@ function checkLog() {
 function setSample(arg) {
     editor = document.getElementById("edittext")
     if (textdirty) {
-	if(confirm("Clear modified FLE log?") == false)
+	if(confirm("FLEログをクリアします") == false)
 	    return
     }
 
@@ -704,8 +746,8 @@ function setSample(arg) {
 	    "14 ja4bbb\n" + 
             "40 jp1qqq/1 5 3 <ソタ> {飯能市}jaff-0213 ja/st-018\n"+
             "70cm fm\n"+
-            "55 jg0zzz/0 9 9 ja/nn-001 {松本市AO-91/FM/144MHz} \n"+
-            "58 jk2zzz 9 9 {PM85rl AO-91/FM/144MHz} \n"+
+            "55 jg0zzz/0 ja/nn-001 {松本市 AO-91/FM/144MHz} \n"+
+            "58 jk2zzz {PM85rl AO-91/FM/144MHz} \n"+
             "day +\n"+
 	    "17m cw\n"+
             "rigset 1\n"+
@@ -724,7 +766,7 @@ function clearLog() {
     wwff = document.getElementById("checkWWFF");
     wwff.checked = false;
     textinterpreted = false;
-    $('#loglisthead').empty()
+    $('#loglisthead').empty();
     $('#loglisthead').append("<tr><th>No.</th><th>My Call</th>"+
                              "<th>Date</th><th>Time</th>"+
                              "<th>Call</th><th>Band</th>"+
@@ -734,7 +776,14 @@ function clearLog() {
 	                     "<th>Comment</th>"+
                              "<th>Operator</th>"+
                              "</tr>");
-    $('#loglisttable').empty()
+    $('#loglisttable').empty();
+
+    $('#hamloglisthead').empty();
+    $('#hamloglisthead').append("<tr><th>No.</th><th>Call</th><th>Date</th><th>Time</th>"+
+			    "<th>His</th><th>My</th><th>Freq</th>"+
+			    "<th>Mode</th><th>GL</th><th>Name</th>"+
+				"<th>QTH</th><th>Remarks2</th></tr>");
+    $('#hamloglisttable').empty();
 }
 
 function clickUpdate() {
@@ -776,6 +825,13 @@ function clickUpdate() {
 			      td = td + "<td>" + tlist[i][j] + "</td>";
 			  $('#loglisttable').append('<tr>'+td+'</tr>');
 		      }
+		      tlist = data.hamlogtext;
+		      for(var i = 0, len = tlist.length; i < len; ++i) {
+			  td = "";
+			  for(var j =0,len2 = tlist[i].length; j < len2;++j)
+			      td = td + "<td>" + tlist[i][j] + "</td>";
+			  $('#hamloglisttable').append('<tr>'+td+'</tr>');
+		      }
 		  } else {
 		      textinterpreted = false;
 		      $('#loglisthead').empty()
@@ -790,6 +846,20 @@ function clickUpdate() {
 			      tr = tr + "<font color=\"#ff0000\"><b>&nbspError!&nbsp" + tlist[i][1] + "</b></font>"
 			  tr = tr + "</td></tr>"
 			  $('#loglisttable').append(tr);
+		      }
+
+		      $('#hamloglisthead').empty()
+		      $('#hamloglisthead').append("<tr><th>Line#</th><th>Text</th></tr>");
+		      tlist = data.logtext;
+		      $('#hamloglisttable').empty()
+		      for(var i = 0, len = tlist.length; i < len; ++i) {
+			  tr = "<tr>"
+			  tr = tr + "<td>" + tlist[i][0] + "</td>"
+			  tr = tr + "<td>" + tlist[i][2] 
+			  if (tlist[i][1] != '')
+			      tr = tr + "<font color=\"#ff0000\"><b>&nbspError!&nbsp" + tlist[i][1] + "</b></font>"
+			  tr = tr + "</td></tr>"
+			  $('#hamloglisttable').append(tr);
 		      }
 		  }
 	      });

@@ -250,6 +250,7 @@ def tokenizer(line):
 
 def compileFLE(input_text,conv_mode):
     res = []
+    hamlogres = []
     (NORM,FREQ,RSTS,RSTR)=(1,2,3,4)
     env = {
         'mycall':'',
@@ -641,6 +642,7 @@ def compileFLE(input_text,conv_mode):
                     'qsormks':env['c_qso_rmks'],
                     'qslmsg':env['qslmsg']
                 }
+                hamlogqso = []
                 (_, _, qth, qsl) = compose_qsl_msg(qso, env);
                 if len(qth)> 28:
                     env['errno'].append((lc-2,pos,'QTH too long: ' + qth))
@@ -688,7 +690,7 @@ def compileFLE(input_text,conv_mode):
                     'qsormks':env['c_qso_rmks'],
                     'qslmsg':env['qslmsg']
                 }
-                (_, _, qth, qsl) = compose_qsl_msg(qsotmp, env);
+                (rmks, freq, qth, qsl) = compose_qsl_msg(qsotmp, env);
                 if len(qth)> 28:
                     env['errno'].append((lc-2,pos,'QTH too long: ' + qth))
                 if len(qsl)> 54:
@@ -700,9 +702,12 @@ def compileFLE(input_text,conv_mode):
                 hiswwff = env['c_his_wwff']
                 qsormks = get_ref(env['c_qso_rmks'])
                 operator = env['operator']
-                
+                hisname = env['c_qso_msg']
+
                 qso = [ str(qsoc), mycall, date, time, call, band, mode, rsts, rstr, mysota, hissota,mywwff, hiswwff , qsormks['LOC']+qsormks['SAT'], operator]
+                hamlogqso = [ str(qsoc), call, date, time, rsts, rstr, freq, mode, rmks['LOC_org'], hisname, qth, qsl]
             res.append(qso)
+            hamlogres.append(hamlogqso)
 
     if conv_mode:
         if len(env['errno'])>0:
@@ -752,12 +757,15 @@ def compileFLE(input_text,conv_mode):
             lines = input_text.splitlines()
             lc = 0
             res = []
+            hamglogres = []
             for l in lines:
                 e = findErrors(lc,errors)
                 if e:
                     res.append([str(lc),e, l])
+                    hamlogres.append([str(lc),e, l])
                 else:
                     res.append([str(lc),"", l])
+                    hamlogres.append([str(lc),"", l])
                 lc += 1
         else:
             status = 'OK'
@@ -771,6 +779,7 @@ def compileFLE(input_text,conv_mode):
                 logtype = 'NONE'
 
         logtext = res
+        hamlogtext = hamlogres
         errmsg = env['errno']
         
         res = {'status': status,
@@ -781,6 +790,7 @@ def compileFLE(input_text,conv_mode):
                'mywwff':env['mywwff'],
                'qslmsg':env['qslmsg'],
                'logtext': logtext,
+               'hamlogtext':hamlogtext
         }
         return (res)
     
