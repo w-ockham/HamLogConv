@@ -295,11 +295,9 @@
 	    var form = document.forms.SOTABoth;
  	    if( form.myQTH.value == "rmks1" && form.hisQTH.value == "rmks1") {
 		form.hisQTH.value = "rmks2";
-		form.hisQTH.QTH2.checked = true;
 	    }
 	    if( form.myQTH.value == "rmks2" && form.hisQTH.value == "rmks2") {
 		form.hisQTH.value = "rmks1";
-		form.hisQTH.QTH1.checked = true;
 	    }
 	}
 
@@ -307,11 +305,9 @@
 	    var form = document.forms.SOTABoth;
  	    if( form.myQTH.value == "rmks1" && form.hisQTH.value == "rmks1") {
 		form.myQTH.value = "rmks2";
-		form.myQTH.myQTH2.checked = true;
 	    }
 	    if( form.myQTH.value == "rmks2" && form.hisQTH.value == "rmks2") {
 		form.myQTH.value = "rmks1";
-		form.myQTH.myQTH1.checked = true;
 	    }
 	}
       </script>
@@ -589,6 +585,7 @@
 <!---------------------------------------------------------------------->
 <!-- JQuery -->
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
 <!-- Bootstrap tooltips -->
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
 <!-- Bootstrap core JavaScript -->
@@ -642,27 +639,27 @@ function saveCookie() {
     var actQTH = $('#SOTAActivator [name="QTH"]').filter(':checked').val();
     var hisQTH = $('#SOTAChaser [name="QTH"]').filter(':checked').val();
 
-    $.cookie('act_call_b', act_call_b, {expires: 180});
-    $.cookie('portable', portable, {expires: 180});
-    $.cookie('myQTH_b', myQTH_b, {expires: 180});
-    $.cookie('actQTH_b', actQTH_b, {expires: 180});
-    $.cookie('note_b', note_b, {expires: 180});
+    Cookies.set('act_call_b', act_call_b, {expires: 180});
+    Cookies.set('portable', portable, {expires: 180});
+    Cookies.set('myQTH_b', myQTH_b, {expires: 180});
+    Cookies.set('actQTH_b', actQTH_b, {expires: 180});
+    Cookies.set('note_b', note_b, {expires: 180});
     
-    $.cookie('act_call', act_call, {expires: 180});
-    $.cookie('chsr_call', chsr_call, {expires: 180});
-    $.cookie('myQTH', myQTH, {expires: 180});
-    $.cookie('actQTH', actQTH, {expires: 180});
-    $.cookie('hisQTH', hisQTH, {expires: 180});
+    Cookies.set('act_call', act_call, {expires: 180});
+    Cookies.set('chsr_call', chsr_call, {expires: 180});
+    Cookies.set('myQTH', myQTH, {expires: 180});
+    Cookies.set('actQTH', actQTH, {expires: 180});
+    Cookies.set('hisQTH', hisQTH, {expires: 180});
 }
 
 function loadCookie() {
-    $('#activation_call_both').val([$.cookie('act_call_b')]);
-    $('#activation_call').val([$.cookie('act_call')]);
-    $('#chaser_call').val([$.cookie('chsr_call')]);
+    $('#activation_call_both').val([Cookies.get('act_call_b')]);
+    $('#activation_call').val([Cookies.get('act_call')]);
+    $('#chaser_call').val([Cookies.get('chsr_call')]);
 
-    var myQTH = $.cookie('myQTH');
-    var aQTH = $.cookie('actQTH');
-    var cQTH = $.cookie('hisQTH');
+    var myQTH = Cookies.get('myQTH');
+    var aQTH = Cookies.get('actQTH');
+    var cQTH = Cookies.get('hisQTH');
 
     if ( myQTH == undefined )
 	$('#SOTAActivator [name="myQTH"]').val(["form"]);
@@ -679,10 +676,10 @@ function loadCookie() {
     else
 	$('#SOTAChaser [name="QTH"]').val([cQTH]);
 
-    var myQTH_b = $.cookie('myQTH_b');
-    var aQTH_b = $.cookie('actQTH_b');
-    var portable = $.cookie('portable');
-    var note_b = $.cookie('note_b');
+    var myQTH_b = Cookies.get('myQTH_b');
+    var aQTH_b = Cookies.get('actQTH_b');
+    var portable = Cookies.get('portable');
+    var note_b = Cookies.get('note_b');
     
     if ( myQTH_b == undefined )
 	$('#SOTABoth [name="myQTH"]').val(["rmks1"]);
