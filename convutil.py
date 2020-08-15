@@ -605,69 +605,83 @@ def adif(key, value):
         
 def toADIF(decoder, lcount, mode, row, options):
     h = decodeHamlog(row)
+    if h['error']:
+        l = [
+            "HamLog format error at Line {}. : {}".format(lcount,h['errormsg']),
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+        ]
+        return ("000000", False, l)
+    else:
+        if options['myQTH']=='rmks1':
+            myref = get_ref(h['rmks1'])
+            comment = h['rmks2']
+        elif options['myQTH']=='rmks2':
+            myref = get_ref(h['rmks2'])
+            comment = h['rmks1']
+        else:
+            myref = {'SOTA': options['Summit']}
+            comment = ''
 
-    if options['myQTH']=='rmks1':
-        myref = get_ref(h['rmks1'])
-        comment = h['rmks2']
-    elif options['myQTH']=='rmks2':
-        myref = get_ref(h['rmks2'])
-        comment = h['rmks1']
-    else:
-        myref = {'SOTA': options['Summit']}
-        comment = ''
-
-    if options['QTH']=='rmks1':
-        hisref = get_ref(h['rmks1'])
-        comment = h['rmks2']
-    elif options['QTH']=='rmks2':
-        hisref = get_ref(h['rmks2'])
-        comment = h['rmks1']
-    else:
-        hisref = {'SOTA':'','WWFF':''}
-        comment = ''
+        if options['QTH']=='rmks1':
+            hisref = get_ref(h['rmks1'])
+            comment = h['rmks2']
+        elif options['QTH']=='rmks2':
+            hisref = get_ref(h['rmks2'])
+            comment = h['rmks1']
+        else:
+            hisref = {'SOTA':'','WWFF':''}
+            comment = ''
         
-    date = '{year:02}{month:02}{day:02}'.format(
-        day=h['day'], month=h['month'], year=h['year'])
+        date = '{year:02}{month:02}{day:02}'.format(
+            day=h['day'], month=h['month'], year=h['year'])
     
-    date2 = '{year:02}-{month:02}-{day:02}'.format(
-        day=h['day'], month=h['month'], year=h['year'])
+        date2 = '{year:02}-{month:02}-{day:02}'.format(
+            day=h['day'], month=h['month'], year=h['year'])
     
-    if mode == 'SOTA':
-        activator = options['SOTAActivator']
-        wwffref = ''
-    else:
-        activator = options['WWFFActivator']
-        wwffref = options['WWFFRef']
+        if mode == 'SOTA':
+            activator = options['SOTAActivator']
+            wwffref = ''
+        else:
+            activator = options['WWFFActivator']
+            wwffref = options['WWFFRef']
         
-    if mode == 'SOTA' and myref['SOTA']=='':
-        return (date2,'',[])
+        if mode == 'SOTA' and myref['SOTA']=='':
+            return (date2,'',[])
     
-    l = [
-        adif('activator',activator),
-        adif('callsign',h['callsign']),
-        adif('date',date),
-        adif('time',
-             '{hour:02}{minute:02}'.format(
-                 hour=h['hour'], minute=h['minute'])),
-        adif('band-wlen',h['band-wlen']),
-        adif('mode',h['mode']),
-        adif('rst_sent',h['rst_sent']),
-        adif('rst_rcvd',h['rst_rcvd']),
+        l = [
+            adif('activator',activator),
+            adif('callsign',h['callsign']),
+            adif('date',date),
+            adif('time',
+                 '{hour:02}{minute:02}'.format(
+                     hour=h['hour'], minute=h['minute'])),
+            adif('band-wlen',h['band-wlen']),
+            adif('mode',h['mode']),
+            adif('rst_sent',h['rst_sent']),
+            adif('rst_rcvd',h['rst_rcvd']),
         ]
     
-    if mode == 'SOTA':
-        l += [ adif('mysotaref',myref['SOTA']) ]
-        if  hisref['SOTA'] != '':
-            l+= [adif('sotaref',hisref['SOTA'])]
-    else:
-        l += [ adif('mysig','WWFF'),
-               adif('mysiginfo',options['WWFFRef'])]
-        if hisref['WWFF'] != '':
-            l+= [adif('sig','WWFF'),adif('siginfo',hisref['WWFF'])]
-
-    l+= ['<EOR>']
+        if mode == 'SOTA':
+            l += [ adif('mysotaref',myref['SOTA']) ]
+            if  hisref['SOTA'] != '':
+                l+= [adif('sotaref',hisref['SOTA'])]
+        else:
+            l += [ adif('mysig','WWFF'),
+                   adif('mysiginfo',options['WWFFRef'])]
+            if hisref['WWFF'] != '':
+                l+= [adif('sig','WWFF'),adif('siginfo',hisref['WWFF'])]
+                
+        l+= ['<EOR>']
     
-    return (date2,wwffref,l)
+        return (date2,wwffref,l)
 
 def sendAirHamLog(fp, fname, decoder, options, inchar, outchar):
 
