@@ -8,6 +8,7 @@ from convutil import (
     sendSOTA_A,
     sendSOTA_C,
     sendWWFF,
+    sendPOTA,
     sendAirHamLog,
     decodeHamlog,
     writeZIP,
@@ -31,6 +32,7 @@ def main():
     activation_call_both = form.getvalue('activation_call_both',None)
     activation_call = form.getvalue('activation_call',None)
     chaser_call = form.getvalue('chaser_call',None)
+    pota_activation_call = form.getvalue('pota_activation_call',None)
     wwffoperator = form.getvalue('wwffoperator',None)
     gpx_trk_interval = form.getvalue('gpx_trk_interval',None)
     
@@ -46,7 +48,9 @@ def main():
         'WWFFOperator': form.getvalue('wwffoperator',''),
         'WWFFActivator': form.getvalue('wwffact_call',''),
         'WWFFRef': form.getvalue('wwffref',''),
-        'SOTAActivator': activation_call
+        'SOTAActivator': activation_call,
+        'POTAActivator': pota_activation_call,
+        'Park': form.getvalue('park','')
     }
 
     if debug:
@@ -98,6 +102,12 @@ def main():
         fname = "sota-" + fname + ".zip"
         files = sendSOTA_C(fp, decodeHamlog, callsign, options,
                            inchar, outchar)
+        writeZIP(files,fname)
+
+    elif pota_activation_call:
+        outchar = "utf-8"
+        files = sendPOTA(fp, decodeHamlog, options, inchar, outchar)
+        fname = "pota-" + fname + ".zip"
         writeZIP(files,fname)
         
     elif wwffoperator:

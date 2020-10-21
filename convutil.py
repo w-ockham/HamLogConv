@@ -392,7 +392,7 @@ def toAirHam(decoder, lcount, row, options):
     return l
 
 def get_ref(str):
-    r = {'SOTA':'', 'PORT':'', 'WWFF':'' ,
+    r = {'SOTA':'', 'PORT':'', 'WWFF':'' ,'POTA':'',
          'LOC':'', 'LOC_org':'',
          'SAT':'','SAT_oscar':'','SAT_org':'','SAT_down':'',
          'ORG':'' }
@@ -406,6 +406,11 @@ def get_ref(str):
         m = re.match(r'.*?([a-zA-Z0-9]+FF-\d+).*',ref)
         if m:
             r['WWFF'] = m.group(1).upper()
+            continue
+
+        m = re.match(r'.*?([a-zA-Z0-9]+-\d\d\d\d).*',ref)
+        if m:
+            r['POTA'] = m.group(1).upper()
             continue
 
         m = re.match(r'.*?(([a-zA-Z0-9]+/[a-zA-Z0-9]+)-\d+).*',ref)
@@ -627,7 +632,7 @@ def toADIF(decoder, lcount, mode, row, options):
             myref = get_ref(h['rmks2'])
             comment = h['rmks1']
         else:
-            myref = {'SOTA': options['Summit']}
+            myref = {'SOTA': options['Summit'], 'POTA':options['Park']}
             comment = ''
 
         if options['QTH']=='rmks1':
@@ -637,7 +642,7 @@ def toADIF(decoder, lcount, mode, row, options):
             hisref = get_ref(h['rmks2'])
             comment = h['rmks1']
         else:
-            hisref = {'SOTA':'','WWFF':''}
+            hisref = {'SOTA':'','WWFF':'','POTA':''}
             comment = ''
         
         date = '{year:02}{month:02}{day:02}'.format(
@@ -649,13 +654,18 @@ def toADIF(decoder, lcount, mode, row, options):
         if mode == 'SOTA':
             activator = options['SOTAActivator']
             wwffref = ''
+        elif mode == 'POTA':
+            activator = options['POTAActivator']
+            wwffref = myref['POTA']
         else:
             activator = options['WWFFActivator']
             wwffref = options['WWFFRef']
         
         if mode == 'SOTA' and myref['SOTA']=='':
             return (date2,'',[])
-    
+        elif mode == 'POTA' and myref['POTA']=='':
+            return (date2,'',[])
+        
         l = [
             adif('activator',activator),
             adif('callsign',h['callsign']),
@@ -673,6 +683,11 @@ def toADIF(decoder, lcount, mode, row, options):
             l += [ adif('mysotaref',myref['SOTA']) ]
             if  hisref['SOTA'] != '':
                 l+= [adif('sotaref',hisref['SOTA'])]
+        elif mode == 'POTA':
+            l += [ adif('mysig','POTA'),
+                   adif('mysiginfo',myref['POTA'])]
+            if hisref['POTA'] != '':
+                l+= [adif('sig','POTA'),adif('siginfo',hisref['POTA'])]
         else:
             l += [ adif('mysig','WWFF'),
                    adif('mysiginfo',options['WWFFRef'])]
@@ -915,7 +930,7 @@ def sendWWFF(fp, decoder, options, inchar, outchar):
             if linecount > 100000:
                 break
             else:
-                (date,ref,l) = toADIF(decoder, 'WWFF', row, options)
+                (date,ref,l) = toADIF(decoder, linecount, 'WWFF', row, options)
                 if linecount == 0:
                     act_call = options['WWFFActivator']
                     fname = act_call.replace('/','-') + '@' + ref + ' '+ date +'.adi'
@@ -927,4 +942,49 @@ def sendWWFF(fp, decoder, options, inchar, outchar):
                 linecount += 1
         files.update({fname : outstr.getvalue()})
 
+def sendPOTA(fp, decoder, options, inchar, outchar):
+    files = {}
+    outstr = io.StringIO()
+    linecount = 0
+    fname = ''
+    writer = csv.writer(outstr, delimiter=' ',
+                        quoting=csv.QUOTE_MINIMAL)
+    act_call = options['POTAActivator']
+    prev_ref = ''
+    with io.TextIOWrapper(fp, encoding=inchar,errors="backslashreplace") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            if linecount > 100000:
+                break
+            else:
+                (date,ref,l) = toADIF(decoder, linecount, 'POTA', row, options)
+                fn = act_call.replace('/','-') + '@' + ref + ' '+ date +'.adi'
+                if l:
+                    if linecount==0:
+                        fname = fn
+
+                    if fn == fname:
+                        writer.writerow(l)
+                    else:
+                        if fname in files:
+                            newstr = files[fname] + outstr.getvalue()
+                        else:
+                            header = 'ADIF Export from HAMLOG by JL1NIE\n' + adif('programid','FCTH')+ '\n' + adif('adifver','3.0.6')+'\n' + '<EOH>\n' 
+                            newstr = header + outstr.getvalue()
+
+                        files.update({fname : newstr })
+                        
+                        outstr = io.StringIO()
+                        writer = csv.writer(outstr,delimiter=' ',
+                                            quoting=csv.QUOTE_MINIMAL)
+                        fname = fn
+                        writer.writerow(l)
+                linecount += 1
+        if fname != '':
+            if fname in files:
+                newstr = files[fname] + outstr.getvalue()
+            else:
+                newstr = outstr.getvalue()
+            files.update({fname : newstr })
+            
     return files
