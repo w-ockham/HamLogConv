@@ -334,6 +334,75 @@ def decodeHamlog(cols):
             'rmks1': cols[12], # All
             'rmks2': cols[13]  # All
         }
+
+def decodeHamLogIOS(cols):
+
+    errorfl = False
+    errormsg = []
+    
+    if len(cols) < 19:
+        errorfl = True
+        errormsg = [ "Fatal:Too short columns." ]
+        return {
+            'error':True,
+            'errormsg': errormsg
+        }
+    else:
+        (operator, portable) = splitCallsign(cols[3])
+        
+        try:
+            atime = datetime.datetime.strptime(cols[0],'%Y-%m-%d %H:%M:%S %z')
+            utime = atime.astimezone(datetime.timezone(datetime.timedelta(hours=0)))
+            isotime = atime.isoformat()
+        except Exception as e:
+            errorfl = True
+            errormsg.append("Wrong time format:{}".format(operator+ ":"+cols[0]))
+            atime = datetime.datetime.strptime("1900/1/1 0:0 +0000",'%Y/%m/%d %H:%M %z')
+            utime = atime.astimezone(datetime.timezone(datetime.timedelta(hours=0)))
+            isotime = atime.isoformat()
+
+
+        year = utime.year
+        month = utime.month
+        day = utime.day
+        hour = utime.hour
+        minute = utime.minute
+        timezone = '+0000'
+            
+        (band_air,band_sota,wlen) = freq_to_band(cols[2])
+
+        return {
+            'error':errorfl,
+            'errormsg':" , ".join(errormsg),
+            'callsign': cols[3],   # All
+            'operator': operator,  # AirHam
+            'portable': portable,  # AirHam
+            'isotime': isotime,    # AirHam
+            'year': year,          # SOTA,WWFF
+            'month': month,        # SOTA,WWFF
+            'day': day,            # SOTA,WWFF
+            'hour': hour,          # SOTA,WWFF
+            'minute': minute,      # SOTA,WWFF
+            'timezone': timezone,  # AirHam
+            'rst_sent': cols[5],   # All
+            'rst_rcvd': cols[4],   # All
+            'freq': cols[2],       # None
+            'band': band_air,      # AirHam
+            'band-sota': band_sota,# SOTA
+            'band-wlen': wlen,     # WWFF
+            'mode': cols[11],       # WWFF
+            'mode-airham': mode_to_airhammode(cols[11],cols[2]), #AirHam
+            'mode-sota': mode_to_SOTAmode(cols[11]), #SOTA
+            'code': '',   # None
+            'gl': cols[6],     # SOTA
+            'qsl': cols[14],    # AirHam
+            'qsl_sent':cols[15], #AirHam
+            'qsl_rcvd':cols[16], #AirHam
+            'name': cols[7],  # None
+            'qth': cols[8],   # SOTA
+            'rmks1': cols[8], # All
+            'rmks2': cols[13]  # All
+        }
     
 def toAirHam(decoder, lcount, row, options):
     if lcount == 0:
@@ -609,7 +678,7 @@ def adif(key, value):
     return f
         
 def toADIF(decoder, lcount, mode, row, options):
-    h = decodeHamlog(row)
+    h = decoder(row)
     if h['error']:
         l = [
             "HamLog format error at Line {}. : {}".format(lcount,h['errormsg']),
@@ -623,7 +692,7 @@ def toADIF(decoder, lcount, mode, row, options):
             "",
             ""
         ]
-        return ("000000", False, l)
+        return ("000000",'', l)
     else:
         if options['myQTH']=='rmks1':
             myref = get_ref(h['rmks1'])
@@ -942,7 +1011,7 @@ def sendWWFF(fp, decoder, options, inchar, outchar):
                 linecount += 1
         files.update({fname : outstr.getvalue()})
 
-def sendPOTA(fp, decoder, options, inchar, outchar):
+def sendPOTA(fp, options, inchar, outchar):
     files = {}
     outstr = io.StringIO()
     linecount = 0
@@ -951,14 +1020,23 @@ def sendPOTA(fp, decoder, options, inchar, outchar):
                         quoting=csv.QUOTE_MINIMAL)
     act_call = options['POTAActivator']
     prev_ref = ''
+    decoder = None
+    header = 'ADIF Export from HAMLOG by JL1NIE\n' + adif('programid','FCTH')+ '\n' + adif('adifver','3.0.6')+'\n' + '<EOH>\n' 
     with io.TextIOWrapper(fp, encoding=inchar,errors="backslashreplace") as f:
         reader = csv.reader(f)
         for row in reader:
             if linecount > 100000:
                 break
             else:
+                if not decoder:
+                    if 'TimeOn' in row:
+                        decoder = decodeHamLogIOS
+                        continue
+                    else:
+                        decoder = decodeHamlog
+                    
                 (date,ref,l) = toADIF(decoder, linecount, 'POTA', row, options)
-                fn = act_call.replace('/','-') + '@' + ref + ' '+ date +'.adi'
+                fn = act_call.replace('/','-') + '@' + ref + ' ' + date +'.adi'
                 if l:
                     if linecount==0:
                         fname = fn
@@ -969,7 +1047,6 @@ def sendPOTA(fp, decoder, options, inchar, outchar):
                         if fname in files:
                             newstr = files[fname] + outstr.getvalue()
                         else:
-                            header = 'ADIF Export from HAMLOG by JL1NIE\n' + adif('programid','FCTH')+ '\n' + adif('adifver','3.0.6')+'\n' + '<EOH>\n' 
                             newstr = header + outstr.getvalue()
 
                         files.update({fname : newstr })
@@ -984,7 +1061,7 @@ def sendPOTA(fp, decoder, options, inchar, outchar):
             if fname in files:
                 newstr = files[fname] + outstr.getvalue()
             else:
-                newstr = outstr.getvalue()
+                newstr = header + outstr.getvalue()
             files.update({fname : newstr })
             
     return files

@@ -106,7 +106,7 @@ def main():
 
     elif pota_activation_call:
         outchar = "utf-8"
-        files = sendPOTA(fp, decodeHamlog, options, inchar, outchar)
+        files = sendPOTA(fp, options, inchar, outchar)
         fname = "pota-" + fname + ".zip"
         writeZIP(files,fname)
         
