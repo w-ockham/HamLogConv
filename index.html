@@ -479,15 +479,19 @@
       <div class="tab-pane fade" id="POTAActivator" role="tabpanel" aria-labelledby="POTAActivator-tab">	
 	<form id="POTAActivator" method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' onsubmit="return formCheckPOTA()" style="padding:10px">
 	  <div class="form-group">
-	    <label for="pota_activation_call"><b> 運用時のコールサイン</b></label>
-	    <input type="text" id="pota_activation_call" name="pota_activation_call" class="form-control" placeholder="コールサイン" required>
+	    <label for="pota_activation_call"><b> 運用時のコールサイン(必須)</b></label>
+	    <input type="text" id="pota_activation_call" name="pota_activation_call" class="form-control" placeholder="コールサイン(例:JL1NIE/1)" required>
+	  </div>
+	  <div class="form-group">
+	    <label for="pota_operator"><b>運用時のオペレータ(任意)</b></label>
+	    <input type="text" id="pota_operator" name="pota_operator" class="form-control" placeholder="コールサイン(例:JL1NIE)">
 	  </div>
 	  <div class="form-group">
 	    <h6><b>運用した公園番号</b></h6>
 	    <div class="form-check">
 	      <input class="form-check-input" type="radio" name="myQTH" id="myQTH" value="form" checked>
 	      <label for="park">公園番号を入力</label>
-	      <input type="text" id="park" name="park" class="form-control" placeholder="e.g. JA-1289">
+	      <input type="text" id="park" name="park" class="form-control" placeholder="例: JA-1289">
 	    </div>
 	    <div class="form-check">
 	      <input class="form-check-input" type="radio" name="myQTH" id="myQTH1" value="rmks1">
@@ -717,6 +721,7 @@ function saveCookie() {
     var act_call_b = $('#activation_call_both').val();
     var act_call = $('#activation_call').val();
     var pota_act_call = $('#pota_activation_call').val();
+    var pota_operator = $('#pota_operator').val();
     var chsr_call = $('#chaser_call').val();
     var portable = $('#SOTABoth [name="portable"]').filter(':checked').val();
     var myQTH_b = $('#SOTABoth [name="myQTH"]').filter(':checked').val();
@@ -741,6 +746,7 @@ function saveCookie() {
     Cookies.set('hisQTH', hisQTH, {expires: 180});
 
     Cookies.set('pota_act_call', pota_act_call, {expires: 180});
+    Cookies.set('pota_operator', pota_operator, {expires: 180});
     Cookies.set('myQTHp', myQTHp, {expires: 180});
     Cookies.set('actQTHp', actQTHp, {expires: 180});
 }
@@ -749,6 +755,7 @@ function loadCookie() {
     $('#activation_call_both').val([Cookies.get('act_call_b')]);
     $('#activation_call').val([Cookies.get('act_call')]);
     $('#pota_activation_call').val([Cookies.get('pota_act_call')]);
+    $('#pota_operator').val([Cookies.get('pota_operator')]);
     $('#chaser_call').val([Cookies.get('chsr_call')]);
 
     var myQTH = Cookies.get('myQTH');
@@ -772,7 +779,7 @@ function loadCookie() {
 
     var myQTHp = Cookies.get('myQTHp');
     var aQTHp = Cookies.get('actQTHp');
-
+    
     if ( myQTHp == undefined )
 	$('#POTAActivator [name="myQTH"]').val(["form"]);
     else

@@ -722,12 +722,15 @@ def toADIF(decoder, lcount, mode, row, options):
     
         if mode == 'SOTA':
             activator = options['SOTAActivator']
+            (operator,_) = splitCallsign(activator)
             wwffref = ''
         elif mode == 'POTA':
             activator = options['POTAActivator']
+            operator = options['POTAOperator']
             wwffref = myref['POTA']
         else:
             activator = options['WWFFActivator']
+            operator = options['WWFFOperator']
             wwffref = options['WWFFRef']
         
         if mode == 'SOTA' and myref['SOTA']=='':
@@ -737,6 +740,7 @@ def toADIF(decoder, lcount, mode, row, options):
         
         l = [
             adif('activator',activator),
+            adif('operator',operator),
             adif('callsign',h['callsign']),
             adif('date',date),
             adif('time',
@@ -1018,10 +1022,15 @@ def sendPOTA(fp, options, inchar, outchar):
     fname = ''
     writer = csv.writer(outstr, delimiter=' ',
                         quoting=csv.QUOTE_MINIMAL)
+    header = 'ADIF Export from HAMLOG by JL1NIE\n' + adif('programid','FCTH')+ '\n' + adif('adifver','3.0.6')+'\n' + '<EOH>\n'
+    
     act_call = options['POTAActivator']
-    prev_ref = ''
+    (operator,portable) = splitCallsign(act_call)
+    if not options['POTAOperator']:
+        options['POTAOperator'] = operator
+
     decoder = None
-    header = 'ADIF Export from HAMLOG by JL1NIE\n' + adif('programid','FCTH')+ '\n' + adif('adifver','3.0.6')+'\n' + '<EOH>\n' 
+        
     with io.TextIOWrapper(fp, encoding=inchar,errors="backslashreplace") as f:
         reader = csv.reader(f)
         for row in reader:

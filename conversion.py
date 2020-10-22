@@ -50,6 +50,7 @@ def main():
         'WWFFRef': form.getvalue('wwffref',''),
         'SOTAActivator': activation_call,
         'POTAActivator': pota_activation_call,
+        'POTAOperator': form.getvalue('pota_operator',None),
         'Park': form.getvalue('park','')
     }
 
