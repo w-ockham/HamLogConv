@@ -705,7 +705,7 @@ def compileFLE(input_text,conv_mode):
                 hisname = env['c_qso_msg']
 
                 qso = [ str(qsoc), mycall, date, time, call, band, mode, rsts, rstr, mysota, hissota,mywwff, hiswwff , qsormks['LOC']+qsormks['SAT'], operator]
-                hamlogqso = [ str(qsoc), call, date, time, rsts, rstr, freq, mode, rmks['LOC_org'], hisname, qth, qsl]
+                hamlogqso = [ str(qsoc), call, date, time+'U', rsts, rstr, freq, mode, rmks['LOC_org'], hisname, qth, qsl]
             res.append(qso)
             hamlogres.append(hamlogqso)
 
