@@ -14,14 +14,23 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/css/mdb.min.css" rel="stylesheet">
 <!------------------------------------------------------------------>
     <style>
-      .loglist-exetend {
+      .loglist-extend {
       position: relative;
       height: 35vh;
       border: 1px solid #aaa;
       min-height: 100px;
       overflow:auto;
-      -webkit-overflow-scrolling:touch;
+      -webkit-overflow-scrolling:touch
       margin-bottom: -13px;
+      }
+      .csvlist-extend {
+      position: relative;
+      border: 2px solid #aaa;
+      overflow:auto;
+      min-width: 560px;
+      height: 60vh;
+      -webkit-overflow-scrolling:touch;
+      margin-bottom: 5px;
       }
       .table-condensed > thead > tr > th,
       .table-condensed > tbody > tr > th,
@@ -260,7 +269,7 @@
 	      </label>
 	    </div>
 	    <div class="form-check">
-	      <input class="form-check-input" type="checkbox" name="hisQTHopt" id="hisQTHopt" value="yes"">
+	      <input class="form-check-input" type="checkbox" name="hisQTHopt" id="hisQTHopt" value="yes">
 	      <label class="form-check-label" for="hisQTHopt">
 		QTHも参照する<small>(重複時はRemarksの山岳IDを優先)</small>
 	      </label>
@@ -476,74 +485,116 @@
 	</form>
       </div><!-- end of tab-pane -->
 
-      <div class="tab-pane fade" id="POTAActivator" role="tabpanel" aria-labelledby="POTAActivator-tab">	
-	<form id="POTAActivator" method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' onsubmit="return formCheckPOTA()" style="padding:10px">
-	  <div class="form-group">
-	    <label for="pota_activation_call"><b> 運用時のコールサイン(必須)</b></label>
-	    <input type="text" id="pota_activation_call" name="pota_activation_call" class="form-control" placeholder="コールサイン(例:JL1NIE/1)" required>
-	  </div>
-	  <div class="form-group">
-	    <label for="pota_operator"><b>運用時のオペレータ(任意)</b></label>
-	    <input type="text" id="pota_operator" name="pota_operator" class="form-control" placeholder="コールサイン(例:JL1NIE)">
-	  </div>
-	  <div class="form-group">
-	    <h6><b>運用した公園番号</b></h6>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="myQTH" id="myQTH" value="form" checked>
-	      <label for="park">公園番号を入力</label>
-	      <input type="text" id="park" name="park" class="form-control" placeholder="例: JA-1289">
+      <div class="tab-pane fade" id="POTAActivator" role="tabpanel" aria-labelledby="POTAActivator-tab">
+	<form id="POTAActivatorForm" name="POTAActivatorForm" method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' onsubmit="return formCheckPOTA()" style="padding:10px">
+	  <div class="container">
+	    <div class="row">
+	      <div class="row">
+		<div class="col-sm-4">
+		  <div class="form-group">
+		    <label for="pota_activation_call"><b> 運用時のコールサイン(必須)</b></label>
+		    <input type="text" id="pota_activation_call" name="pota_activation_call" class="form-control" placeholder="コールサイン(例:JL1NIE/1)" required>
+		  </div>
+		  <div class="form-group">
+		    <label for="pota_operator"><b>運用時のオペレータ(任意)</b></label>
+		    <input type="text" id="pota_operator" name="pota_operator" class="form-control" placeholder="コールサイン(例:JL1NIE)">
+		  </div>
+		  <div class="form-group">
+		    <h6><b>運用した公園番号</b></h6>
+		    <div class="form-check">
+		      <input class="form-check-input" type="radio" name="myQTH" id="myQTH" value="form" checked>
+		      <label for="park">公園番号を入力</label>
+		      <input type="text" id="park" name="park" class="form-control" placeholder="例: JA-1289">
+		    </div>
+		    <div class="form-check">
+		      <input class="form-check-input" type="radio" name="myQTH" id="myQTH1" value="rmks1">
+		      <label class="form-check-label" for="myQTH1">
+			Remarks1で指定する
+		      </label>
+		    </div>
+		    <div class="form-check">
+		      <input class="form-check-input" type="radio" name="myQTH" id="myQTH2" value="rmks2">
+		      <label class="form-check-label" for="myQTH2">
+			Remarks2で指定する
+		      </label>
+		    </div>
+		  </div>
+		  <div class="form-group">
+		    <h6><b>P2P交信局の公園番号</b></h6>
+		    <div class="form-check">
+		      <input class="form-check-input" type="radio" name="QTH" id="QTHNone" value="none" checked>
+		      <label class="form-check-label" for="QTHNone">
+			指定しない
+		      </label>
+		    </div>
+		    <div class="form-check">
+		      <input class="form-check-input" type="radio" name="QTH" id="QTH1" value="rmks1">
+		      <label class="form-check-label" for="QTH1">
+			Remarks1で指定する
+		      </label>
+		    </div>
+		    <div class="form-check">
+		      <input class="form-check-input" type="radio" name="QTH" id="QTH2" value="rmks2">
+		      <label class="form-check-label" for="QTH2">
+			Remarks2で指定する
+		      </label>
+		    </div>
+		  </div>
+		</div>
+		<div class="col-sm-8" style="padding:0;">
+		  <div id="potacsvlist" class="container csvlist-extend">
+		    <div class="table-responsive">
+		      <table class="table table-striped table-condensed text-nowrap" style="font-size:8pt;">
+			<thead id="potacsvlisthead" class="thead-light">
+			  <tr>
+			    <th>No.</th>
+			    <th>Call</th>
+			    <th>Date</th>
+			    <th>Time</th>
+			    <th>Band</th>
+			    <th>Mode</th>
+			    <th>Sent</th>
+			    <th>Rcvd</th>
+			    <th>SigInfo</th>
+			    <th>MySigInfo</th>
+			    <th>Station</th>
+			    <th>Operator</th>
+			  </tr>
+			</thead>
+			<tbody id="potacsvlisttable">
+			</tbody>
+		      </table>
+		    </div>
+		  </div>
+		</div>
+	      </div>
+	      <div class="col-sm-12">
+		<div class="form-group">
+		  <div class="custom-file">
+		    <input type="file" class="custom-file-input" id="filename" name="filename" required>
+		    <label class="custom-file-label" for="csvfilename">HamLog CSVファイルを選択</label>
+		    <div class="invalid-feedback">ファイルを指定してください</div>
+		  </div>
+		</div>
+		<div class="form-group">
+		<button type="button" class="btn-sm btn-primary" 
+			onClick="readPOTACSV()">CSV読込
+		</button>
+		<button type="submit" class="btn-sm btn-primary">ADIF生成</button>
+		  <a href="https://parksontheair.com/" target="_blank" class="btn-sm btn-outline-info" role="button">Parks on the Air</a>
+		</div>
+	      </div>
 	    </div>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="myQTH" id="myQTH1" value="rmks1">
-	      <label class="form-check-label" for="myQTH1">
-		Remarks1で指定する
-	      </label>
-	    </div>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="myQTH" id="myQTH2" value="rmks2">
-	      <label class="form-check-label" for="myQTH2">
-		Remarks2で指定する
-	      </label>
-	    </div>
-	  </div>
-	  <div class="form-group">
-	    <h6><b>P2P交信局の公園番号</b></h6>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="QTH" id="QTHNone" value="none" checked>
-	      <label class="form-check-label" for="QTHNone">
-		指定しない
-	      </label>
-	    </div>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="QTH" id="QTH1" value="rmks1">
-	      <label class="form-check-label" for="QTH1">
-		Remarks1で指定する
-	      </label>
-	    </div>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="QTH" id="QTH2" value="rmks2">
-	      <label class="form-check-label" for="QTH2">
-		Remarks2で指定する
-	      </label>
-	    </div>
-	  </div>
-	  <div class="form-group">
-	    <div class="custom-file">
-	      <input type="file" class="custom-file-input" id="filename" name="filename" required>
-	      <label class="custom-file-label" for="filename">HamLog CSVファイルを選択</label>
-	      <div class="invalid-feedback">ファイルを指定してください</div>
-	    </div>
-	  </div>
-	  <div class="form-group">
-	    <button type="submit" class="btn btn-primary">変換</button>
-	    <a href="https://parksontheair.com/" target="_blank" class="btn btn-outline-info" role="button">Parks on the Air</a>
 	  </div>
       	</form>
       </div><!-- end of tab-pane -->
       <script>
+	function clearPath(e) {
+	    this.value = null;
+	}
         function formCheckPOTA() {
-	var form = document.forms.POTAActivator;
-	    if( form.myQTH.value == "form" && form.summit.value == "") {
+	var form = document.forms.POTAActivatorForm;
+	    if( form.myQTH.value == "form" && form.park.value == "") {
 		window . alert ( '運用したParkリファレンスを入力して下さい');
 		return false;
 	    }
@@ -555,6 +606,12 @@
 		window . alert ( 'Remarks2の指定が重複しています。');
 		return false;
 	    }
+	    
+	    if (textinterpreted == false) {
+		if(confirm("CSVファイルにエラーがあります。\nADIFを生成しますか？") == false)
+		    return false;
+	    }
+
 	    saveCookie();
 	    return true;
         }
@@ -574,7 +631,7 @@
 	      </ul>
 	      <div class="tab-content">
 		<div class="tab-pane show active" id="SOTAJAFF" role="tabpanel" aria-labelledby="SOTAJAFF-tab">
-		  <div id="loglist" class="container loglist-exetend">	
+		  <div id="loglist" class="container loglist-extend">	
 		    <div class="table-responsive">
 		      <table class="table table-striped table-condensed text-nowrap" style="font-size:8pt;">
 			<thead id="loglisthead" class="thead-light">
@@ -594,7 +651,7 @@
 		  </div>
 		</div>
 		<div class="tab-pane" id="HAMLOG" role="tabpanel" aria-labelledby="HAMLOG-tab">	
-		  <div id="hamloglist" class="container loglist-exetend">
+		  <div id="hamloglist" class="container loglist-extend">
 		    <div class="table-responsive">
 		      <table class="table table-striped table-condensed text-nowrap" style="font-size:8pt;">
 			<thead id="hamloglisthead" class="thead-light">
@@ -686,6 +743,10 @@
     
 $('.custom-file-input').on('change',function(){
     $(this).next('.custom-file-label').html($(this)[0].files[0].name);
+});
+
+$('.custom-file-input').on('click',function(){
+    this.value = null;
 });
 
 var textdirty = false;
@@ -974,6 +1035,52 @@ function clickUpdate() {
 		      }
 		  }
 	      });
+};
+
+function readPOTACSV() {
+    var form =  $('#POTAActivatorForm').get(0)
+    console.log(form)
+    var formdata = new FormData(form)
+    formdata.append("command","POTACSVCheck")
+    for(let value of formdata.entries()) {
+	console.log(value);
+    }
+    $.ajax({
+	url:'/cgi-bin/conversion.py',
+	method: 'post',
+	dataType: 'json',
+	data: formdata,
+	cache: false,
+	processData: false,
+	contentType: false,
+	error: function(data) {
+	    alert('CSVファイルが変更されました。\n再度ファイルを指定して下さい。');
+	}
+    }).done(function(data) {
+	console.log(data)
+	if (data.status == "OK")
+	    textinterpreted = true;
+	else 
+	    textinterpreted = false;
+	
+	$('#potacsvlisthead').empty();
+	$('#potacsvlisthead').append(
+	    "<tr><th>No.</th><th>Call</th>"+
+                "<th>Date</th><th>Time</th>"+
+                "<th>Band</th><th>Mode</th>"+
+                "<th>Sent</th><th>Rcvd</th><th>SigInfo</th>"+
+                "<th>MySigInfo</th><th>Station</th><th>Operator</th>"+
+                "</tr>");
+	$('#potacsvlisttable').empty();
+	tlist = data.logtext;
+	var count = 1
+	for(var i = 0, len = tlist.length; i < len; ++i,++count) {
+	    td = "<td>"+count+"</td>";
+	    for(var j =0,len2 = tlist[i].length; j < len2;++j)
+		td = td + "<td>" + tlist[i][j] + "</td>";
+	    $('#potacsvlisttable').append('<tr>'+td+'</tr>');
+	}
+    });
 };
     </script>
   </body>

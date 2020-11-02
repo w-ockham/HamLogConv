@@ -124,6 +124,8 @@ JA_region_table = {
     'JA/IK':'9'
 }
     
+def errMsg(val):
+    return ('<font color="red"><b>' + str(val) + '</b></font>')
     
 def band_to_freq(band_str, is_sota = False):
     for (_, _, f_air, f_sota, b) in freq_table:
@@ -147,7 +149,7 @@ def freq_to_band(freq_str):
         if freq >= lower and freq <= upper:
             return (band_air,band_sota,wlen)
         
-    return (freq_str, freq_str, freq_str)
+    raise Exception(freq_str)
 
 def mode_to_airhammode(mode,freq_str):
     try:
@@ -212,7 +214,8 @@ def splitCallsign(call):
             portable = ''
             
     return (operator, portable)
-    
+
+
 def decodeHamlog(cols):
 
     errorfl = False
@@ -239,13 +242,15 @@ def decodeHamlog(cols):
                     year = '20' + m.group(1)
             month = m.group(2)
             day = m.group(3)
+            errordate = ''
         else:
             errorfl = True
-            errormsg.append("Wrong date format:{}".format(cols[1]))
+            errormsg.append("Err:Wrong date format:{}".format(cols[1]))
             year = '1900'
             month = '01'
             day = '01'
-
+            errordate = errMsg(cols[1])
+            
         m = re.match('(\d\d):(\d\d)(\w)',cols[2])
         if m:
             hour = m.group(1)
@@ -255,12 +260,14 @@ def decodeHamlog(cols):
                 timezone = '+0000'
             else:
                 timezone = '+0900'
+            errortime = ''
         else:
             errorfl = True
-            errormsg.append("Wrong time format:{}".format(cols[2]))
+            errormsg.append("Err:Wrong time format:{}".format(cols[2]))
             hour = '00'
             minute = '00'
             timezone = '+0900'
+            errortime = errMsg(cols[2])
 
         tstr = year + '/' + month + '/' + day + ' ' + hour + ':' + minute + ' ' + timezone
         try:
@@ -269,20 +276,26 @@ def decodeHamlog(cols):
             isotime = atime.isoformat()
         except Exception as e:
             errorfl = True
-            errormsg.append("Wrong time format:{}".format(operator+ ":"+tstr))
+            errormsg.append("Err:Wrong time format:{}".format(operator+ ":"+tstr))
             atime = datetime.datetime.strptime("1900/1/1 0:0 +0000",'%Y/%m/%d %H:%M %z')
             utime = atime.astimezone(datetime.timezone(datetime.timedelta(hours=0)))
             isotime = atime.isoformat()
+            [errordate ,errortime] = map(errMsg,[cols[1],cols[2]])
         
-
         year = utime.year
         month = utime.month
         day = utime.day
         hour = utime.hour
         minute = utime.minute
 
-        (band_air,band_sota,wlen) = freq_to_band(cols[5])
-
+        try:
+            (band_air,band_sota,wlen) = freq_to_band(cols[5])
+            band_error = ''
+        except Exception as e:
+            band_error = errMsg(str(e))
+            errormsg.append("Err:Frequency out of range:{}".format(e))
+            (band_air,band_sota,wlen) = (band_error, band_error, band_error)
+            
         qsl_sent = 0
         qsl_rcvd = 0
         qsl_via = ""
@@ -305,6 +318,10 @@ def decodeHamlog(cols):
         return {
             'error':errorfl,
             'errormsg':" , ".join(errormsg),
+            'date_error':errordate,
+            'time_error':errortime,
+            'band_error':band_error,
+            
             'callsign': cols[0],   # All
             'operator': operator,  # AirHam
             'portable': portable,  # AirHam
@@ -349,17 +366,20 @@ def decodeHamLogIOS(cols):
         }
     else:
         (operator, portable) = splitCallsign(cols[3])
-        
+        errordate = ''
+        errortime = ''
         try:
             atime = datetime.datetime.strptime(cols[0],'%Y-%m-%d %H:%M:%S %z')
             utime = atime.astimezone(datetime.timezone(datetime.timedelta(hours=0)))
             isotime = atime.isoformat()
         except Exception as e:
             errorfl = True
-            errormsg.append("Wrong time format:{}".format(operator+ ":"+cols[0]))
+            errormsg.append("Err:Wrong time format:{}".format(operator+ ":"+cols[0]))
             atime = datetime.datetime.strptime("1900/1/1 0:0 +0000",'%Y/%m/%d %H:%M %z')
             utime = atime.astimezone(datetime.timezone(datetime.timedelta(hours=0)))
             isotime = atime.isoformat()
+            [errordate ,errortime] = map(errMsg, cols[0].split(' ')[0:2])
+            
 
 
         year = utime.year
@@ -368,12 +388,22 @@ def decodeHamLogIOS(cols):
         hour = utime.hour
         minute = utime.minute
         timezone = '+0000'
-            
-        (band_air,band_sota,wlen) = freq_to_band(cols[2])
 
+        try:
+            (band_air,band_sota,wlen) = freq_to_band(cols[2])
+            band_error = ''
+        except Exception as e:
+            band_error = errMsg(str(e))
+            errormsg.append("Err:Frequency out of range:{}".format(e))
+            (band_air,band_sota,wlen) = (band_error,band_error,band_error)
+            
         return {
             'error':errorfl,
             'errormsg':" , ".join(errormsg),
+            'date_error':errordate,
+            'time_error':errortime,
+            'band_error':band_error,
+            
             'callsign': cols[3],   # All
             'operator': operator,  # AirHam
             'portable': portable,  # AirHam
@@ -679,97 +709,112 @@ def adif(key, value):
         
 def toADIF(decoder, lcount, mode, row, options):
     h = decoder(row)
-    if h['error']:
-        l = [
-            "HamLog format error at Line {}. : {}".format(lcount,h['errormsg']),
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            ""
-        ]
-        return ("000000",'', l)
+    if options['myQTH']=='rmks1':
+        myref = get_ref(h['rmks1'])
+        comment = h['rmks2']
+    elif options['myQTH']=='rmks2':
+        myref = get_ref(h['rmks2'])
+        comment = h['rmks1']
     else:
-        if options['myQTH']=='rmks1':
-            myref = get_ref(h['rmks1'])
-            comment = h['rmks2']
-        elif options['myQTH']=='rmks2':
-            myref = get_ref(h['rmks2'])
-            comment = h['rmks1']
-        else:
-            myref = {'SOTA': options['Summit'], 'POTA':options['Park']}
-            comment = ''
+        myref = {'SOTA': options['Summit'], 'POTA':options['Park']}
+        comment = ''
 
-        if options['QTH']=='rmks1':
-            hisref = get_ref(h['rmks1'])
-            comment = h['rmks2']
-        elif options['QTH']=='rmks2':
-            hisref = get_ref(h['rmks2'])
-            comment = h['rmks1']
-        else:
-            hisref = {'SOTA':'','WWFF':'','POTA':''}
-            comment = ''
+    if options['QTH']=='rmks1':
+        hisref = get_ref(h['rmks1'])
+        comment = h['rmks2']
+    elif options['QTH']=='rmks2':
+        hisref = get_ref(h['rmks2'])
+        comment = h['rmks1']
+    else:
+        hisref = {'SOTA':'','WWFF':'','POTA':''}
+        comment = ''
         
+    if h['date_error']:
+        date = h['date_error']
+    else:
         date = '{year:02}{month:02}{day:02}'.format(
             day=h['day'], month=h['month'], year=h['year'])
     
-        date2 = '{year:02}-{month:02}-{day:02}'.format(
-            day=h['day'], month=h['month'], year=h['year'])
-    
-        if mode == 'SOTA':
-            activator = options['SOTAActivator']
-            (operator,_) = splitCallsign(activator)
-            wwffref = ''
-        elif mode == 'POTA':
-            activator = options['POTAActivator']
-            operator = options['POTAOperator']
-            wwffref = myref['POTA']
-        else:
-            activator = options['WWFFActivator']
-            operator = options['WWFFOperator']
-            wwffref = options['WWFFRef']
+    date2 = '{year:02}-{month:02}-{day:02}'.format(
+        day=h['day'], month=h['month'], year=h['year'])
+
+    if h['time_error']:
+        time = h['time_error']
+    else:
+        time = '{hour:02}{minute:02}'.format(
+            hour=h['hour'], minute=h['minute'])
+
+    if mode == 'SOTA':
+        activator = options['SOTAActivator']
+        (operator,_) = splitCallsign(activator)
+        wwffref = ''
+    elif mode == 'POTA':
+        activator = options['POTAActivator']
+        operator = options['POTAOperator']
+        wwffref = myref['POTA']
+    else:
+        activator = options['WWFFActivator']
+        operator = options['WWFFOperator']
+        wwffref = options['WWFFRef']
         
-        if mode == 'SOTA' and myref['SOTA']=='':
-            return (date2,'',[])
-        elif mode == 'POTA' and myref['POTA']=='':
-            return (date2,'',[])
-        
-        l = [
-            adif('activator',activator),
-            adif('operator',operator),
-            adif('callsign',h['callsign']),
-            adif('date',date),
-            adif('time',
-                 '{hour:02}{minute:02}'.format(
-                     hour=h['hour'], minute=h['minute'])),
-            adif('band-wlen',h['band-wlen']),
-            adif('mode',h['mode']),
-            adif('rst_sent',h['rst_sent']),
-            adif('rst_rcvd',h['rst_rcvd']),
+    if mode == 'SOTA' and myref['SOTA']=='':
+        return (date2,'',[],[],False)
+    elif mode == 'POTA' and myref['POTA']=='':
+        return (date2,'',[],[],False)
+
+    if h['error'] or (mode == 'POTA' and h['band_error']):
+        l = [h['errormsg']]
+        l2 = []
+        errorfl = True
+    else:
+        l = []
+        l2 = []
+        errorfl = False
+          
+    l += [
+        adif('activator',activator),
+        adif('operator',operator),
+        adif('callsign',h['callsign']),
+        adif('date',date),
+        adif('time',time),
+        adif('band-wlen',h['band-wlen']),
+        adif('mode',h['mode']),
+        adif('rst_sent',h['rst_sent']),
+        adif('rst_rcvd',h['rst_rcvd']),
+    ]
+    if mode == 'POTA':
+        l2 += [
+            h['callsign'],
+            date,
+            time,
+            h['band-wlen'],
+            h['mode'],
+            h['rst_sent'],
+            h['rst_rcvd'],
+            hisref['POTA'],
+            myref['POTA'],
+            activator,
+            operator
         ]
+            
+    if mode == 'SOTA':
+        l += [ adif('mysotaref',myref['SOTA']) ]
+        if  hisref['SOTA'] != '':
+            l+= [adif('sotaref',hisref['SOTA'])]
+    elif mode == 'POTA':
+        l += [ adif('mysig','POTA'),
+               adif('mysiginfo',myref['POTA'])]
+        if hisref['POTA'] != '':
+            l+= [adif('sig','POTA'),adif('siginfo',hisref['POTA'])]
+    else:
+        l += [ adif('mysig','WWFF'),
+               adif('mysiginfo',options['WWFFRef'])]
+        if hisref['WWFF'] != '':
+            l+= [adif('sig','WWFF'),adif('siginfo',hisref['WWFF'])]
+            
+    l+= ['<EOR>']
     
-        if mode == 'SOTA':
-            l += [ adif('mysotaref',myref['SOTA']) ]
-            if  hisref['SOTA'] != '':
-                l+= [adif('sotaref',hisref['SOTA'])]
-        elif mode == 'POTA':
-            l += [ adif('mysig','POTA'),
-                   adif('mysiginfo',myref['POTA'])]
-            if hisref['POTA'] != '':
-                l+= [adif('sig','POTA'),adif('siginfo',hisref['POTA'])]
-        else:
-            l += [ adif('mysig','WWFF'),
-                   adif('mysiginfo',options['WWFFRef'])]
-            if hisref['WWFF'] != '':
-                l+= [adif('sig','WWFF'),adif('siginfo',hisref['WWFF'])]
-                
-        l+= ['<EOR>']
-    
-        return (date2,wwffref,l)
+    return (date2, wwffref, l, l2, errorfl)
 
 def sendAirHamLog(fp, fname, decoder, options, inchar, outchar):
 
@@ -893,7 +938,7 @@ def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
             if linecount > 100000:
                 break
             elif row:
-                (d2,ref,ladif) = toADIF(decoder, linecount, 'SOTA', row, options)
+                (d2,ref,ladif,_,_) = toADIF(decoder, linecount, 'SOTA', row, options)
                 (fn, s2s, lcsv) = toSOTA(decoder, linecount, True, row, callsign, options)
 
                 if ladif:
@@ -1003,7 +1048,7 @@ def sendWWFF(fp, decoder, options, inchar, outchar):
             if linecount > 100000:
                 break
             else:
-                (date,ref,l) = toADIF(decoder, linecount, 'WWFF', row, options)
+                (date,ref,l,_,_) = toADIF(decoder, linecount, 'WWFF', row, options)
                 if linecount == 0:
                     act_call = options['WWFFActivator']
                     fname = act_call.replace('/','-') + '@' + ref + ' '+ date +'.adi'
@@ -1017,6 +1062,7 @@ def sendWWFF(fp, decoder, options, inchar, outchar):
 
 def sendPOTA(fp, options, inchar, outchar):
     files = {}
+    res = {'status':'OK','logtext':[]}
     outstr = io.StringIO()
     linecount = 0
     fname = ''
@@ -1036,36 +1082,40 @@ def sendPOTA(fp, options, inchar, outchar):
         for row in reader:
             if linecount > 100000:
                 break
-            else:
-                if not decoder:
-                    if 'TimeOn' in row:
-                        decoder = decodeHamLogIOS
-                        continue
-                    else:
-                        decoder = decodeHamlog
+            if not decoder:
+                if 'TimeOn' in row:
+                    decoder = decodeHamLogIOS
+                    continue
+                else:
+                    decoder = decodeHamlog
                     
-                (date,ref,l) = toADIF(decoder, linecount, 'POTA', row, options)
-                fn = act_call.replace('/','-') + '@' + ref + ' ' + date +'.adi'
-                if l:
-                    if linecount==0:
-                        fname = fn
-
-                    if fn == fname:
-                        writer.writerow(l)
+            (date,ref,l,l2,errorfl) = toADIF(decoder, linecount, 'POTA', row, options)
+            if errorfl:
+                res['status'] = 'NG'
+                
+            fn = act_call.replace('/','-') + '@' + ref + ' ' + date +'.adi'
+            if l:
+                if linecount==0:
+                    fname = fn
+                    
+                if fn == fname:
+                    writer.writerow(l)
+                else:
+                    if fname in files:
+                        newstr = files[fname] + outstr.getvalue()
                     else:
-                        if fname in files:
-                            newstr = files[fname] + outstr.getvalue()
-                        else:
-                            newstr = header + outstr.getvalue()
+                        newstr = header + outstr.getvalue()
 
-                        files.update({fname : newstr })
-                        
-                        outstr = io.StringIO()
-                        writer = csv.writer(outstr,delimiter=' ',
-                                            quoting=csv.QUOTE_MINIMAL)
-                        fname = fn
-                        writer.writerow(l)
-                linecount += 1
+                    files.update({fname : newstr })
+                    outstr = io.StringIO()
+                    writer = csv.writer(outstr,delimiter=' ',
+                                        quoting=csv.QUOTE_MINIMAL)
+                    fname = fn
+                    writer.writerow(l)
+            if l2:
+                res['logtext'].append(l2)
+            linecount += 1
+
         if fname != '':
             if fname in files:
                 newstr = files[fname] + outstr.getvalue()
@@ -1073,4 +1123,4 @@ def sendPOTA(fp, options, inchar, outchar):
                 newstr = header + outstr.getvalue()
             files.update({fname : newstr })
             
-    return files
+    return files,res

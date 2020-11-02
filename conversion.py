@@ -3,6 +3,7 @@
 import cgi
 import cgitb
 import datetime
+import json
 from convutil import (
     sendSOTA_Both,
     sendSOTA_A,
@@ -25,7 +26,7 @@ debug = False
 
 
 def main():
-    #cgitb.enable()
+    cgitb.enable(display=0, logdir='/var/tmp/')
 
     form = cgi.FieldStorage()
 
@@ -35,6 +36,7 @@ def main():
     pota_activation_call = form.getvalue('pota_activation_call',None)
     wwffoperator = form.getvalue('wwffoperator',None)
     gpx_trk_interval = form.getvalue('gpx_trk_interval',None)
+    command = form.getvalue('command',None);
     
     options = {
         'Portable': form.getvalue('portable',''),
@@ -75,7 +77,6 @@ def main():
             return
         fp = fileitem.file
         
-        
     now  = datetime.datetime.now()
     fname = now.strftime("%Y-%m-%d-%H-%M")
 
@@ -107,9 +108,13 @@ def main():
 
     elif pota_activation_call:
         outchar = "utf-8"
-        files = sendPOTA(fp, options, inchar, outchar)
-        fname = "pota-" + fname + ".zip"
-        writeZIP(files,fname)
+        files, res  = sendPOTA(fp, options, inchar, outchar)
+        if command == "POTACSVCheck":
+            print("Content-Type:application/json\n\n")
+            print(json.dumps(res))
+        else:
+            fname = "pota-" + fname + ".zip"
+            writeZIP(files,fname)
         
     elif wwffoperator:
         outchar = "utf-8"
