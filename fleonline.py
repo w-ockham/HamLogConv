@@ -30,6 +30,7 @@ keyword_table = {
     'qslmsg':-1,
     'mywwff':1,
     'mysota':1,
+    'mypota':1,
     'nickname':1,
     'date':1,
     'day':1,
@@ -218,6 +219,10 @@ def tokenizer(line):
         if m:
             res.append(('sotaref',w,word))
             continue
+        m = re.match('\w+-\d+$',w)
+        if m:
+            res.append(('potaref',w,word))
+            continue
         kw = keyword(w)
         if kw:
             if w == 'QSLMSG':
@@ -258,6 +263,7 @@ def compileFLE(input_text,conv_mode):
         'qslmsg':'',
         'mywwff':'',
         'mysota':'',
+        'mypota':'',
         'nickname':'',
         'rigset':0,
         'year':2000,
@@ -274,6 +280,7 @@ def compileFLE(input_text,conv_mode):
         'c_call':'',
         'c_rigset':0,
         'c_his_wwff':'',
+        'c_his_pota':'',
         'c_his_sota':'',
         'c_r_s':5,
         'c_s_s':9,
@@ -289,6 +296,7 @@ def compileFLE(input_text,conv_mode):
     qsoc = 0
     sotafl = False
     wwfffl = False
+    potafl = False
     for l in lines:
         env['c_r_s']=5
         env['c_s_s']=9
@@ -301,6 +309,7 @@ def compileFLE(input_text,conv_mode):
         env['c_snr_r']='-10'
         env['c_his_wwff']=''
         env['c_his_sota']=''
+        env['c_his_pota']=''
         env['c_qso_msg']=''
         env['c_qso_rmks']=''
 
@@ -387,7 +396,19 @@ def compileFLE(input_text,conv_mode):
                     else:
                         env['errno'].append((lc,pos+1,'Invalid SOTA ref#.'))
                 else:
-                    env['errno'].append((lc,pos,'mywwff','Missing WWFF ref#.'))
+                    env['errno'].append((lc,pos,'Missing SOTA ref#.'))
+                lc += 1
+                continue
+            if key == 'mypota':
+                if pos < ml:
+                    (id, ref, w) = tl[pos+1]
+                    if id =='potaref':
+                        env['mypota'] = ref
+                        potafl = True
+                    else:
+                        env['errno'].append((lc,pos+1,'Invalid POTA ref#.'))
+                else:
+                    env['errno'].append((lc,pos,'Missing POTA ref#.'))
                 lc += 1
                 continue
             if key == 'nickname':
@@ -504,6 +525,11 @@ def compileFLE(input_text,conv_mode):
                         continue
                     if t == 'wwffref':
                         env['c_his_wwff'] = p1
+                        pos+=1
+                        state = NORM
+                        continue
+                    if t == 'potaref':
+                        env['c_his_pota'] = p1
                         pos+=1
                         state = NORM
                         continue
@@ -637,6 +663,8 @@ def compileFLE(input_text,conv_mode):
                     'hissota':env['c_his_sota'],
                     'mywwff':env['mywwff'],
                     'hiswwff':env['c_his_wwff'],
+                    'mypota':env['mypota'],
+                    'hispota':env['c_his_pota'],
                     'operator':env['operator'],
                     'qsomsg':env['c_qso_msg'],
                     'qsormks':env['c_qso_rmks'],
@@ -685,6 +713,8 @@ def compileFLE(input_text,conv_mode):
                     'hissota':env['c_his_sota'],
                     'mywwff':env['mywwff'],
                     'hiswwff':env['c_his_wwff'],
+                    'mypota':env['mypota'],
+                    'hispota':env['c_his_pota'],
                     'operator':env['operator'],
                     'qsomsg':env['c_qso_msg'],
                     'qsormks':env['c_qso_rmks'],
@@ -698,13 +728,25 @@ def compileFLE(input_text,conv_mode):
                     
                 mysota = env['mysota']
                 hissota = env['c_his_sota']
-                mywwff = env['mywwff']
-                hiswwff = env['c_his_wwff']
+                myref = ''
+                hisref =''
+                if potafl:
+                    myref = env['mypota']
+                    hisref = env['c_his_pota']
+                    prefix = '/'
+                else:
+                    prefix = ''
+                    
+                if wwfffl:
+                    myref += prefix + env['mywwff']
+                    if env['c_his_wwff'] != '':
+                        hisref += prefix + env['c_his_wwff']
+                    
                 qsormks = get_ref(env['c_qso_rmks'])
                 operator = env['operator']
                 hisname = env['c_qso_msg']
 
-                qso = [ str(qsoc), mycall, date, time, call, band, mode, rsts, rstr, mysota, hissota,mywwff, hiswwff , qsormks['LOC']+qsormks['SAT'], operator]
+                qso = [ str(qsoc), mycall, date, time, call, band, mode, rsts, rstr, mysota, hissota, myref, hisref, qsormks['LOC']+qsormks['SAT'], operator]
                 hamlogqso = [ str(qsoc), call, date, time+'U', rsts, rstr, freq, mode, rmks['LOC_org'], hisname, qth, qsl]
             res.append(qso)
             hamlogres.append(hamlogqso)
@@ -733,7 +775,7 @@ def compileFLE(input_text,conv_mode):
             now  = datetime.datetime.now()
             fname = "fle-" + now.strftime("%Y-%m-%d-%H-%M")
             aday = '{}{:02}{:02}'.format(env['year'],env['month'],env['day'])
-            logname= aday + '@' + env['mysota'].replace('/','-')+env['mywwff']
+            logname= aday + '@' + env['mysota'].replace('/','-')+env['mypota']+env['mywwff']
             files = {
                 "fle-" + logname + ".txt" :input_text,
                 "hamlog-" + logname + ".csv" : sendHamlog_FLE(res,env),
@@ -742,10 +784,14 @@ def compileFLE(input_text,conv_mode):
             
             if sotafl:
                 files = sendSOTA_FLE(files,res)
-            if wwfffl:
-                files = sendWWFF_FLE(files, res, env['mycall'])
 
-            if (not sotafl) and (not wwfffl):
+            if wwfffl:
+                files = sendADIF_FLE(files, res, env['mycall'], 'WWFF')
+
+            if potafl:
+                files = sendADIF_FLE(files, res, env['mycall'], 'POTA')
+
+            if (not sotafl) and (not wwfffl) and (not potafl):
                 files = sendSOTA_FLE(files,res)
                 
             writeZIP(files,fname+".zip")
@@ -769,11 +815,11 @@ def compileFLE(input_text,conv_mode):
                 lc += 1
         else:
             status = 'OK'
-            if sotafl and wwfffl:
+            if sotafl and ( wwfffl or potafl):
                 logtype = 'BOTH'
             elif sotafl:
                 logtype = 'SOTA'
-            elif wwfffl:
+            elif wwfffl or potafl:
                 logtype = 'WWFF'
             else:
                 logtype = 'NONE'
@@ -881,17 +927,24 @@ def sendSOTA_FLE(files, loginput):
 
     return(files)
 
-def toWWFF_FLE(h):
+def toADIF_FLE(h, mode):
     date = '{year:02}{month:02}{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year'])
     
     date2 = '{year:02}-{month:02}-{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year'])
-    
-    wwffref = h['mywwff']
 
+    if mode == 'POTA':
+        sig = 'POTA'
+        siginfo = h['mypota']
+        hissig = h['hispota']
+    else:
+        sig = 'WWFF'
+        siginfo = h['mywwff']
+        hissig = h['hiswwff']
+        
     l = [
-        adif('WWFFActivator',h['mycall']),
+        adif('activator',h['mycall']),
         adif('callsign',h['callsign']),
         adif('date',date),
         adif('time',
@@ -901,36 +954,58 @@ def toWWFF_FLE(h):
         adif('mode',h['mode']),
         adif('rst_sent',h['rst_sent']),
         adif('rst_rcvd',h['rst_rcvd']),
-        adif('mysig','WWFF'),
-        adif('mysiginfo',wwffref)
+        adif('mysig',sig),
+        adif('mysiginfo',siginfo)
         ]
-    
-    if h['hiswwff'] != '':
-        l+= [adif('sig','WWFF'),adif('siginfo',h['hiswwff'])]
 
-    l+= [adif('WWFFOperator',h['operator']),'<EOR>']
-    
-    return (date2,wwffref,l)
+    if hissig != '':
+        l+= [adif('sig',sig),adif('siginfo', hissig)]        
 
-def sendWWFF_FLE(files, loginput, callsign):
+    l+= [adif('operator',h['operator']),'<EOR>']
+    
+    return (date2, siginfo, l)
+
+def sendADIF_FLE(files, loginput, callsign, mode):
     outstr = io.StringIO()
     linecount = 0
+    fname = ''
     writer = csv.writer(outstr, delimiter=' ',
                         quoting=csv.QUOTE_MINIMAL)
+    header = 'ADIF Export from HAMLOG by JL1NIE\n' + adif('programid','FCTH')+ '\n' + adif('adifver','3.0.6')+'\n' + '<EOH>\n'
+
     for row in loginput:
         if linecount > 100000:
             break
         else:
-            (date,ref,l) = toWWFF_FLE(row)
+            (date,ref,l) = toADIF_FLE(row, mode)
+            
+            fn = callsign.replace('/','-') + '@' + ref + ' '+ date +'.adi'
+                
             if linecount == 0:
-                fname = callsign.replace('/','-') + '@' + ref + ' '+ date +'.adi'
-                outstr.write('ADIF Export from FLEO by JL1NIE\n')
-                outstr.write(adif('programid','FLEO')+'\n')
-                outstr.write(adif('adifver','3.0.6')+'\n')
-                outstr.write('<EOH>\n')
-            writer.writerow(l)
-            linecount += 1
-    files.update({fname : outstr.getvalue()})
+                fname = fn
+
+            if fn == fname:
+                    writer.writerow(l)
+            else:
+                if fname in files:
+                    newstr = files[fname] + outstr.getvalue()
+                else:
+                    newstr = header + outstr.getvalue()
+
+                files.update({fname : newstr })
+                outstr = io.StringIO()
+                writer = csv.writer(outstr,delimiter=' ',
+                                    quoting=csv.QUOTE_MINIMAL)
+                fname = fn
+                writer.writerow(l)
+        linecount += 1
+
+    if fname != '':
+        if fname in files:
+            newstr = files[fname] + outstr.getvalue()
+        else:
+            newstr = header + outstr.getvalue()
+        files.update({fname : newstr })
 
     return files
 
@@ -1089,7 +1164,7 @@ def do_command(command, arg):
     print(json.dumps(res))
         
 def main():
-#    cgitb.enable(display=1, logdir='/tmp')
+    cgitb.enable(display=1, logdir='/tmp')
 
     form = cgi.FieldStorage()
 
