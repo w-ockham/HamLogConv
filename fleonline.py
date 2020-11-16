@@ -433,6 +433,7 @@ def compileFLE(input_text,conv_mode):
                 continue
             if key == 'qslmsg':
                 p2 = re.sub('\$mywwff',env['mywwff'],p2)
+                p2 = re.sub('\$mypota',env['mypota'],p2)
                 p2 = re.sub('\$mysota',env['mysota'],p2)
                 env['qslmsg'] = p2
                 lc += 1
@@ -1016,11 +1017,16 @@ def compose_qsl_msg(h,env):
     else:
         f = re.sub(r'MHz','',band_to_freq(h['band']))
 
-    hisref = h['hissota']
-
+    hisref = []
+    if h['hissota'] != '':
+        hisref.append(h['hissota'])
+        
     if h['hiswwff'] != '':
-        hisref = hisref + "," + h['hiswwff']
+        hisref.append(h['hiswwff'])
 
+    if h['hispota'] != '':
+        hisref.append(h['hispota'])
+    
     rmks = get_ref(h['qsormks'])
 
     qslmsg = h['qslmsg']
@@ -1042,7 +1048,7 @@ def compose_qsl_msg(h,env):
     else:
         rig = ''
 
-    qthstr = rmks['ORG']+ ' '+ hisref
+    qthstr = rmks['ORG']+ ' '+ ",".join(hisref)
 
     qthstr = qthstr.strip()
     qslmsg = '%'+ qslmsg + '%' + rig
@@ -1119,6 +1125,9 @@ def toAirHamFLE(lcount, h, env):
         
     if h['hiswwff'] != '':
         hisref.append(h['hiswwff'])
+
+    if h['hispota'] != '':
+        hisref.append(h['hispota'])
                                          
     l = ["",
          operator,
