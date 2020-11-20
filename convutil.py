@@ -816,6 +816,103 @@ def toADIF(decoder, lcount, mode, row, options):
     
     return (date2, wwffref, l, l2, errorfl)
 
+def toADIF2(decoder, mode, row, options):
+
+    h = decoder(row)
+
+    if options['myQTH']=='rmks1':
+        myref = get_ref(h['rmks1'])
+        comment = h['rmks2']
+    elif options['myQTH']=='rmks2':
+        myref = get_ref(h['rmks2'])
+        comment = h['rmks1']
+    else:
+        myref = get_ref(options['Park'])
+        comment = ''
+
+    if options['QTH']=='rmks1':
+        hisref = get_ref(h['rmks1'])
+        comment = h['rmks2']
+    elif options['QTH']=='rmks2':
+        hisref = get_ref(h['rmks2'])
+        comment = h['rmks1']
+    else:
+        hisref = {'POTA':'','WWFF':''}
+        comment = ''
+        
+    if h['date_error']:
+        date = h['date_error']
+    else:
+        date = '{year:02}{month:02}{day:02}'.format(
+            day=h['day'], month=h['month'], year=h['year'])
+    
+    date2 = '{year:02}-{month:02}-{day:02}'.format(
+        day=h['day'], month=h['month'], year=h['year'])
+
+    if h['time_error']:
+        time = h['time_error']
+    else:
+        time = '{hour:02}{minute:02}'.format(
+            hour=h['hour'], minute=h['minute'])
+
+    activator = options['POTAActivator']
+    operator = options['POTAOperator']
+        
+    if h['error'] or h['band_error']:
+        log = [h['errormsg']]
+        errorfl = True
+    else:
+        log = []
+        errorfl = False
+    
+    log += [
+        adif('activator',activator),
+        adif('operator',operator),
+        adif('callsign',h['callsign']),
+        adif('date',date),
+        adif('time',time),
+        adif('band-wlen',h['band-wlen']),
+        adif('mode',h['mode']),
+        adif('rst_sent',h['rst_sent']),
+        adif('rst_rcvd',h['rst_rcvd']),
+    ]
+
+    if mode == 'POTA':
+        log += [ adif('mysig','POTA'),
+               adif('mysiginfo',myref['POTA'])]
+        if hisref['POTA'] != '':
+            log += [adif('sig','POTA'),adif('siginfo',hisref['POTA'])]
+    elif mode == 'WWFF':
+        log += [ adif('mysig','WWFF'),
+                 adif('mysiginfo',myref['WWFF'])]
+        if hisref['WWFF'] != '':
+            log += [adif('sig','WWFF'),adif('siginfo',hisref['WWFF'])]
+
+    log += ['<EOR>']
+    
+    make_str = lambda x : '/'.join([i for i in [x['WWFF'],x['POTA']] if i != ''])
+
+    hisstr = make_str(hisref)
+    mystr = make_str(myref) 
+    ldisp = [
+            h['callsign'],
+            date,
+            time,
+            h['band-wlen'],
+            h['mode'],
+            h['rst_sent'],
+            h['rst_rcvd'],
+            hisstr,
+            mystr,
+            activator,
+            operator
+        ]
+
+    if myref[mode]=='':
+        return (date2,'', ldisp, log, False)
+    else:
+        return (date2, myref[mode], ldisp, log, errorfl)
+
 def sendAirHamLog(fp, fname, decoder, options, inchar, outchar):
 
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding=outchar, errors="backslashreplace")
@@ -1059,6 +1156,122 @@ def sendWWFF(fp, decoder, options, inchar, outchar):
                 writer.writerow(l)
                 linecount += 1
         files.update({fname : outstr.getvalue()})
+
+def sendADIF(fp, options, inchar, outchar):
+    files = {}
+    res = {'status':'OK','logtext':[]}
+    header = 'ADIF Export from HAMLOG by JL1NIE\n'+ adif('programid','FCTH')+ '\n' + adif('adifver','3.0.6')+'\n' + '<EOH>\n'
+    
+    act_call = options['POTAActivator']
+    (operator,portable) = splitCallsign(act_call)
+
+    if not options['POTAOperator']:
+        options['POTAOperator'] = operator
+
+    lines = []
+    with io.TextIOWrapper(fp, encoding=inchar,errors="backslashreplace") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            lines += [row]
+
+    decoder = None
+    outstr = io.StringIO()
+    writer = csv.writer(outstr, delimiter=' ',
+                        quoting=csv.QUOTE_MINIMAL)
+    linecount = 0
+    for row in lines:
+        if linecount > 100000:
+                break
+        if not decoder:
+            if 'TimeOn' in row:
+                decoder = decodeHamLogIOS
+                continue
+            else:
+                decoder = decodeHamlog
+                    
+        (date, ref, ldisp, log, errorfl) = toADIF2(decoder,'WWFF', row, options)
+
+        if errorfl:
+            res['status'] = 'NG'
+                
+        fn = act_call.replace('/','-') + '@' + ref + ' ' + date +'.adi'
+        if log:
+            if linecount==0:
+                fname = fn
+                    
+            if fn == fname:
+                writer.writerow(log)
+            else:
+                if fname in files:
+                    newstr = files[fname] + outstr.getvalue()
+                else:
+                    newstr = header + outstr.getvalue()
+
+                files.update({fname : newstr })
+                outstr = io.StringIO()
+                writer = csv.writer(outstr,delimiter=' ',
+                                    quoting=csv.QUOTE_MINIMAL)
+                fname = fn
+                writer.writerow(log)
+        if ldisp:
+            res['logtext'].append(ldisp)
+        linecount += 1
+
+    if fname != '':
+        if fname in files:
+            newstr = files[fname] + outstr.getvalue()
+        else:
+            newstr = header + outstr.getvalue()
+        files.update({fname : newstr })
+
+    decoder = None
+    outstr = io.StringIO()
+    writer = csv.writer(outstr, delimiter=' ',
+                        quoting=csv.QUOTE_MINIMAL)
+    linecount = 0
+    for row in lines:
+        if linecount > 100000:
+                break
+        if not decoder:
+            if 'TimeOn' in row:
+                decoder = decodeHamLogIOS
+                continue
+            else:
+                decoder = decodeHamlog
+                    
+        (date, ref, ldisp, log, errorfl) = toADIF2(decoder,'POTA', row, options)
+        if errorfl:
+            res['status'] = 'NG'
+                
+        fn = act_call.replace('/','-') + '@' + ref + ' ' + date +'.adi'
+        if log:
+            if linecount==0:
+                fname = fn
+                    
+            if fn == fname:
+                writer.writerow(log)
+            else:
+                if fname in files:
+                    newstr = files[fname] + outstr.getvalue()
+                else:
+                    newstr = header + outstr.getvalue()
+
+                files.update({fname : newstr })
+                outstr = io.StringIO()
+                writer = csv.writer(outstr,delimiter=' ',
+                                    quoting=csv.QUOTE_MINIMAL)
+                fname = fn
+                writer.writerow(log)
+        linecount += 1
+
+    if fname != '':
+        if fname in files:
+            newstr = files[fname] + outstr.getvalue()
+        else:
+            newstr = header + outstr.getvalue()
+        files.update({fname : newstr })
+            
+    return files,res
 
 def sendPOTA(fp, options, inchar, outchar):
     files = {}

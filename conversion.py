@@ -10,6 +10,7 @@ from convutil import (
     sendSOTA_C,
     sendWWFF,
     sendPOTA,
+    sendADIF,
     sendAirHamLog,
     decodeHamlog,
     writeZIP,
@@ -58,14 +59,16 @@ def main():
 
     if debug:
         fp = open('sample.csv','rb')
-        activation_call_both = 'JL1NIE'
+        #activation_call_both = 'JL1NIE'
+        pota_activation_call = 'JL1NIE'
         options['QTH']='rmks1'
-        options['myQTH']='rmks2'
+        options['myQTH']=''
         options['Portable']='portable'
         options['Note']='rmks1'
-        #options['WWFFOperator']= wwffoperator
-        #options['WWFFActivator']=wwffoperator+'/1'
-        #options['WWFFRef']= 'JAFF-0123'
+        options['POTAOperator']= 'JL1NIE'
+        options['POTAActivator']= 'JL1NIE/1'
+        options['Park']= 'JAFF-0123,JA-0005'
+        command = "ADIFCSVCheck"
         #wwffoperator=''
         #fp = open('tmp/test.gpx','rb')
         #gpx_trk_interval = '60'
@@ -108,12 +111,12 @@ def main():
 
     elif pota_activation_call:
         outchar = "utf-8"
-        files, res  = sendPOTA(fp, options, inchar, outchar)
-        if command == "POTACSVCheck":
+        files, res  = sendADIF(fp, options, inchar, outchar)
+        if command == "ADIFCSVCheck":
             print("Content-Type:application/json\n\n")
             print(json.dumps(res))
         else:
-            fname = "pota-" + fname + ".zip"
+            fname = "adif-" + fname + ".zip"
             writeZIP(files,fname)
         
     elif wwffoperator:

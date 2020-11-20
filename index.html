@@ -51,11 +51,11 @@
       gtag('config', 'UA-139463065-3');
     </script>
 
-    <title>ファイル変換ツールfor SOTA</title>
+    <title>ファイル変換ツールfor SOTA/JAFF/POTA</title>
   </head>
   <body>
     <div class="header clearfix">
-      <div class="text-muted"><h5>ファイル変換ツールfor SOTA</h5>
+      <div class="text-muted"><h5>ファイル変換ツールfor SOTA/JAFF/POTA</h5>
       </div>
     </div>
     <ul class="nav nav-tabs nav-pills" role="tablist">
@@ -63,21 +63,23 @@
 	<a class="nav-link active" id="AirHamLog-tab" data-toggle="tab" href="#AirHamLog" role="tab" aria-controls="AirHamLog" aria-selected="true">AirHamLog</a>
       </li>
       <li class="nav-item">
-	<a class="nav-link" id="SOTAActivator-tab" data-toggle="tab" href="#SOTAActivator" role="tab" aria-controls="SOTAActivator" aria-selected="false">SOTA Activator CSV</a>
+	<a class="nav-link" id="SOTAActivator-tab" data-toggle="tab" href="#SOTAActivator" role="tab" aria-controls="SOTAActivator" aria-selected="false">SOTA Activator</a>
       </li>
       <li class="nav-item">
-	<a class="nav-link" id="SOTAChaser-tab" data-toggle="tab" href="#SOTAChaser" role="tab" aria-controls="SOTAChaser" aria-selected="false">SOTA Chaser CSV</a>
+	<a class="nav-link" id="SOTAChaser-tab" data-toggle="tab" href="#SOTAChaser" role="tab" aria-controls="SOTAChaser" aria-selected="false">SOTA Chaser</a>
       </li>
       <li class="nav-item">
-	<a class="nav-link" id="POTAActivator-tab" data-toggle="tab" href="#POTAActivator" role="tab" aria-controls="POTAActivator" aria-selected="false">POTA ADIF</a>
+	<a class="nav-link" id="POTAActivator-tab" data-toggle="tab" href="#POTAActivator" role="tab" aria-controls="POTAActivator" aria-selected="false">JAFF/POTA</a>
+      </li>
+<!--
+      <li class="nav-item">
+	<a class="nav-link" id="JAFFActivator-tab" data-toggle="tab" href="#JAFFActivator" role="tab" aria-controls="JAFFActivator" aria-selected="false">JAFF</a>
       </li>
 
       <li class="nav-item">
-	<a class="nav-link" id="JAFFActivator-tab" data-toggle="tab" href="#JAFFActivator" role="tab" aria-controls="JAFFActivator" aria-selected="false">JAFF ADIF</a>
-      </li>
-      <li class="nav-item">
 	<a class="nav-link" id="SOTABoth-tab" data-toggle="tab" href="#SOTABoth" role="tab" aria-controls="SOTABoth" aria-selected="false">SOTA CSV（統合版)</a>
       </li>
+-->
       <li class="nav-item">
 	<a class="nav-link" id="FLEOnline-tab" data-toggle="tab" href="#FLEOnline" role="tab" aria-controls="FLEOnline" aria-selected="false">FLE Online</a>
       </li>
@@ -500,11 +502,11 @@
 		    <input type="text" id="pota_operator" name="pota_operator" class="form-control" placeholder="コールサイン(例:JL1NIE)">
 		  </div>
 		  <div class="form-group">
-		    <h6><b>運用した公園番号</b></h6>
+		    <h6><b>JAFF/POTA運用先</b></h6>
 		    <div class="form-check">
 		      <input class="form-check-input" type="radio" name="myQTH" id="myQTH" value="form" checked>
-		      <label for="park">公園番号を入力</label>
-		      <input type="text" id="park" name="park" class="form-control" placeholder="例: JA-1289">
+		      <label for="park">リファレンス/公園番号を入力</label>
+		      <input type="text" id="park" name="park" class="form-control" placeholder="例: JAFF-0005 JA-0014">
 		    </div>
 		    <div class="form-check">
 		      <input class="form-check-input" type="radio" name="myQTH" id="myQTH1" value="rmks1">
@@ -520,7 +522,7 @@
 		    </div>
 		  </div>
 		  <div class="form-group">
-		    <h6><b>P2P交信局の公園番号</b></h6>
+		    <h6><b>P2P局のリファレンス/公園番号</b></h6>
 		    <div class="form-check">
 		      <input class="form-check-input" type="radio" name="QTH" id="QTHNone" value="none" checked>
 		      <label class="form-check-label" for="QTHNone">
@@ -581,7 +583,8 @@
 			onClick="readPOTACSV()">CSV読込
 		</button>
 		<button type="submit" class="btn-sm btn-primary">ADIF生成</button>
-		  <a href="https://parksontheair.com/" target="_blank" class="btn-sm btn-outline-info" role="button">Parks on the Air</a>
+		  <a href="mailto:jaff-log@nifty.com" target="_blank" class="btn-sm btn-outline-info" role="button">JAFFログ送付</a>
+		  <a href="mailto:K[エリア番号]@parksontheair.com" target="_blank" class="btn-sm btn-outline-info" role="button">POTAログ送付</a>
 		</div>
 	      </div>
 	    </div>
@@ -595,7 +598,7 @@
         function formCheckPOTA() {
 	var form = document.forms.POTAActivatorForm;
 	    if( form.myQTH.value == "form" && form.park.value == "") {
-		window . alert ( '運用したParkリファレンスを入力して下さい');
+		window . alert ( '運用先を入力して下さい');
 		return false;
 	    }
 	    if( form.myQTH.value == "rmks1" && form.QTH.value == "rmks1") {
@@ -1056,7 +1059,7 @@ function readPOTACSV() {
     var form =  $('#POTAActivatorForm').get(0)
     console.log(form)
     var formdata = new FormData(form)
-    formdata.append("command","POTACSVCheck")
+    formdata.append("command","ADIFCSVCheck")
     for(let value of formdata.entries()) {
 	console.log(value);
     }
