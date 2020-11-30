@@ -1306,7 +1306,7 @@ def sendPOTA(fp, options, inchar, outchar):
             if errorfl:
                 res['status'] = 'NG'
                 
-            fn = act_call.replace('/','-') + '@' + ref + ' ' + date +'.adi'
+            fn = act_call.replace('/','-') + '@' + ref + '-' + date +'.adi'
             if l:
                 if linecount==0:
                     fname = fn
