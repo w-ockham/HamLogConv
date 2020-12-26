@@ -980,7 +980,7 @@ def sendADIF_FLE(files, loginput, callsign, mode):
         else:
             (date,ref,l) = toADIF_FLE(row, mode)
             
-            fn = callsign.replace('/','-') + '@' + ref + ' '+ date +'.adi'
+            fn = callsign.replace('/','-') + '@' + ref + '-'+ date +'.adi'
                 
             if linecount == 0:
                 fname = fn
