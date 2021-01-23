@@ -909,7 +909,7 @@ def toADIF2(decoder, mode, row, options):
         ]
 
     if myref[mode]=='':
-        return (date2,'', ldisp, log, False)
+        return (date2,'', ldisp, [], False)
     else:
         return (date2, myref[mode], ldisp, log, errorfl)
 
@@ -1179,6 +1179,8 @@ def sendADIF(fp, options, inchar, outchar):
     writer = csv.writer(outstr, delimiter=' ',
                         quoting=csv.QUOTE_MINIMAL)
     linecount = 0
+    fname = ''
+    
     for row in lines:
         if linecount > 100000:
                 break
@@ -1194,7 +1196,7 @@ def sendADIF(fp, options, inchar, outchar):
         if errorfl:
             res['status'] = 'NG'
                 
-        fn = act_call.replace('/','-') + '@' + ref + ' ' + date +'.adi'
+        fn = act_call.replace('/','-') + '@' + ref + '-' + date +'.adi'
         if log:
             if linecount==0:
                 fname = fn
@@ -1229,6 +1231,8 @@ def sendADIF(fp, options, inchar, outchar):
     writer = csv.writer(outstr, delimiter=' ',
                         quoting=csv.QUOTE_MINIMAL)
     linecount = 0
+    fname = ''
+    
     for row in lines:
         if linecount > 100000:
                 break
@@ -1243,7 +1247,7 @@ def sendADIF(fp, options, inchar, outchar):
         if errorfl:
             res['status'] = 'NG'
                 
-        fn = act_call.replace('/','-') + '@' + ref + ' ' + date +'.adi'
+        fn = act_call.replace('/','-') + '@' + ref + '-' + date +'.adi'
         if log:
             if linecount==0:
                 fname = fn
@@ -1270,7 +1274,7 @@ def sendADIF(fp, options, inchar, outchar):
         else:
             newstr = header + outstr.getvalue()
         files.update({fname : newstr })
-            
+
     return files,res
 
 def sendPOTA(fp, options, inchar, outchar):
