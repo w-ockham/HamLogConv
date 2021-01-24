@@ -584,7 +584,8 @@
 		</button>
 		<button type="submit" class="btn-sm btn-primary">ADIF生成</button>
 		  <a href="mailto:jaff-log@nifty.com" target="_blank" class="btn-sm btn-outline-info" role="button">JAFFログ送付</a>
-		  <a href="mailto:K[エリア番号]@parksontheair.com" target="_blank" class="btn-sm btn-outline-info" role="button">POTAログ送付</a>
+		  <a id="regional_manager" href="mailto:K[貴局コールのエリア番号]@parksontheair.com" target="_blank" class="btn-sm btn-outline-info" role="button">POTAログ送付</a>
+		  <a href="https://bit.ly/35Wfj4J" target="_blank" class="btn-sm btn-info" role="button">使い方</a>
 		</div>
 	      </div>
 	    </div>
@@ -596,7 +597,7 @@
 	    this.value = null;
 	}
         function formCheckPOTA() {
-	var form = document.forms.POTAActivatorForm;
+	    var form = document.forms.POTAActivatorForm;
 	    if( form.myQTH.value == "form" && form.park.value == "") {
 		window . alert ( '運用先を入力して下さい');
 		return false;
@@ -614,7 +615,10 @@
 		if(confirm("CSVファイルにエラーがあります。\nADIFを生成しますか？") == false)
 		    return false;
 	    }
-
+	    callsign = form.pota_activation_call.value
+	    areaNo = callsign.match(/.\D+(\d).+/)
+	    var target = document.getElementById("regional_manager");
+	    target.href = "mailto:K" + areaNo[1] +"@parksontheair.com";
 	    saveCookie();
 	    return true;
         }
