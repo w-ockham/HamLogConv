@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # coding: utf-8
+import adif_io
 import csv
 import datetime
 import io
@@ -175,6 +176,14 @@ def mode_to_SOTAmode(mode):
             return smode
     return 'OTHER'
 
+def mode_to_ADIFmode(mode):
+    mode_table = [
+        ('DIGITALVOICE',['DV','FUSION','D-STAR','DMR'])]
+    for smode,pat in mode_table:
+        if mode.upper() in pat:
+            return smode
+    return mode.upper()
+
 def splitCallsign(call):
     call = call.upper()
     m = re.match('(\w+)/(\w+)/(\w+)',call)
@@ -331,7 +340,7 @@ def decodeHamlog(cols):
             'band': band_air,      # AirHam
             'band-sota': band_sota,# SOTA
             'band-wlen': wlen,     # WWFF
-            'mode': cols[6],       # WWFF
+            'mode': mode_to_ADIFmode(cols[6]),       # WWFF
             'mode-airham': mode_to_airhammode(cols[6],cols[5]), #AirHam
             'mode-sota': mode_to_SOTAmode(cols[6]), #SOTA
             'code': cols[7],   # None
@@ -343,6 +352,51 @@ def decodeHamlog(cols):
             'qth': cols[11],   # SOTA
             'rmks1': cols[12], # All
             'rmks2': cols[13]  # All
+        }
+
+def decodeADIF(cols):
+    qsos , header = adif_io.read_from_string(cols)
+    qso = qsos[0]
+    ( _, _, wlen ) = freq_to_band(qso['FREQ'])
+    errorfl = False
+    errormsg = ''
+    if 'MY_SIG_INFO' in qso:
+        my_sig = qso['MY_SIG_INFO']
+    elif 'MY_SOTA_REF' in qso:
+        my_sig = qso['MY_SOTA_REF']
+    else:
+        my_sig = 'UNKNOWN'
+        errorfl = True
+        errormsg = 'Not specified my reference.'
+
+    if 'SIG_INFO' in qso:
+        his_sig = qso['SIG_INFO']
+    elif 'SOTA_REF' in qso:
+        his_sig = qso['SOTA_REF']
+    else:
+        his_sig = 'UNKNOWN'
+        errorfl = True
+        errormsg = 'Not specified his reference.'
+
+    return {
+            'error':errorfl,
+            'errormsg':errormsg,
+            'date_error':'',
+            'time_error':'',
+            'band_error':'',
+            
+            'callsign': qso['CALL'] ,# All
+            'year': int(qso['QSO_DATE'][0:4]),# SOTA,WWFF
+            'month':int(qso['QSO_DATE'][4:6]),        # SOTA,WWFF
+            'day': int(qso['QSO_DATE'][6:8]),            # SOTA,WWFF
+            'hour': int(qso['TIME_ON'][0:2]),          # SOTA,WWFF
+            'minute': int(qso['TIME_ON'][2:4]),      # SOTA,WWFF
+            'rst_sent': qso['RST_SENT'],   # All
+            'rst_rcvd': qso['RST_RCVD'],   # All
+            'band-wlen': wlen,     # WWFF
+            'mode': mode_to_ADIFmode(qso['MODE']),       # WWFF
+            'rmks1': my_sig, # All
+            'rmks2': his_sig# All
         }
 
 def decodeHamLogIOS(cols):
@@ -1173,14 +1227,32 @@ def sendADIF(fp, options, inchar, outchar):
                         quoting=csv.QUOTE_MINIMAL)
     linecount = 0
     fname = ''
+    isADIF = False
     
+    if 'ADIF_VER' in lines[0][0].upper():
+        r = lines
+        lines = []
+        isADIF = True
+        isbody = False
+        options['myQTH'] = 'rmks1'
+        options['QTH'] = 'rmks2'
+        for l in r:
+            lstr = ','.join(l)
+            if isbody:
+                lines.append(lstr)
+            elif 'EOH' in lstr:
+                isbody = True
+
     for row in lines:
         if linecount > 100000:
-                break
+            break
+
         if not decoder:
             if 'TimeOn' in row:
                 decoder = decodeHamLogIOS
                 continue
+            elif isADIF:
+                decoder = decodeADIF
             else:
                 decoder = decodeHamlog
                     
@@ -1233,6 +1305,8 @@ def sendADIF(fp, options, inchar, outchar):
             if 'TimeOn' in row:
                 decoder = decodeHamLogIOS
                 continue
+            elif isADIF:
+                decoder = decodeADIF
             else:
                 decoder = decodeHamlog
                     
