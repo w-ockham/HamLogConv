@@ -538,7 +538,7 @@ def toAirHam(decoder, lcount, row, options):
     return l
 
 def get_ref(str):
-    r = {'SOTA':'', 'PORT':'', 'WWFF':'' ,'POTA':'',
+    r = {'SOTA':'', 'PORT':'', 'WWFF':[] ,'POTA':[],
          'LOC':'', 'LOC_org':'',
          'SAT':'','SAT_oscar':'','SAT_org':'','SAT_down':'',
          'ORG':'' }
@@ -551,12 +551,12 @@ def get_ref(str):
     for ref in l:
         m = re.match(r'.*?([a-zA-Z0-9]+FF-\d+).*',ref)
         if m:
-            r['WWFF'] = m.group(1).upper()
+            r['WWFF'].append(m.group(1).upper())
             continue
 
         m = re.match(r'.*?([a-zA-Z0-9]+-\d\d\d\d).*',ref)
         if m:
-            r['POTA'] = m.group(1).upper()
+            r['POTA'].append(m.group(1).upper())
             continue
 
         m = re.match(r'.*?(([a-zA-Z0-9]+/[a-zA-Z0-9]+)-\d+).*',ref)
@@ -863,7 +863,7 @@ def toADIF(decoder, lcount, mode, row, options):
     
     return (date2, wwffref, l, l2, errorfl)
 
-def toADIF2(decoder, mode, row, options):
+def toADIF2(decoder, row, options):
 
     h = decoder(row)
 
@@ -884,7 +884,7 @@ def toADIF2(decoder, mode, row, options):
         hisref = get_ref(h['rmks2'])
         comment = h['rmks1']
     else:
-        hisref = {'POTA':'','WWFF':''}
+        hisref = {'POTA':[],'WWFF':[]}
         comment = ''
         
     if h['date_error']:
@@ -906,13 +906,13 @@ def toADIF2(decoder, mode, row, options):
     operator = options['POTAOperator']
         
     if h['error'] or h['band_error']:
-        log = [h['errormsg']]
+        qso = [h['errormsg']]
         errorfl = True
     else:
-        log = []
+        qso = []
         errorfl = False
     
-    log += [
+    qso += [
         adif('activator',activator),
         adif('operator',operator),
         adif('callsign',h['callsign']),
@@ -923,22 +923,31 @@ def toADIF2(decoder, mode, row, options):
         adif('rst_sent',h['rst_sent']),
         adif('rst_rcvd',h['rst_rcvd']),
     ]
+    log = {}
+    for my in myref['POTA']:
+        log[my] = []
+        if hisref['POTA']:
+            for his in hisref['POTA']:
+                log[my] += qso + [ adif('mysig','POTA'),
+                                     adif('mysiginfo',my),
+                                     adif('sig','POTA'),
+                                     adif('siginfo',his),'<EOR>\n']
+        else:
+            log[my] += qso + [ adif('mysig','POTA'),
+                              adif('mysiginfo',my),'<EOR>\n']
+    for my in myref['WWFF']:
+        log[my] = []
+        if hisref['WWFF']:
+            for his in hisref['WWFF']:
+                log[my] += qso + [ adif('mysig','WWFF'),
+                                  adif('mysiginfo',my),
+                                  adif('sig','WWFF'),
+                                  adif('siginfo',his),'<EOR>\n']
+        else:
+            log[my] += qso + [ adif('mysig','WWFF'),
+                              adif('mysiginfo',my),'<EOR>\n']
 
-    if mode == 'POTA':
-        log += [ adif('mysig','POTA'),
-               adif('mysiginfo',myref['POTA'])]
-        if hisref['POTA'] != '':
-            log += [adif('sig','POTA'),adif('siginfo',hisref['POTA'])]
-    elif mode == 'WWFF':
-        log += [ adif('mysig','WWFF'),
-                 adif('mysiginfo',myref['WWFF'])]
-        if hisref['WWFF'] != '':
-            log += [adif('sig','WWFF'),adif('siginfo',hisref['WWFF'])]
-
-    log += ['<EOR>']
-    
-    make_str = lambda x : '/'.join([i for i in [x['WWFF'],x['POTA']] if i != ''])
-
+    make_str = lambda x : '/'.join(x['WWFF']+ x['POTA'])
     hisstr = make_str(hisref)
     mystr = make_str(myref) 
     ldisp = [
@@ -955,10 +964,7 @@ def toADIF2(decoder, mode, row, options):
             operator
         ]
 
-    if myref[mode]=='':
-        return (date2,'', ldisp, [], False)
-    else:
-        return (date2, myref[mode], ldisp, log, errorfl)
+    return (date2, ldisp, log, errorfl)
 
 def sendAirHamLog(fp, fname, decoder, options, inchar, outchar):
 
@@ -1222,11 +1228,7 @@ def sendADIF(fp, options, inchar, outchar):
             lines += [row]
 
     decoder = None
-    outstr = io.StringIO()
-    writer = csv.writer(outstr, delimiter=' ',
-                        quoting=csv.QUOTE_MINIMAL)
     linecount = 0
-    fname = ''
     isADIF = False
     
     if 'ADIF_VER' in lines[0][0].upper():
@@ -1242,7 +1244,7 @@ def sendADIF(fp, options, inchar, outchar):
                 lines.append(lstr)
             elif 'EOH' in lstr:
                 isbody = True
-
+    
     for row in lines:
         if linecount > 100000:
             break
@@ -1256,91 +1258,23 @@ def sendADIF(fp, options, inchar, outchar):
             else:
                 decoder = decodeHamlog
                     
-        (date, ref, ldisp, log, errorfl) = toADIF2(decoder,'WWFF', row, options)
+        (date, ldisp, log, errorfl) = toADIF2(decoder, row, options)
 
         if errorfl:
             res['status'] = 'NG'
-                
-        fn = act_call.replace('/','-') + '@' + ref + '-' + date +'.adi'
-        if log:
-            if linecount==0:
-                fname = fn
-                    
-            if fn == fname:
-                writer.writerow(log)
-            else:
-                if fname in files:
-                    newstr = files[fname] + outstr.getvalue()
-                else:
-                    newstr = header + outstr.getvalue()
 
-                files.update({fname : newstr })
-                outstr = io.StringIO()
-                writer = csv.writer(outstr,delimiter=' ',
-                                    quoting=csv.QUOTE_MINIMAL)
-                fname = fn
-                writer.writerow(log)
         if ldisp:
             res['logtext'].append(ldisp)
+
+        for ref in log.keys():
+            fn = act_call.replace('/','-') + '@' + ref + '-' + date +'.adi'
+            if files.get(fn) == None:
+                files[fn] = header
+
+            if log[ref]:
+                files[fn] += ''.join(log[ref])
+
         linecount += 1
-
-    if fname != '':
-        if fname in files:
-            newstr = files[fname] + outstr.getvalue()
-        else:
-            newstr = header + outstr.getvalue()
-        files.update({fname : newstr })
-
-    decoder = None
-    outstr = io.StringIO()
-    writer = csv.writer(outstr, delimiter=' ',
-                        quoting=csv.QUOTE_MINIMAL)
-    linecount = 0
-    fname = ''
-    
-    for row in lines:
-        if linecount > 100000:
-                break
-        if not decoder:
-            if 'TimeOn' in row:
-                decoder = decodeHamLogIOS
-                continue
-            elif isADIF:
-                decoder = decodeADIF
-            else:
-                decoder = decodeHamlog
-                    
-        (date, ref, ldisp, log, errorfl) = toADIF2(decoder,'POTA', row, options)
-        if errorfl:
-            res['status'] = 'NG'
-                
-        fn = act_call.replace('/','-') + '@' + ref + '-' + date +'.adi'
-        if log:
-            if linecount==0:
-                fname = fn
-                    
-            if fn == fname:
-                writer.writerow(log)
-            else:
-                if fname in files:
-                    newstr = files[fname] + outstr.getvalue()
-                else:
-                    newstr = header + outstr.getvalue()
-
-                files.update({fname : newstr })
-                outstr = io.StringIO()
-                writer = csv.writer(outstr,delimiter=' ',
-                                    quoting=csv.QUOTE_MINIMAL)
-                fname = fn
-                writer.writerow(log)
-        linecount += 1
-
-    if fname != '':
-        if fname in files:
-            newstr = files[fname] + outstr.getvalue()
-        else:
-            newstr = header + outstr.getvalue()
-        files.update({fname : newstr })
 
     return files,res
 
