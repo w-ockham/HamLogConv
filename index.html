@@ -69,7 +69,7 @@
 	<a class="nav-link" id="SOTAChaser-tab" data-toggle="tab" href="#SOTAChaser" role="tab" aria-controls="SOTAChaser" aria-selected="false">SOTA Chaser</a>
       </li>
       <li class="nav-item">
-	<a class="nav-link" id="POTAActivator-tab" data-toggle="tab" href="#POTAActivator" role="tab" aria-controls="POTAActivator" aria-selected="false">JAFF/POTA</a>
+	<a class="nav-link" id="POTAActivator-tab" data-toggle="tab" href="#POTAActivator" role="tab" aria-controls="POTAActivator" aria-selected="false">SOTA/JAFF/POTA ADIF</a>
       </li>
 <!--
       <li class="nav-item">
@@ -270,7 +270,7 @@
 		Remarks2で指定する
 	      </label>
 	    </div>
-	    <div class="form-check">
+  	    <div class="form-check">
 	      <input class="form-check-input" type="checkbox" name="hisQTHopt" id="hisQTHopt" value="yes">
 	      <label class="form-check-label" for="hisQTHopt">
 		QTHも参照する<small>(重複時はRemarksの山岳IDを優先)</small>
@@ -502,7 +502,7 @@
 		    <input type="text" id="pota_operator" name="pota_operator" class="form-control" placeholder="コールサイン(例:JL1NIE)">
 		  </div>
 		  <div class="form-group">
-		    <h6><b>JAFF/POTA運用先</b></h6>
+		    <h6><b>SOTA/JAFF/POTA運用先</b></h6>
 		    <div class="form-check">
 		      <input class="form-check-input" type="radio" name="myQTH" id="myQTH" value="form" checked>
 		      <label for="park">リファレンス/公園番号を入力</label>
@@ -522,7 +522,7 @@
 		    </div>
 		  </div>
 		  <div class="form-group">
-		    <h6><b>P2P局のリファレンス/公園番号</b></h6>
+		    <h6><b>相手局のリファレンス/公園番号</b></h6>
 		    <div class="form-check">
 		      <input class="form-check-input" type="radio" name="QTH" id="QTHNone" value="none" checked>
 		      <label class="form-check-label" for="QTHNone">
@@ -539,6 +539,12 @@
 		      <input class="form-check-input" type="radio" name="QTH" id="QTH2" value="rmks2">
 		      <label class="form-check-label" for="QTH2">
 			Remarks2で指定する
+		      </label>
+		    </div>
+		    <div class="form-check">
+		      <input class="form-check-input" type="radio" name="QTH" id="QTH3" value="qth">
+		      <label class="form-check-label" for="QTH3">
+			QTHで指定する
 		      </label>
 		    </div>
 		  </div>
@@ -583,6 +589,7 @@
 			onClick="readPOTACSV()">CSV読込
 		</button>
 		<button type="submit" class="btn-sm btn-primary">ADIF生成</button>
+		  <a href="https://www.sotadata.org.uk/" target="_blank" class="btn-sm btn-outline-info" role="button">SOTAログアップロード</a>
 		  <a href="mailto:jaff-log@nifty.com" target="_blank" class="btn-sm btn-outline-info" role="button">JAFFログ送付</a>
 		  <a id="regional_manager" href="mailto:K[貴局コールのエリア番号]@parksontheair.com" target="_blank" class="btn-sm btn-outline-info" role="button">POTAログ送付</a>
 		  <a href="https://bit.ly/35Wfj4J" target="_blank" class="btn-sm btn-info" role="button">使い方</a>

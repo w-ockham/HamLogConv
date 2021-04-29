@@ -876,17 +876,30 @@ def toADIF2(decoder, row, options):
     else:
         myref = get_ref(options['Park'])
         comment = ''
-
+        
+    if myref['SOTA'] != '':
+        myref['SOTA'] = [myref['SOTA']]
+    else:
+        myref['SOTA'] = []
+        
     if options['QTH']=='rmks1':
         hisref = get_ref(h['rmks1'])
         comment = h['rmks2']
     elif options['QTH']=='rmks2':
         hisref = get_ref(h['rmks2'])
         comment = h['rmks1']
+    elif options['QTH']=='qth':
+        hisref = get_ref(h['qth'])
+        comment = h['rmks2']
     else:
-        hisref = {'POTA':[],'WWFF':[]}
+        hisref = {'SOTA':'', 'POTA':[],'WWFF':[]}
         comment = ''
-        
+
+    if hisref['SOTA'] != '':
+        hisref['SOTA'] = [hisref['SOTA']]
+    else:
+        hisref['SOTA'] = []
+
     if h['date_error']:
         date = h['date_error']
     else:
@@ -904,7 +917,7 @@ def toADIF2(decoder, row, options):
 
     activator = options['POTAActivator']
     operator = options['POTAOperator']
-        
+
     if h['error'] or h['band_error']:
         qso = [h['errormsg']]
         errorfl = True
@@ -924,6 +937,14 @@ def toADIF2(decoder, row, options):
         adif('rst_rcvd',h['rst_rcvd']),
     ]
     log = {}
+    for my in myref['SOTA']:
+       log[my] = []
+       if hisref['SOTA']:
+           for his in hisref['SOTA']:
+               log[my] += qso + [ adif('mysotaref',my),
+                                  adif('sotaref',his),'<EOR>\n']
+       else:
+           log[my] += qso + [ adif('mysotaref',my),'<EOR>\n']
     for my in myref['POTA']:
         log[my] = []
         if hisref['POTA']:
@@ -947,7 +968,7 @@ def toADIF2(decoder, row, options):
             log[my] += qso + [ adif('mysig','WWFF'),
                               adif('mysiginfo',my),'<EOR>\n']
 
-    make_str = lambda x : '/'.join(x['WWFF']+ x['POTA'])
+    make_str = lambda x : '/'.join(x['SOTA']+ x['WWFF']+ x['POTA'])
     hisstr = make_str(hisref)
     mystr = make_str(myref) 
     ldisp = [
@@ -1267,7 +1288,7 @@ def sendADIF(fp, options, inchar, outchar):
             res['logtext'].append(ldisp)
 
         for ref in log.keys():
-            fn = act_call.replace('/','-') + '@' + ref + '-' + date +'.adi'
+            fn = act_call.replace('/','-') + '@' + ref.replace('/','-') + '-' + date +'.adi'
             if files.get(fn) == None:
                 files[fn] = header
 
