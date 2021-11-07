@@ -924,11 +924,16 @@ def toADIF2(decoder, row, options):
     else:
         qso = []
         errorfl = False
-    
+
+    if options['OmitPortable'] == 'checked' and myref['POTA']:
+        (hiscall,_) = splitCallsign(h['callsign'])
+    else:
+        hiscall = h['callsign']
+        
     qso += [
         adif('activator',activator),
         adif('operator',operator),
-        adif('callsign',h['callsign']),
+        adif('callsign',hiscall),
         adif('date',date),
         adif('time',time),
         adif('band-wlen',h['band-wlen']),
@@ -945,6 +950,7 @@ def toADIF2(decoder, row, options):
                                   adif('sotaref',his),'<EOR>\n']
        else:
            log[my] += qso + [ adif('mysotaref',my),'<EOR>\n']
+
     for my in myref['POTA']:
         log[my] = []
         if hisref['POTA']:
@@ -972,7 +978,7 @@ def toADIF2(decoder, row, options):
     hisstr = make_str(hisref)
     mystr = make_str(myref) 
     ldisp = [
-            h['callsign'],
+            hiscall,
             date,
             time,
             h['band-wlen'],

@@ -41,6 +41,7 @@ def main():
     
     options = {
         'Portable': form.getvalue('portable',''),
+        'OmitPortable': form.getvalue('OmitPortable',''),
         'QTH': form.getvalue('QTH',''),
         'hisQTH': form.getvalue('hisQTH',''),
         'hisQTHopt': form.getfirst('hisQTHopt',''),
@@ -58,17 +59,20 @@ def main():
     }
 
     if debug:
-        fp = open('sample.csv','rb')
+        fp = open('test.adif','rb')
         #activation_call_both = 'JL1NIE'
         pota_activation_call = 'JL1NIE'
-        options['QTH']='rmks1'
+        #options['QTH']='rmks1'
         options['myQTH']=''
         options['Portable']='portable'
+        options['OmitPortable'] = ''
         options['Note']='rmks1'
         options['POTAOperator']= 'JL1NIE'
         options['POTAActivator']= 'JL1NIE/1'
         options['Park']= 'JAFF-0123,JA-0005'
-        command = "ADIFCSVCheck"
+        options['myQTH']='rmks2'
+        options['QTH']='rmks1'
+        #command = "ADIFCSVCheck"
         #wwffoperator=''
         #fp = open('tmp/test.gpx','rb')
         #gpx_trk_interval = '60'
