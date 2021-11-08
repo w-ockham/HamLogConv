@@ -926,14 +926,14 @@ def toADIF2(decoder, row, options):
         errorfl = False
 
     if options['OmitPortable'] == 'checked' and myref['POTA']:
-        (hiscall,_) = splitCallsign(h['callsign'])
+        (potacall,_) = splitCallsign(h['callsign'])
     else:
-        hiscall = h['callsign']
+        potacall = h['callsign']
         
-    qso += [
+    qsopota = qso + [
         adif('activator',activator),
         adif('operator',operator),
-        adif('callsign',hiscall),
+        adif('callsign',potacall),
         adif('date',date),
         adif('time',time),
         adif('band-wlen',h['band-wlen']),
@@ -941,7 +941,21 @@ def toADIF2(decoder, row, options):
         adif('rst_sent',h['rst_sent']),
         adif('rst_rcvd',h['rst_rcvd']),
     ]
+
+    qso += [
+        adif('activator',activator),
+        adif('operator',operator),
+        adif('callsign',h['callsign']),
+        adif('date',date),
+        adif('time',time),
+        adif('band-wlen',h['band-wlen']),
+        adif('mode',h['mode']),
+        adif('rst_sent',h['rst_sent']),
+        adif('rst_rcvd',h['rst_rcvd']),
+    ]
+    
     log = {}
+
     for my in myref['SOTA']:
        log[my] = []
        if hisref['SOTA']:
@@ -955,30 +969,35 @@ def toADIF2(decoder, row, options):
         log[my] = []
         if hisref['POTA']:
             for his in hisref['POTA']:
-                log[my] += qso + [ adif('mysig','POTA'),
-                                     adif('mysiginfo',my),
-                                     adif('sig','POTA'),
-                                     adif('siginfo',his),'<EOR>\n']
+                log[my] += qsopota + [
+                    adif('mysig','POTA'),
+                    adif('mysiginfo',my),
+                    adif('sig','POTA'),
+                    adif('siginfo',his),'<EOR>\n']
         else:
-            log[my] += qso + [ adif('mysig','POTA'),
-                              adif('mysiginfo',my),'<EOR>\n']
+            log[my] += qsopota + [
+                adif('mysig','POTA'),
+                adif('mysiginfo',my),'<EOR>\n']
+
     for my in myref['WWFF']:
         log[my] = []
         if hisref['WWFF']:
             for his in hisref['WWFF']:
-                log[my] += qso + [ adif('mysig','WWFF'),
-                                  adif('mysiginfo',my),
-                                  adif('sig','WWFF'),
-                                  adif('siginfo',his),'<EOR>\n']
+                log[my] += qso + [
+                    adif('mysig','WWFF'),
+                    adif('mysiginfo',my),
+                    adif('sig','WWFF'),
+                    adif('siginfo',his),'<EOR>\n']
         else:
-            log[my] += qso + [ adif('mysig','WWFF'),
-                              adif('mysiginfo',my),'<EOR>\n']
+            log[my] += qso + [
+                adif('mysig','WWFF'),
+                adif('mysiginfo',my),'<EOR>\n']
 
     make_str = lambda x : '/'.join(x['SOTA']+ x['WWFF']+ x['POTA'])
     hisstr = make_str(hisref)
     mystr = make_str(myref) 
     ldisp = [
-            hiscall,
+            potacall,
             date,
             time,
             h['band-wlen'],
