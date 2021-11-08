@@ -60,36 +60,32 @@
     </div>
     <ul class="nav nav-tabs nav-pills" role="tablist">
       <li class="nav-item">
-	<a class="nav-link active" id="AirHamLog-tab" data-toggle="tab" href="#AirHamLog" role="tab" aria-controls="AirHamLog" aria-selected="true">AirHamLog</a>
-      </li>
-      <li class="nav-item">
-	<a class="nav-link" id="SOTAActivator-tab" data-toggle="tab" href="#SOTAActivator" role="tab" aria-controls="SOTAActivator" aria-selected="false">SOTA Activator</a>
-      </li>
-      <li class="nav-item">
-	<a class="nav-link" id="SOTAChaser-tab" data-toggle="tab" href="#SOTAChaser" role="tab" aria-controls="SOTAChaser" aria-selected="false">SOTA Chaser</a>
-      </li>
-      <li class="nav-item">
-	<a class="nav-link" id="POTAActivator-tab" data-toggle="tab" href="#POTAActivator" role="tab" aria-controls="POTAActivator" aria-selected="false">SOTA/JAFF/POTA ADIF</a>
-      </li>
-<!--
-      <li class="nav-item">
-	<a class="nav-link" id="JAFFActivator-tab" data-toggle="tab" href="#JAFFActivator" role="tab" aria-controls="JAFFActivator" aria-selected="false">JAFF</a>
+	<a class="nav-link active" id="POTAActivator-tab" data-toggle="tab" href="#POTAActivator" role="tab" aria-controls="POTAActivator" aria-selected="false">SOTA/JAFF/POTA ADIF</a>
       </li>
 
       <li class="nav-item">
-	<a class="nav-link" id="SOTABoth-tab" data-toggle="tab" href="#SOTABoth" role="tab" aria-controls="SOTABoth" aria-selected="false">SOTA CSV（統合版)</a>
+	<a class="nav-link" id="SOTAActivator-tab" data-toggle="tab" href="#SOTAActivator" role="tab" aria-controls="SOTAActivator" aria-selected="false">SOTA Activator</a>
       </li>
--->
+
+      <li class="nav-item">
+	<a class="nav-link" id="SOTAChaser-tab" data-toggle="tab" href="#SOTAChaser" role="tab" aria-controls="SOTAChaser" aria-selected="false">SOTA Chaser</a>
+      </li>
+
       <li class="nav-item">
 	<a class="nav-link" id="FLEOnline-tab" data-toggle="tab" href="#FLEOnline" role="tab" aria-controls="FLEOnline" aria-selected="false">FLE Online</a>
       </li>
+
+      <li class="nav-item">
+	<a class="nav-link" id="AirHamLog-tab" data-toggle="tab" href="#AirHamLog" role="tab" aria-controls="AirHamLog" aria-selected="true">AirHamLog</a>
+      </li>
+
       <li class="nav-item">
 	<a class="nav-link" id="GPXTrim-tab" data-toggle="tab" href="#GPXTrim" role="tab" aria-controls="GPXTrim" aria-selected="false">GPX for SMP</a>
       </li>
     </ul>
 
     <div class="tab-content">
-      <div class="tab-pane fade show active" id="AirHamLog" role="tabpanel" aria-labelledby="AirHamLog-tab">	
+      <div class="tab-pane fade" id="AirHamLog" role="tabpanel" aria-labelledby="AirHamLog-tab">	
 	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
 	  <div class="form-row">
 	    <div class="form-group col-sm-6">
@@ -487,7 +483,7 @@
 	</form>
       </div><!-- end of tab-pane -->
 
-      <div class="tab-pane fade" id="POTAActivator" role="tabpanel" aria-labelledby="POTAActivator-tab">
+      <div class="tab-pane fade show active" id="POTAActivator" role="tabpanel" aria-labelledby="POTAActivator-tab">
 	<form id="POTAActivatorForm" name="POTAActivatorForm" method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' onsubmit="return formCheckPOTA()" style="padding:10px">
 	  <div class="container">
 	    <div class="row">
