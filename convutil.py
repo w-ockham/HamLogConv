@@ -782,7 +782,7 @@ def toADIF(decoder, lcount, mode, row, options):
         date = '{year:02}{month:02}{day:02}'.format(
             day=h['day'], month=h['month'], year=h['year'])
     
-    date2 = '{year:02}-{month:02}-{day:02}'.format(
+    date2 = '{year:02}{month:02}{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year'])
 
     if h['time_error']:
@@ -906,7 +906,7 @@ def toADIF2(decoder, row, options):
         date = '{year:02}{month:02}{day:02}'.format(
             day=h['day'], month=h['month'], year=h['year'])
     
-    date2 = '{year:02}-{month:02}-{day:02}'.format(
+    date2 = '{year:02}{month:02}{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year'])
 
     if h['time_error']:

@@ -932,9 +932,6 @@ def toADIF_FLE(h, mode):
     date = '{year:02}{month:02}{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year'])
     
-    date2 = '{year:02}-{month:02}-{day:02}'.format(
-        day=h['day'], month=h['month'], year=h['year'])
-
     if mode == 'POTA':
         sig = 'POTA'
         siginfo = h['mypota']
@@ -964,7 +961,7 @@ def toADIF_FLE(h, mode):
 
     l+= [adif('operator',h['operator']),'<EOR>']
     
-    return (date2, siginfo, l)
+    return (date, siginfo, l)
 
 def sendADIF_FLE(files, loginput, callsign, mode):
     outstr = io.StringIO()
