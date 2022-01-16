@@ -1157,7 +1157,7 @@ function readPOTACSV() {
 	for(var i = 0, len = tlist.length; i < len; ++i,++count) {
 	    td = "<td>"+count+"</td>";
 	    for(var j =0,len2 = tlist[i].length; j < len2;++j)
-		td = td + "<td>" + tlist[i][j] + "</td>";
+		td = td + "<td>" + tlist[i][j] + "&nbsp</td>";
 	    $('#potacsvlisttable').append('<tr>'+td+'</tr>');
 	}
     });
