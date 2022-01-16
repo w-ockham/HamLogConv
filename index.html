@@ -705,9 +705,12 @@
 	    </div>
 	    <div class="form-group">
 	      <div class="button-group d-flex" style="justify-content:space-around">
-		<input id="loadfle" type="file" style="display:none">
-		<button type="button" class="btn-sm btn-primary" 
-			  onClick="$('input[id=loadfle]').click()">FLEログ読込</button>
+			<input id="loadfle" type="file" style="display:none">
+			<button type="button" class="btn-sm btn-primary" 
+				  onClick="$('input[id=loadfle]').click()">FLEログ読込</button>
+			<input id="appendADIF" type="file" style="display:none">
+			<button type="button" class="btn-sm btn-primary" 
+					onClick="$('input[id=appendADIF]').click()">ADIFログ追加</button>	  
 		<button type="button" id="update" class="btn-info btn-sm" onClick="clickUpdate()">変換</button>
 		<button type="submit" id="generate" class="btn-primary btn-sm">CSVファイル生成</button>
 	      </div>
@@ -785,6 +788,52 @@ $('input[id=loadfle]').change(function(e){
     reader.addEventListener('load', function() {
 	editor = document.getElementById("edittext")
 	editor.value = reader.result;
+	textdirty = false;
+    })
+});
+
+function adif2fle(text) {
+    var adiftext = text.toUpperCase().split('<EOR>');
+    var today = '', mode = '', band = '';
+    var result = '';
+    for (const elem of adiftext) {
+	var qso = '';
+	var call = elem.match(/<CALL:\d>(\S+)/);
+	if (call == null)
+	    continue;
+	var newmode = elem.match(/<MODE:\d>(\S+)/);
+	var newband = elem.match(/<BAND:\d>(\S+)/);
+	var newday = elem.match(/<QSO_DATE:\d>(\S+)/);
+	var time = elem.match(/<TIME_ON:\d>(\S+)/);
+	var sent = elem.match(/<RST_SENT:\d>(\S+)/);
+	var recv = elem.match(/<RST_RCVD:\d>(\S+)/);
+	
+	if (newday[1] != today ) {
+	    var d = newday[1];
+	    qso += 'date ' + d.substring(0,4) + '-' + d.substring(4,6) + '-' + d.substring(6,8) + '\r\n';
+	    today = newday[1];
+	}
+	if (newband[1] != band || newmode[1] != mode) {
+	    band = newband[1];
+	    mode = newmode[1];
+	    qso += band.toLowerCase() + ' ' + mode + '\r\n';
+	}
+	qso += time[1].substring(0,4) + ' ' + call[1] + ' ' + sent[1] + ' ' + recv[1] + '\r\n';
+	console.log(qso);
+
+	result += qso;
+    }
+    return (result);
+}
+
+$('input[id=appendADIF]').change(function(e){
+    var result = e.target.files[0];
+    var reader = new FileReader();
+    reader.readAsText(result,'UTF-8');
+    $('input[id=appendADIF]').val('');
+    reader.addEventListener('load', function() {
+	editor = document.getElementById("edittext")
+	editor.value += adif2fle(reader.result);
 	textdirty = false;
     })
 });

@@ -203,7 +203,7 @@ def tokenizer(line):
         if m:
             res.append(('freq',freq_to_band(w),w))
             continue
-        m = re.match('-\d+$',w)
+        m = re.match('[-\+]\d+$',w)
         if m:
             res.append(('snr',w,w))
             continue
