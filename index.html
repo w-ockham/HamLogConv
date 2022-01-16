@@ -798,15 +798,15 @@ function adif2fle(text) {
     var result = '';
     for (const elem of adiftext) {
 	var qso = '';
-	var call = elem.match(/<CALL:\d>(\S+)/);
+	var call = elem.match(/<CALL:\d>([A-Z0-9\/]+)[\s<]/);
 	if (call == null)
 	    continue;
-	var newmode = elem.match(/<MODE:\d>(\S+)/);
-	var newband = elem.match(/<BAND:\d>(\S+)/);
-	var newday = elem.match(/<QSO_DATE:\d>(\S+)/);
-	var time = elem.match(/<TIME_ON:\d>(\S+)/);
-	var sent = elem.match(/<RST_SENT:\d>(\S+)/);
-	var recv = elem.match(/<RST_RCVD:\d>(\S+)/);
+	var newmode = elem.match(/<MODE:\d>(\S+)[\s<]/);
+	var newband = elem.match(/<BAND:\d>([0-9]+[A-Z]+)/);
+	var newday = elem.match(/<QSO_DATE:\d>(\d+)[\s<]/);
+	var time = elem.match(/<TIME_ON:\d>(\d+)[\s<]/);
+	var sent = elem.match(/<RST_SENT:\d>([0-9\+\-]+)[\s<]/);
+	var recv = elem.match(/<RST_RCVD:\d>([0-9\+\-]+)[\s<]/);
 	
 	if (newday[1] != today ) {
 	    var d = newday[1];
