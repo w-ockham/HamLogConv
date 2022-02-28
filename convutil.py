@@ -5,6 +5,7 @@ import csv
 import datetime
 import io
 import re
+import requests
 import sys
 import zipfile
 
@@ -1012,6 +1013,16 @@ def toADIF2(decoder, row, options):
 
     return (date2, ldisp, log, errorfl)
 
+def getPOTALoc(parkid):
+    url = f"https://www.sotalive.tk/api/jaff-pota?parkid={parkid}"
+    res = requests.get(url)
+    js = res.json()
+    r = []
+    if js:
+        for p in js:
+            r += p['locid']
+    return r
+
 def sendAirHamLog(fp, fname, decoder, options, inchar, outchar):
 
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding=outchar, errors="backslashreplace")
@@ -1313,7 +1324,21 @@ def sendADIF(fp, options, inchar, outchar):
             res['logtext'].append(ldisp)
 
         for ref in log.keys():
-            fn = act_call.replace('/','-') + '@' + ref.replace('/','-') + '-' + date +'.adi'
+            if 'JA-' in ref:
+                mloc = getPOTALoc(ref)
+            else:
+                mloc = []
+
+            if len(mloc) > 1:
+                cndt = map(lambda x: x.replace('JP-',""), mloc)
+                mlocmesg = '[' + ','.join(list(cndt)) + ']'
+                fn = act_call.replace('/','-') + '@' + ref.replace('/','-') + '-' + mlocmesg + '-' + date +'.adi'
+                
+            else:
+                fn = act_call.replace('/','-') + '@' + ref.replace('/','-') + '-' + date +'.adi'
+
+            #fn = act_call.replace('/','-') + '@' + ref.replace('/','-') + '-' + date +'.adi'
+
             if files.get(fn) == None:
                 files[fn] = header
 
