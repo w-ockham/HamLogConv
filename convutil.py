@@ -1269,7 +1269,8 @@ def sendWWFF(fp, decoder, options, inchar, outchar):
 
 def sendADIF(fp, options, inchar, outchar):
     files = {}
-    res = {'status':'OK','logtext':[]}
+    potafiles = []
+    res = {'status':'OK','logtext':[],'filelist':[]}
     header = 'ADIF Export from HAMLOG by JL1NIE\n'+ adif('programid','FCTH')+ '\n' + adif('adifver','3.0.6')+'\n' + '<EOH>\n'
     
     act_call = options['POTAActivator']
@@ -1337,16 +1338,18 @@ def sendADIF(fp, options, inchar, outchar):
             else:
                 fn = act_call.replace('/','-') + '@' + ref.replace('/','-') + '-' + date +'.adi'
 
-            #fn = act_call.replace('/','-') + '@' + ref.replace('/','-') + '-' + date +'.adi'
-
             if files.get(fn) == None:
                 files[fn] = header
 
             if log[ref]:
                 files[fn] += ''.join(log[ref])
 
+            if 'JA-' in ref:
+                potafiles.append(fn)
+                
         linecount += 1
-
+        
+    res['filelist'] = sorted(set(potafiles), key=potafiles.index)
     return files,res
 
 def sendPOTA(fp, options, inchar, outchar):
