@@ -629,8 +629,8 @@
 	    var target = document.getElementById("regional_manager"),
 		maddr = "mailto:K" + areaNo[1] +"@parksontheair.com",
 		sbj = "?subject=" + adiflist[0] +"&",
-		body = "Dear coordinator,\nPlease find the attached files as follows.\n" + adiflist.join('\n'),
-		sig = "\nRegards,\n" + callsign + "\n";
+		body = "Dear coordinator,\n\nPlease find the attached files as follows.\n" + adiflist.join('\n'),
+		sig = "\n\nRegards,\n" + callsign + "\n";
 	    target.href = maddr + sbj + "body=" + encodeURIComponent(body + sig);
 	   
 	    saveCookie();
