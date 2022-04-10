@@ -550,7 +550,7 @@ def get_ref(str):
  
     l = re.split('[,\s]', str)
     for ref in l:
-        m = re.match(r'.*?([a-zA-Z0-9]+FF-\d+).*',ref)
+        m = re.match(r'.*?([A-Z0-9]+FF-\d+).*', ref, re.IGNORECASE)
         if m:
             r['WWFF'].append(m.group(1).upper())
             continue
