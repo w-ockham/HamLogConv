@@ -597,6 +597,10 @@ def compileFLE(input_text,conv_mode):
                             pos += 1
                             state = RSTR
                             continue
+                        else:
+                            env['errno'].append((lc,pos,'Wrong RST format.'))
+                            state = NORM
+                            continue
                     elif t == 'snr':
                         env['c_snr_s'] = p1
                         pos += 1
@@ -606,33 +610,29 @@ def compileFLE(input_text,conv_mode):
                         state = NORM
                         continue
                 elif state == RSTR:
+                    state = NORM
                     if t == 'dec':
                         if p1 == 1:
                             env['c_s_r'] = int(p2)
                             pos += 1
-                            state = NORM
                             continue
                         elif p1 == 2:
                             env['c_r_r'] = int(p2)//10
                             env['c_s_r'] = int(p2)%10
                             pos += 1
-                            state = NORM
                             continue
                         elif p1 == 3:
                             env['c_r_r'] = int(p2)//100
                             env['c_s_r'] = (int(p2)%100)//10
                             env['c_t_r'] = int(p2)%10
                             pos += 1
-                            state = NORM
                             continue
+                        else:
+                            env['errno'].append((lc,pos,'Wrong RST format.'))
                     elif t == 'snr':
                         env['c_snr_r'] = p1
                         pos += 1
-                        state = NORM
-                        continue
-                    else:
-                        state = NORM
-                        continue
+                    continue
             lc+=1
         if env['c_call'] != '':
             if conv_mode : # GenerateLog
