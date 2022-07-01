@@ -42,15 +42,14 @@
       }
 </style>
     <!-- Global site tag (gtag.js) - Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139463065-3"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-P5XNK2LGGK"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       
-      gtag('config', 'UA-139463065-3');
+      gtag('config', 'G-P5XNK2LGGK');
     </script>
-
     <title>ファイル変換ツールfor SOTA/JAFF/POTA</title>
   </head>
   <body>
@@ -593,7 +592,11 @@
 		<button type="submit" class="btn-sm btn-primary">ADIF生成</button>
 		  <a href="https://www.sotadata.org.uk/" target="_blank" class="btn-sm btn-outline-info" role="button">SOTAログアップロード</a>
 		  <a href="mailto:jaff-log@nifty.com" target="_blank" class="btn-sm btn-outline-info" role="button">JAFFログ送付</a>
+		  <!--
 		  <a id="regional_manager" href="mailto:K[貴局コールのエリア番号]@parksontheair.com" target="_blank" class="btn-sm btn-outline-info" role="button">POTAログ送付</a>
+-->
+		  <a href="https://pota.app/#/user/logs" target="_blank" class="btn-sm btn-outline-info" role="button">POTAログアップロード</a>
+
 		  <a href="https://bit.ly/35Wfj4J" target="_blank" class="btn-sm btn-info" role="button">使い方</a>
 		</div>
 	      </div>
@@ -626,13 +629,14 @@
 	    }
 	    callsign = form.pota_activation_call.value
 	    areaNo = callsign.match(/.\D+(\d).+/)
+	    /*
 	    var target = document.getElementById("regional_manager"),
-		maddr = "mailto:K" + areaNo[1] +"@parksontheair.com",
+	    maddr = "mailto:K" + areaNo[1] +"@parksontheair.com",
 		sbj = "?subject=" + adiflist[0] +"&",
 		body = "Dear coordinator,\n\nPlease find the attached files as follows.\n" + adiflist.join('\n'),
 		sig = "\n\nRegards,\n" + callsign + "\n";
 	    target.href = maddr + sbj + "body=" + encodeURIComponent(body + sig);
-	   
+	   */
 	    saveCookie();
 	    return true;
         }
@@ -1125,6 +1129,24 @@ function clickUpdate() {
 var adiflist = [];
   
 function readPOTACSV() {
+    var form = document.forms.POTAActivatorForm;
+    if( form.pota_activation_call.value == "") {
+	window . alert ( '運用時のコールサインを入力して下さい');
+	return false;
+    }
+    if( form.myQTH.value == "form" && form.park.value == "") {
+	window . alert ( '運用先を入力して下さい');
+	return false;
+    }
+    if( form.myQTH.value == "rmks1" && form.QTH.value == "rmks1") {
+		window . alert ( 'Remarks1の指定が重複しています。');
+	return false;
+    }
+    if( form.myQTH.value == "rmks2" && form.QTH.value == "rmks2") {
+	window . alert ( 'Remarks2の指定が重複しています。');
+	return false;
+    }
+	    
     var form =  $('#POTAActivatorForm').get(0)
     var formdata = new FormData(form)
     formdata.append("command","ADIFCSVCheck")
