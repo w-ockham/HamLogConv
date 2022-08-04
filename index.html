@@ -543,7 +543,7 @@
 		      </label>
 		    </div>
 		    <div class="form-check">
-		      <input class="form-check-input" type="checkbox" name="OmitPortable" id="OmitPortable" value="checked" checked>
+		      <input class="form-check-input" type="checkbox" name="OmitPortable" id="OmitPortable" value="checked">
 		      <label class="form-check-label" for="OmitPortable">
 			相手局コールから'/X'を除く(POTA)
 		      </label>
@@ -1160,7 +1160,7 @@ function readPOTACSV() {
 	processData: false,
 	contentType: false,
 	error: function(data) {
-	    alert('CSVファイルが変更されました。\n再度ファイルを指定して下さい。');
+	    alert('エラーが発生しました。\n再度ファイルを指定して入力してください。');
 	}
     }).done(function(data) {
 	if (data.status == "OK")
