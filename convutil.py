@@ -740,6 +740,7 @@ def adif(key, value):
         ('RST_RCVD','rst_rcvd'),
         ('MY_SIG','mysig'),
         ('MY_SIG_INFO','mysiginfo'),
+        ('MY_STATE','mystate'),
         ('SIG','sig'),
         ('SIG_INFO','siginfo'),
         ('SOTA_REF', 'sotaref'),
@@ -926,10 +927,7 @@ def toADIF2(decoder, row, options):
         qso = []
         errorfl = False
 
-    if options['OmitPortable'] == 'checked' and myref['POTA']:
-        (potacall,_) = splitCallsign(h['callsign'])
-    else:
-        potacall = h['callsign']
+    potacall = h['callsign']
         
     qsopota = qso + [
         adif('activator',activator),
@@ -968,17 +966,26 @@ def toADIF2(decoder, row, options):
 
     for my in myref['POTA']:
         log[my] = []
+
+        mystates = getPOTALoc(my)
+        if len(mystates) > 1:
+            mystate = ""
+        else:
+            mystate = mystates[0].replace("JP-","")
+            
         if hisref['POTA']:
             for his in hisref['POTA']:
-                log[my] += qsopota + [
-                    adif('mysig','POTA'),
-                    adif('mysiginfo',my),
-                    adif('sig','POTA'),
-                    adif('siginfo',his),'<EOR>\n']
+                log[my] += qsopota
+                log[my] += [adif('mysig','POTA'),adif('mysiginfo',my)]
+                if mystate:
+                    log[my] += [ adif('mystate',mystate) ]
+                log[my] += [ adif('sig','POTA'), adif('siginfo',his),'<EOR>\n']
         else:
-            log[my] += qsopota + [
-                adif('mysig','POTA'),
-                adif('mysiginfo',my),'<EOR>\n']
+            log[my] += qsopota
+            log[my] += [adif('mysig','POTA'),adif('mysiginfo',my)]
+            if mystate:
+                log[my] += [ adif('mystate',mystate) ]
+            log[my] += ['<EOR>\n']
 
     for my in myref['WWFF']:
         log[my] = []
@@ -996,7 +1003,9 @@ def toADIF2(decoder, row, options):
 
     make_str = lambda x : '/'.join(x['SOTA']+ x['WWFF']+ x['POTA'])
     hisstr = make_str(hisref)
-    mystr = make_str(myref) 
+    mystr = make_str(myref)
+    if mystate:
+        mystr += "(" + mystate + ")"
     ldisp = [
             potacall,
             date,
@@ -1014,7 +1023,7 @@ def toADIF2(decoder, row, options):
     return (date2, ldisp, log, errorfl)
 
 def getPOTALoc(parkid):
-    url = f"https://www.sotalive.tk/api/jaff-pota?parkid={parkid}"
+    url = f"https://www.sotalive.net/api/jaff-pota?parkid={parkid}"
     res = requests.get(url)
     js = res.json()
     r = []
@@ -1302,6 +1311,8 @@ def sendADIF(fp, options, inchar, outchar):
                 lines.append(lstr)
             elif 'EOH' in lstr:
                 isbody = True
+
+    date = ''
     
     for row in lines:
         if linecount > 100000:
@@ -1316,8 +1327,11 @@ def sendADIF(fp, options, inchar, outchar):
             else:
                 decoder = decodeHamlog
                     
-        (date, ldisp, log, errorfl) = toADIF2(decoder, row, options)
+        (d, ldisp, log, errorfl) = toADIF2(decoder, row, options)
 
+        if not date:
+            date = d
+            
         if errorfl:
             res['status'] = 'NG'
 
@@ -1334,10 +1348,9 @@ def sendADIF(fp, options, inchar, outchar):
                 cndt = map(lambda x: x.replace('JP-',""), mloc)
                 mlocmesg = '[' + ','.join(list(cndt)) + ']'
                 fn = act_call.replace('/','-') + '@' + ref.replace('/','-') + '-' + mlocmesg + '-' + date +'.adi'
-                
             else:
                 fn = act_call.replace('/','-') + '@' + ref.replace('/','-') + '-' + date +'.adi'
-
+                
             if files.get(fn) == None:
                 files[fn] = header
 
@@ -1385,7 +1398,7 @@ def sendPOTA(fp, options, inchar, outchar):
             if errorfl:
                 res['status'] = 'NG'
                 
-            fn = act_call.replace('/','-') + '@' + ref + '-' + date +'.adi'
+            fn = act_call.replace('/','-') + '@' + ref + '.adi'
             if l:
                 if linecount==0:
                     fname = fn
