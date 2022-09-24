@@ -226,7 +226,7 @@ def decodeHamlog(cols):
     
     if len(cols) < 15:
         errorfl = True
-        errormsg = [ "Fatal:Too short columns." ]
+        errormsg = [ "入力エラー:HAMLOG CSV形式ではありません" ]
         return {
             'error':True,
             'errormsg': errormsg
@@ -869,6 +869,9 @@ def toADIF2(decoder, row, options):
 
     h = decoder(row)
 
+    if h['error']:
+        return ('',[h['errormsg']],{}, True)
+    
     if options['myQTH']=='rmks1':
         myref = get_ref(h['rmks1'])
         comment = h['rmks2']
@@ -878,11 +881,6 @@ def toADIF2(decoder, row, options):
     else:
         myref = get_ref(options['Park'])
         comment = ''
-        
-    if myref['SOTA'] != '':
-        myref['SOTA'] = [myref['SOTA']]
-    else:
-        myref['SOTA'] = []
         
     if options['QTH']=='rmks1':
         hisref = get_ref(h['rmks1'])
@@ -896,11 +894,6 @@ def toADIF2(decoder, row, options):
     else:
         hisref = {'SOTA':'', 'POTA':[],'WWFF':[]}
         comment = ''
-
-    if hisref['SOTA'] != '':
-        hisref['SOTA'] = [hisref['SOTA']]
-    else:
-        hisref['SOTA'] = []
 
     if h['date_error']:
         date = h['date_error']
@@ -916,6 +909,17 @@ def toADIF2(decoder, row, options):
     else:
         time = '{hour:02}{minute:02}'.format(
             hour=h['hour'], minute=h['minute'])
+
+    if myref['SOTA'] != '':
+        myref['SOTA'] = [myref['SOTA']]
+    else:
+        myref['SOTA'] = []
+        
+    if hisref['SOTA'] != '':
+        hisref['SOTA'] = [hisref['SOTA']]
+    else:
+        hisref['SOTA'] = []
+
 
     activator = options['POTAActivator']
     operator = options['POTAOperator']
