@@ -626,19 +626,11 @@
 	    }
 	    
 	    if (textinterpreted == false) {
-		if(confirm("CSVファイルにエラーがあります。\nADIFを生成しますか？") == false)
-		    return false;
+		window . alert("HAMLOG CSVファイルを読み込んでください。");
+		return false;
 	    }
 	    callsign = form.pota_activation_call.value
 	    areaNo = callsign.match(/.\D+(\d).+/)
-	    /*
-	    var target = document.getElementById("regional_manager"),
-	    maddr = "mailto:K" + areaNo[1] +"@parksontheair.com",
-		sbj = "?subject=" + adiflist[0] +"&",
-		body = "Dear coordinator,\n\nPlease find the attached files as follows.\n" + adiflist.join('\n'),
-		sig = "\n\nRegards,\n" + callsign + "\n";
-	    target.href = maddr + sbj + "body=" + encodeURIComponent(body + sig);
-	   */
 	    saveCookie();
 	    return true;
         }
@@ -1162,14 +1154,10 @@ function readPOTACSV() {
 	processData: false,
 	contentType: false,
 	error: function(data) {
-	    alert('エラーが発生しました。\n再度ファイルを指定して入力してください。');
+	    alert('エラーが発生しました。\nCSVファイル確認してください。');
 	}
     }).done(function(data) {
-	if (data.status == "OK")
-	    textinterpreted = true;
-	else 
-	    textinterpreted = false;
-	
+
 	$('#potacsvlisthead').empty();
 	$('#potacsvlisthead').append(
 	    "<tr><th>No.</th><th>Call</th>"+
@@ -1179,6 +1167,16 @@ function readPOTACSV() {
                 "<th>MySigInfo</th><th>Station</th><th>Operator</th>"+
                 "</tr>");
 	$('#potacsvlisttable').empty();
+
+	if (data.status == "OK")
+	    textinterpreted = true;
+	else {
+	    textinterpreted = false;
+	    alert('CSVファイルにエラーがあります。\nHAMLOG CSVファイルを指定してください');
+
+	    return;
+	}
+	
 	tlist = data.logtext;
 	var count = 1
 	for(var i = 0, len = tlist.length; i < len; ++i,++count) {
