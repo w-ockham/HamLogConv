@@ -968,13 +968,13 @@ def toADIF2(decoder, row, options):
        else:
            log[my] += qso + [ adif('mysotaref',my),'<EOR>\n']
 
+    mystate = ""
+    
     for my in myref['POTA']:
         log[my] = []
 
         mystates = getPOTALoc(my)
-        if len(mystates) > 1:
-            mystate = ""
-        else:
+        if len(mystates) == 1:
             mystate = mystates[0].replace("JP-","")
             
         if hisref['POTA']:

@@ -612,22 +612,30 @@
 	}
         function formCheckPOTA() {
 	    var form = document.forms.POTAActivatorForm;
+	    var errmsg = '';
+	    var result = true;
+	    
 	    if( form.myQTH.value == "form" && form.park.value == "") {
-		window . alert ( '運用先を入力して下さい');
-		return false;
+		errmsg += '運用先を入力して下さい\n'
+		result = false;
 	    }
 	    if( form.myQTH.value == "rmks1" && form.QTH.value == "rmks1") {
-		window . alert ( 'Remarks1の指定が重複しています。');
-		return false;
+		errmsg += 'Remarks1の指定が重複しています\n';
+		result = false;
 	    }
 	    if( form.myQTH.value == "rmks2" && form.QTH.value == "rmks2") {
-		window . alert ( 'Remarks2の指定が重複しています。');
+		errmsg += 'Remarks2の指定が重複しています\n';
+		result = false;
+	    }
+
+	    if (result == false) {
+		alert(errmsg);
 		return false;
 	    }
 	    
 	    if (textinterpreted == false) {
-		window . alert("HAMLOG CSVファイルを読み込んでください。");
-		return false;
+		if (confirm("HAMLOG CSVのチェックをせずにADIFを生成しますか？") == false)
+		    return false;
 	    }
 	    callsign = form.pota_activation_call.value
 	    areaNo = callsign.match(/.\D+(\d).+/)
@@ -1124,23 +1132,31 @@ var adiflist = [];
   
 function readPOTACSV() {
     var form = document.forms.POTAActivatorForm;
+    var errmsg = '';
+    var result = true;
+    
     if( form.pota_activation_call.value == "") {
-	window . alert ( '運用時のコールサインを入力して下さい');
-	return false;
+	errmsg += '運用時のコールサインを入力して下さい\n';
+	result =  false;
     }
     if( form.myQTH.value == "form" && form.park.value == "") {
-	window . alert ( '運用先を入力して下さい');
-	return false;
+	errmsg += '運用先を入力して下さい\n';
+	result = false;
     }
     if( form.myQTH.value == "rmks1" && form.QTH.value == "rmks1") {
-		window . alert ( 'Remarks1の指定が重複しています。');
-	return false;
+	errmsg += 'Remarks1の指定が重複しています\n';
+	result = false;
     }
     if( form.myQTH.value == "rmks2" && form.QTH.value == "rmks2") {
-	window . alert ( 'Remarks2の指定が重複しています。');
+	errmsg += 'Remarks2の指定が重複しています';
+	result =  false;
+    }
+
+    if(result == false) {
+	alert(errmsg);
 	return false;
     }
-	    
+    
     var form =  $('#POTAActivatorForm').get(0)
     var formdata = new FormData(form)
     formdata.append("command","ADIFCSVCheck")
