@@ -358,7 +358,14 @@ def decodeHamlog(cols):
 def decodeADIF(cols):
     qsos , header = adif_io.read_from_string(cols)
     qso = qsos[0]
-    ( _, _, wlen ) = freq_to_band(qso['FREQ'])
+
+    if 'FREQ' in qso.keys():
+        ( _, _, wlen ) = freq_to_band(qso['FREQ'])
+    elif 'BAND' in qso.keys():
+        wlen = qso['BAND']
+    else:
+        wlen = ''
+        
     errorfl = False
     errormsg = ''
     if 'MY_SIG_INFO' in qso:
@@ -366,20 +373,16 @@ def decodeADIF(cols):
     elif 'MY_SOTA_REF' in qso:
         my_sig = qso['MY_SOTA_REF']
     else:
-        my_sig = 'UNKNOWN'
-        errorfl = True
-        errormsg = 'Not specified my reference.'
+        my_sig = 'unknown'
 
     if 'SIG_INFO' in qso:
         his_sig = qso['SIG_INFO']
     elif 'SOTA_REF' in qso:
         his_sig = qso['SOTA_REF']
     else:
-        his_sig = 'UNKNOWN'
-        errorfl = True
-        errormsg = 'Not specified his reference.'
+        his_sig = ''
 
-    return {
+    log = {
             'error':errorfl,
             'errormsg':errormsg,
             'date_error':'',
@@ -392,13 +395,23 @@ def decodeADIF(cols):
             'day': int(qso['QSO_DATE'][6:8]),            # SOTA,WWFF
             'hour': int(qso['TIME_ON'][0:2]),          # SOTA,WWFF
             'minute': int(qso['TIME_ON'][2:4]),      # SOTA,WWFF
-            'rst_sent': qso['RST_SENT'],   # All
-            'rst_rcvd': qso['RST_RCVD'],   # All
             'band-wlen': wlen,     # WWFF
             'mode': mode_to_ADIFmode(qso['MODE']),       # WWFF
-            'rmks1': my_sig, # All
-            'rmks2': his_sig# All
+            'qth': his_sig,
+            'rmks2': ''
         }
+    
+    if 'RST_SENT' in qso:
+        log['rst_sent'] =  qso['RST_SENT']
+    else: 
+        log['rst_sent'] =  ''
+        
+    if 'RST_RCVD' in qso:
+        log['rst_rcvd'] =  qso['RST_RCVD']
+    else:
+        log['rst_rcvd'] =  ''
+        
+    return log
 
 def decodeHamLogIOS(cols):
 
@@ -942,7 +955,7 @@ def toADIF2(decoder, row, options):
         adif('band-wlen',h['band-wlen']),
         adif('mode',h['mode']),
         adif('rst_sent',h['rst_sent']),
-        adif('rst_rcvd',h['rst_rcvd']),
+        adif('rst_rcvd',h['rst_rcvd'])
     ]
 
     qso += [
@@ -954,7 +967,7 @@ def toADIF2(decoder, row, options):
         adif('band-wlen',h['band-wlen']),
         adif('mode',h['mode']),
         adif('rst_sent',h['rst_sent']),
-        adif('rst_rcvd',h['rst_rcvd']),
+        adif('rst_rcvd',h['rst_rcvd'])
     ]
     
     log = {}
@@ -1026,7 +1039,13 @@ def toADIF2(decoder, row, options):
 
     return (date2, ldisp, log, errorfl)
 
+potaloc_cache = {}
+
 def getPOTALoc(parkid):
+    global potaloc_cache
+    if parkid in potaloc_cache.keys():
+        return potaloc_cache[parkid]
+    
     url = f"https://www.sotalive.net/api/jaff-pota?parkid={parkid}"
     res = requests.get(url)
     js = res.json()
@@ -1034,6 +1053,7 @@ def getPOTALoc(parkid):
     if js:
         for p in js:
             r += p['locid']
+    potaloc_cache[parkid] = r
     return r
 
 def sendAirHamLog(fp, fname, decoder, options, inchar, outchar):
@@ -1301,22 +1321,23 @@ def sendADIF(fp, options, inchar, outchar):
     decoder = None
     linecount = 0
     isADIF = False
-    
-    if 'ADIF_VER' in lines[0][0].upper():
+
+    firstline = lines[0][0].upper()
+    if 'ADIF' in firstline or '<EOH>' in firstline:
         r = lines
         lines = []
         isADIF = True
         isbody = False
-        options['myQTH'] = 'rmks1'
-        options['QTH'] = 'rmks2'
+        options['QTH'] = 'qth'
         for l in r:
             lstr = ','.join(l)
             if isbody:
                 lines.append(lstr)
-            elif 'EOH' in lstr:
+            elif '<EOH>' in lstr.upper():
                 isbody = True
 
     date = ''
+    rows = ''
     
     for row in lines:
         if linecount > 100000:
@@ -1330,15 +1351,24 @@ def sendADIF(fp, options, inchar, outchar):
                 decoder = decodeADIF
             else:
                 decoder = decodeHamlog
-                    
-        (d, ldisp, log, errorfl) = toADIF2(decoder, row, options)
 
+        if isADIF:
+            if '<EOR>' in row.upper():
+                rows += row
+                (d, ldisp, log, errorfl) = toADIF2(decoder, rows, options)
+                rows = ''
+            else:
+                rows += row
+                continue
+        else:
+            (d, ldisp, log, errorfl) = toADIF2(decoder, row, options)
+        
         if not date:
             date = d
             
         if errorfl:
             res['status'] = 'NG'
-
+            res['errorlog']=log
         if ldisp:
             res['logtext'].append(ldisp)
 
@@ -1385,7 +1415,6 @@ def sendPOTA(fp, options, inchar, outchar):
         options['POTAOperator'] = operator
 
     decoder = None
-        
     with io.TextIOWrapper(fp, encoding=inchar,errors="backslashreplace") as f:
         reader = csv.reader(f)
         for row in reader:
@@ -1396,7 +1425,7 @@ def sendPOTA(fp, options, inchar, outchar):
                     decoder = decodeHamLogIOS
                     continue
                 else:
-                    decoder = decodeHamlog
+                  decoder = decodeHamlog
                     
             (date,ref,l,l2,errorfl) = toADIF(decoder, linecount, 'POTA', row, options)
             if errorfl:

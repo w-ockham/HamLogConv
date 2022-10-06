@@ -1148,7 +1148,11 @@ function readPOTACSV() {
 	result = false;
     }
     if( form.myQTH.value == "rmks2" && form.QTH.value == "rmks2") {
-	errmsg += 'Remarks2の指定が重複しています';
+	errmsg += 'Remarks2の指定が重複しています\n';
+	result =  false;
+    }
+    if( form.filename.value == "") {
+	errmsg += 'HAMLOG CSVファイルを指定してください';
 	result =  false;
     }
 
@@ -1189,8 +1193,6 @@ function readPOTACSV() {
 	else {
 	    textinterpreted = false;
 	    alert('CSVファイルにエラーがあります。\nHAMLOG CSVファイルを指定してください');
-
-	    return;
 	}
 	
 	tlist = data.logtext;
