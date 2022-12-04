@@ -640,6 +640,12 @@ def toSOTA(decoder, lcount, actp, row, callsign, options):
                 comment = hisqth
             else:
                 comment = get_ref(h['rmks1'])
+        elif options['QTH']=='qth':
+            hisqth = get_ref(h['qth'])
+            if actp:
+                comment = hisqth
+            else:
+                comment = get_ref(h['rmks1'])
         else:
             hisqth = {'SOTA':'', 'LOC': ' '}
             comment = hisqth
@@ -954,8 +960,6 @@ def toADIF2(decoder, row, options):
         adif('time',time),
         adif('band-wlen',h['band-wlen']),
         adif('mode',h['mode']),
-        adif('rst_sent',h['rst_sent']),
-        adif('rst_rcvd',h['rst_rcvd'])
     ]
 
     qso += [
@@ -967,7 +971,7 @@ def toADIF2(decoder, row, options):
         adif('band-wlen',h['band-wlen']),
         adif('mode',h['mode']),
         adif('rst_sent',h['rst_sent']),
-        adif('rst_rcvd',h['rst_rcvd'])
+        adif('rst_rcvd',h['rst_rcvd']),
     ]
     
     log = {}
