@@ -1135,7 +1135,27 @@ function clickUpdate() {
 };
 
 var adiflist = [];
+
+function checkRefs(refid){
+    refs = refid.toUpperCase().split(/,|\s/);
+
+    sotaref = new RegExp(/^\w+\/\w+-\d{3}$/);
+    wwffref = new RegExp(/^\w+FF-\d{4}$/);
+    potaref = new RegExp(/^\w+-\d{4}$/);
+    
+    result = true;
+
+    refs.forEach((ref)=> {
+	if (sotaref.test(ref)|| wwffref.test(ref) || potaref.test(ref)) {
+	    result = result && true;
+	} else
+	    result = false;
+    })
+    
+    return result;
+}
   
+ 
 function readPOTACSV() {
     var form = document.forms.POTAActivatorForm;
     var errmsg = '';
@@ -1145,9 +1165,15 @@ function readPOTACSV() {
 	errmsg += '運用時のコールサインを入力して下さい\n';
 	result =  false;
     }
-    if( form.myQTH.value == "form" && form.park.value == "") {
-	errmsg += '運用先を入力して下さい\n';
-	result = false;
+    if( form.myQTH.value == "form") {
+	if (form.park.value == "") {
+	    errmsg += '運用先を入力して下さい\n';
+	    result = false;
+	}
+	if (!checkRefs(form.park.value)) {
+	    errmsg += '運用先リファレンスに誤りがあります\n';
+	    result = false;
+	}
     }
     if( form.myQTH.value == "rmks1" && form.QTH.value == "rmks1") {
 	errmsg += 'Remarks1の指定が重複しています\n';
