@@ -1140,13 +1140,12 @@ function checkRefs(refid){
     refs = refid.toUpperCase().split(/,|\s/);
 
     sotaref = new RegExp(/^\w+\/\w+-\d{3}$/);
-    wwffref = new RegExp(/^\w+FF-\d{4}$/);
-    potaref = new RegExp(/^\w+-\d{4}$/);
+    parkref = new RegExp(/^\w+-\d{4}$/);
     
     result = true;
 
     refs.forEach((ref)=> {
-	if (sotaref.test(ref)|| wwffref.test(ref) || potaref.test(ref)) {
+	if (sotaref.test(ref)|| parkref.test(ref)) {
 	    result = result && true;
 	} else
 	    result = false;
