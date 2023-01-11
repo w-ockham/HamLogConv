@@ -22,7 +22,6 @@ from convutil import (
 
 
 debug = False
-#debug = True
 
 keyword_table = {
     'mycall':1,
@@ -82,7 +81,7 @@ def modes_sig(key):
     return(arg)
 
 def parseCallsign(c):
-     pat_call = re.compile(r'\w{1,3}[0-9]\w{0,3}[A-Z]$',re.I)
+     pat_call = re.compile(r'\w{1,3}[0-9]\w{0,5}[A-Z]$',re.I)
      pat_prefix = re.compile(r'\w{1,3}[0-9]$',re.I)
      pat_num = re.compile(r'[0-9]')
      pat_p1 = re.compile(r'(\w+)/(\d)$',re.I)
@@ -144,7 +143,7 @@ def get_token(pos,line):
     res = ''
     while pos < len(line):
         c = line[pos]
-        if c == ' ' or c == '　':
+        if c == ' ' or c == '　' or c == ',':
             if res != '':
                 return (pos+1,res)
             else:
@@ -263,7 +262,7 @@ def compileFLE(input_text,conv_mode):
         'qslmsg':'',
         'mywwff':'',
         'mysota':'',
-        'mypota':'',
+        'mypota':[],
         'nickname':'',
         'rigset':0,
         'year':2000,
@@ -280,7 +279,7 @@ def compileFLE(input_text,conv_mode):
         'c_call':'',
         'c_rigset':0,
         'c_his_wwff':'',
-        'c_his_pota':'',
+        'c_his_pota':[],
         'c_his_sota':'',
         'c_r_s':5,
         'c_s_s':9,
@@ -309,7 +308,7 @@ def compileFLE(input_text,conv_mode):
         env['c_snr_r']='-10'
         env['c_his_wwff']=''
         env['c_his_sota']=''
-        env['c_his_pota']=''
+        env['c_his_pota']=[]
         env['c_qso_msg']=''
         env['c_qso_rmks']=''
 
@@ -394,19 +393,22 @@ def compileFLE(input_text,conv_mode):
                         env['mysota'] = ref
                         sotafl = True
                     else:
-                        env['errno'].append((lc,pos+1,'Invalid SOTA ref#.'))
+                        env['errno'].append((lc,pos+1,f"{id} is invalid SOTA ref#."))
                 else:
                     env['errno'].append((lc,pos,'Missing SOTA ref#.'))
                 lc += 1
                 continue
             if key == 'mypota':
                 if pos < ml:
-                    (id, ref, w) = tl[pos+1]
-                    if id =='potaref':
-                        env['mypota'] = ref
-                        potafl = True
-                    else:
-                        env['errno'].append((lc,pos+1,'Invalid POTA ref#.'))
+                    while pos < ml:
+                        pos += 1
+                        (id, ref, w) = tl[pos]
+                        if id =='potaref':
+                            env['mypota'] += [ref]
+                            potafl = True
+                        else:
+                            env['errno'].append((lc,pos,f"{id} is invalid POTA ref#."))
+                            break
                 else:
                     env['errno'].append((lc,pos,'Missing POTA ref#.'))
                 lc += 1
@@ -433,7 +435,7 @@ def compileFLE(input_text,conv_mode):
                 continue
             if key == 'qslmsg':
                 p2 = re.sub('\$mywwff',env['mywwff'],p2)
-                p2 = re.sub('\$mypota',env['mypota'],p2)
+                p2 = re.sub('\$mypota',' '.join(env['mypota']),p2)
                 p2 = re.sub('\$mysota',env['mysota'],p2)
                 env['qslmsg'] = p2
                 lc += 1
@@ -530,7 +532,7 @@ def compileFLE(input_text,conv_mode):
                         state = NORM
                         continue
                     if t == 'potaref':
-                        env['c_his_pota'] = p1
+                        env['c_his_pota'] += [p1]
                         pos+=1
                         state = NORM
                         continue
@@ -646,6 +648,7 @@ def compileFLE(input_text,conv_mode):
                 elif rt == 'snr':
                     rsts = env['c_snr_s']
                     rstr = env['c_snr_r']
+
                 qso = {
                     'mycall': env['mycall'],
                     'year':env['c_year'],
@@ -673,7 +676,7 @@ def compileFLE(input_text,conv_mode):
                 }
                 hamlogqso = []
                 (_, _, qth, qsl) = compose_qsl_msg(qso, env);
-                if len(qth)> 28:
+                if len(qth)> 56: #28
                     env['errno'].append((lc-2,pos,'QTH too long: ' + qth))
                 if len(qsl)> 54:
                     env['errno'].append((lc-1,pos,'Remarks2 too long: ' + qsl))
@@ -722,7 +725,7 @@ def compileFLE(input_text,conv_mode):
                     'qslmsg':env['qslmsg']
                 }
                 (rmks, freq, qth, qsl) = compose_qsl_msg(qsotmp, env);
-                if len(qth)> 28:
+                if len(qth)> 56: #28
                     env['errno'].append((lc-2,pos,'QTH too long: ' + qth))
                 if len(qsl)> 54:
                     env['errno'].append((lc-1,pos,'Remarks2 too long: ' + qsl))
@@ -732,8 +735,8 @@ def compileFLE(input_text,conv_mode):
                 myref = ''
                 hisref =''
                 if potafl:
-                    myref = env['mypota']
-                    hisref = env['c_his_pota']
+                    myref = '/'.join(env['mypota'])
+                    hisref = '/'.join(env['c_his_pota'])
                     prefix = '/'
                 else:
                     prefix = ''
@@ -742,7 +745,18 @@ def compileFLE(input_text,conv_mode):
                     myref += prefix + env['mywwff']
                     if env['c_his_wwff'] != '':
                         hisref += prefix + env['c_his_wwff']
-                    
+
+                if hissota:
+                    topref = 'S2S'
+                else:
+                    topref = ''
+
+                if hisref:
+                    if topref:
+                        topref +='/P2P'
+                    else:
+                        topref = 'P2P'
+                        
                 qsormks = get_ref(env['c_qso_rmks'])
                 operator = env['operator']
                 hisname = env['c_qso_msg']
@@ -776,7 +790,7 @@ def compileFLE(input_text,conv_mode):
             now  = datetime.datetime.now()
             fname = "fle-" + now.strftime("%Y-%m-%d-%H-%M")
             aday = '{}{:02}{:02}'.format(env['year'],env['month'],env['day'])
-            logname= aday + '@' + env['mysota'].replace('/','-')+env['mypota']+env['mywwff']
+            logname= aday + '@' + env['mysota'].replace('/','-')+'-'.join(env['mypota'])+env['mywwff']
             files = {
                 "fle-" + logname + ".txt" :input_text,
                 "hamlog-" + logname + ".csv" : sendHamlog_FLE(res,env),
@@ -787,14 +801,15 @@ def compileFLE(input_text,conv_mode):
                 files = sendSOTA_FLE(files,res)
 
             if wwfffl:
-                files = sendADIF_FLE(files, res, env['mycall'], 'WWFF')
+                files = sendADIF_FLE(files, res, env['mycall'], 'WWFF', env['mywwff'])
 
             if potafl:
-                files = sendADIF_FLE(files, res, env['mycall'], 'POTA')
+                for mysiginfo in env['mypota']:
+                    files = sendADIF_FLE(files, res, env['mycall'], 'POTA', mysiginfo)
 
             if (not sotafl) and (not wwfffl) and (not potafl):
                 files = sendSOTA_FLE(files,res)
-                
+            
             writeZIP(files,fname+".zip")
     else:
         if len(env['errno'])>0:
@@ -928,42 +943,47 @@ def sendSOTA_FLE(files, loginput):
 
     return(files)
 
-def toADIF_FLE(h, mode):
+def toADIF_FLE(h, mysig, mysiginfo, hissigl):
     date = '{year:02}{month:02}{day:02}'.format(
         day=h['day'], month=h['month'], year=h['year'])
-    
-    if mode == 'POTA':
-        sig = 'POTA'
-        siginfo = h['mypota']
-        hissig = h['hispota']
+
+    if hissigl:
+        l = []
+        for hissig in hissigl:
+            l += [[
+                adif('activator',h['mycall']),
+                adif('callsign',h['callsign']),
+                adif('date',date),
+                adif('time',
+                     '{hour:02}{minute:02}'.format(
+                         hour=h['hour'], minute=h['min'])),
+                adif('band-wlen',h['band']),
+                adif('mode',h['mode']),
+                adif('rst_sent',h['rst_sent']),
+                adif('rst_rcvd',h['rst_rcvd']),
+                adif('mysig',mysig),
+                adif('mysiginfo',mysiginfo),
+                adif('sig',mysig),adif('siginfo', hissig),
+                adif('operator',h['operator']),'<EOR>']]       
     else:
-        sig = 'WWFF'
-        siginfo = h['mywwff']
-        hissig = h['hiswwff']
-        
-    l = [
-        adif('activator',h['mycall']),
-        adif('callsign',h['callsign']),
-        adif('date',date),
-        adif('time',
-             '{hour:02}{minute:02}'.format(
-                 hour=h['hour'], minute=h['min'])),
-        adif('band-wlen',h['band']),
-        adif('mode',h['mode']),
-        adif('rst_sent',h['rst_sent']),
-        adif('rst_rcvd',h['rst_rcvd']),
-        adif('mysig',sig),
-        adif('mysiginfo',siginfo)
-        ]
-
-    if hissig != '':
-        l+= [adif('sig',sig),adif('siginfo', hissig)]        
-
-    l+= [adif('operator',h['operator']),'<EOR>']
+        l = [
+            [adif('activator',h['mycall']),
+            adif('callsign',h['callsign']),
+            adif('date',date),
+            adif('time',
+                 '{hour:02}{minute:02}'.format(
+                     hour=h['hour'], minute=h['min'])),
+            adif('band-wlen',h['band']),
+            adif('mode',h['mode']),
+            adif('rst_sent',h['rst_sent']),
+            adif('rst_rcvd',h['rst_rcvd']),
+            adif('mysig',mysig),
+            adif('mysiginfo',mysiginfo),
+            adif('operator',h['operator']),'<EOR>']]       
     
-    return (date, siginfo, l)
+    return (date, l)
 
-def sendADIF_FLE(files, loginput, callsign, mode):
+def sendADIF_FLE(files, loginput, callsign, mysig, mysiginfo):
     outstr = io.StringIO()
     linecount = 0
     fname = ''
@@ -971,19 +991,28 @@ def sendADIF_FLE(files, loginput, callsign, mode):
                         quoting=csv.QUOTE_MINIMAL)
     header = 'ADIF Export from HAMLOG by JL1NIE\n' + adif('programid','FCTH')+ '\n' + adif('adifver','3.0.6')+'\n' + '<EOH>\n'
 
+    date = ''
+
     for row in loginput:
         if linecount > 100000:
             break
         else:
-            (date,ref,l) = toADIF_FLE(row, mode)
-            
-            fn = callsign.replace('/','-') + '@' + ref + '-'+ date +'.adi'
+            if mysig == 'POTA':
+                (d, l) = toADIF_FLE(row, mysig, mysiginfo, row['hispota'])
+            elif mysig == 'WWFF':
+                (d, l) = toADIF_FLE(row, mysig, mysiginfo, row['hiswwff'])
+                
+            if not date:
+                date = d
+                
+            fn = callsign.replace('/','-') + '@' + mysiginfo + '-'+ date +'.adi'
                 
             if linecount == 0:
                 fname = fn
 
             if fn == fname:
-                    writer.writerow(l)
+                for r in l:
+                    writer.writerow(r)
             else:
                 if fname in files:
                     newstr = files[fname] + outstr.getvalue()
@@ -995,7 +1024,9 @@ def sendADIF_FLE(files, loginput, callsign, mode):
                 writer = csv.writer(outstr,delimiter=' ',
                                     quoting=csv.QUOTE_MINIMAL)
                 fname = fn
-                writer.writerow(l)
+                for r in l:
+                    writer.writerow(r)
+                    
         linecount += 1
 
     if fname != '':
@@ -1021,8 +1052,8 @@ def compose_qsl_msg(h,env):
     if h['hiswwff'] != '':
         hisref.append(h['hiswwff'])
 
-    if h['hispota'] != '':
-        hisref.append(h['hispota'])
+    if h['hispota'] != []:
+        hisref.append(",".join(h['hispota']))
     
     rmks = get_ref(h['qsormks'])
 
@@ -1123,8 +1154,8 @@ def toAirHamFLE(lcount, h, env):
     if h['hiswwff'] != '':
         hisref.append(h['hiswwff'])
 
-    if h['hispota'] != '':
-        hisref.append(h['hispota'])
+    if h['hispota'] != []:
+        hisref.append(",".join(h['hispota']))
                                          
     l = ["",
          operator,
