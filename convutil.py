@@ -1340,7 +1340,7 @@ def sendADIF(fp, options, inchar, outchar):
             elif '<EOH>' in lstr.upper():
                 isbody = True
 
-    date = ''
+    first_date = ''
     rows = ''
     
     for row in lines:
@@ -1367,8 +1367,8 @@ def sendADIF(fp, options, inchar, outchar):
         else:
             (d, ldisp, log, errorfl) = toADIF2(decoder, row, options)
         
-        if not date:
-            date = d
+        if not first_date:
+            first_date = d
             
         if errorfl:
             res['status'] = 'NG'
@@ -1379,8 +1379,13 @@ def sendADIF(fp, options, inchar, outchar):
         for ref in log.keys():
             if 'JA-' in ref:
                 mloc = getPOTALoc(ref)
+                date = first_date
+            elif '/' in ref:
+                mloc = []
+                date = d
             else:
                 mloc = []
+                date = first_date
 
             if len(mloc) > 1:
                 cndt = map(lambda x: x.replace('JP-',""), mloc)
