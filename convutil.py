@@ -9,16 +9,18 @@ import requests
 import sys
 import zipfile
 
-def writeZIP(files,zipfname):
+
+def writeZIP(files, zipfname):
     print('Content-type:application/octet-stream; name="{}"'.format(zipfname))
     print('Content-Disposition:attachment; filename="{}"\r\n'.format(zipfname))
     buff = io.BytesIO()
     z = zipfile.ZipFile(buff, 'w', zipfile.ZIP_DEFLATED)
-    for k,v in files.items():
+    for k, v in files.items():
         z.writestr(k, v)
     z.close()
     sys.stdout.flush()
     sys.stdout.buffer.write(buff.getvalue())
+
 
 def writeTXT(files):
     for k,v in files.items():
@@ -177,13 +179,14 @@ def mode_to_SOTAmode(mode):
             return smode
     return 'OTHER'
 
-def mode_to_ADIFmode(mode):
+def mode_to_ADIFmode(smode):
+    smode = smode.upper()
     mode_table = [
-        ('DIGITALVOICE',['DV','FUSION','D-STAR','DMR'])]
-    for smode,pat in mode_table:
-        if mode.upper() in pat:
-            return smode
-    return mode.upper()
+        ('DIGITALVOICE',['C4FM','DMR','DSTAR','FREEDV','M17'])]
+    for mode,pat in mode_table:
+        if smode in pat:
+            return (mode, smode)
+    return (smode, '')
 
 def splitCallsign(call):
     call = call.upper()
@@ -317,7 +320,7 @@ def decodeHamlog(cols):
                 qsl_sent = 1
             if qslflag[2] != ' ':
                 qsl_rcvd = 1
-                
+        (mode, smode) = mode_to_ADIFmode(cols[6])
         return {
             'error':errorfl,
             'errormsg':" , ".join(errormsg),
@@ -341,7 +344,8 @@ def decodeHamlog(cols):
             'band': band_air,      # AirHam
             'band-sota': band_sota,# SOTA
             'band-wlen': wlen,     # WWFF
-            'mode': mode_to_ADIFmode(cols[6]),       # WWFF
+            'mode': mode,       # WWFF
+            'sub_mode': smode,
             'mode-airham': mode_to_airhammode(cols[6],cols[5]), #AirHam
             'mode-sota': mode_to_SOTAmode(cols[6]), #SOTA
             'code': cols[7],   # None
@@ -382,6 +386,7 @@ def decodeADIF(cols):
     else:
         his_sig = ''
 
+    (mode, smode) = mode_to_ADIFmode(qso['MODE'])
     log = {
             'error':errorfl,
             'errormsg':errormsg,
@@ -396,7 +401,8 @@ def decodeADIF(cols):
             'hour': int(qso['TIME_ON'][0:2]),          # SOTA,WWFF
             'minute': int(qso['TIME_ON'][2:4]),      # SOTA,WWFF
             'band-wlen': wlen,     # WWFF
-            'mode': mode_to_ADIFmode(qso['MODE']),       # WWFF
+            'mode': mode ,# WWFF
+            'sub_mode': smode,
             'qth': his_sig,
             'rmks2': ''
         }
@@ -755,6 +761,7 @@ def adif(key, value):
         ('TIME_ON','time'),
         ('BAND','band-wlen'),
         ('MODE','mode'),
+        ('SUBMODE','sub_mode'),
         ('RST_SENT','rst_sent'),
         ('RST_RCVD','rst_rcvd'),
         ('MY_SIG','mysig'),
@@ -1050,11 +1057,12 @@ def getPOTALoc(parkid):
     if parkid in potaloc_cache.keys():
         return potaloc_cache[parkid]
     
-    url = f"https://www.sotalive.net/api/jaff-pota?parkid={parkid}"
+    url = f"https://www.sotalive.net/api/sota-jaff-pota?refid={parkid}"
     res = requests.get(url)
     js = res.json()
     r = []
     if js:
+        js = js['reference']
         for p in js:
             r += p['locid']
     potaloc_cache[parkid] = r
@@ -1308,7 +1316,7 @@ def sendADIF(fp, options, inchar, outchar):
     files = {}
     potafiles = []
     res = {'status':'OK','logtext':[],'filelist':[]}
-    header = 'ADIF Export from HAMLOG by JL1NIE\n'+ adif('programid','FCTH')+ '\n' + adif('adifver','3.0.6')+'\n' + '<EOH>\n'
+    header = 'ADIF Export from HAMLOG by JL1NIE\n'+ adif('programid','FCTH')+ '\n' + adif('adifver','3.1.4')+'\n' + '<EOH>\n'
     
     act_call = options['POTAActivator']
     (operator,portable) = splitCallsign(act_call)
@@ -1416,7 +1424,7 @@ def sendPOTA(fp, options, inchar, outchar):
     fname = ''
     writer = csv.writer(outstr, delimiter=' ',
                         quoting=csv.QUOTE_MINIMAL)
-    header = 'ADIF Export from HAMLOG by JL1NIE\n' + adif('programid','FCTH')+ '\n' + adif('adifver','3.0.6')+'\n' + '<EOH>\n'
+    header = 'ADIF Export from HAMLOG by JL1NIE\n' + adif('programid','FCTH')+ '\n' + adif('adifver','3.1.4')+'\n' + '<EOH>\n'
     
     act_call = options['POTAActivator']
     (operator,portable) = splitCallsign(act_call)
