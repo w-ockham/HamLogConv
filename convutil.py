@@ -23,15 +23,17 @@ def writeZIP(files, zipfname):
 
 
 def writeTXT(files):
-    for k,v in files.items():
+    for k, v in files.items():
         print('Content-Disposition:attachment; filename="{}"\r\n'.format(k))
         print(v)
+
 
 def emitError(txt):
     print("Content-Type:text/html\n\n")
     print("<h4><font color=\"#ff0000\"> Error: {}</font></h4>".format(txt))
     print("<p><input type=\"button\" value=\"back\" onclick=\"history.back()\"></p>")
-            
+
+
 freq_table = [
     (0.1357,0.1378,'135kHz','VLF','2190m'),
     (0.472,0.479,'475kHz','VLF','630m'),
@@ -120,6 +122,27 @@ JA_region_table = {
     'JA/FI':'9',
     'JA/IK':'9'
 }
+
+sota_mode_table = [
+    ('CW',['CW']),
+    ('SSB',['SSB']),
+    ('FM',['FM']),
+    ('AM',['AM']),
+    ('DATA',['RTTY','RTY','PSK','PSK31','PSK-31','DIG','DATA',
+             'JT9','JT65','FT8','FT4','FSQ']),
+    ('DV',['DV','FUSION','DSTAR','D-STAR','DMR','C4FM'])
+]
+
+adif_normalize = [
+    ('DIGITALVOICE',['DV']),
+    ('DSTAR',['D-STAR','FUSION']),
+]
+
+adif_mode_table = [
+    ('MFSK',[ 'FSQCALL', 'FST4', 'FST4W', 'FT4', 'JS8', 'JTMS', 'MFSK4', 'MFSK8', 'MFSK11', 'MFSK16', 'MFSK22', 'MFSK31', 'MFSK32', 'MFSK64', 'MFSK64L', 'MFSK128', 'MFSK128L', 'Q65']),
+    ('DIGITALVOICE',['C4FM','DMR','DSTAR','FREEDV','M17',])
+]
+
     
 def errMsg(val):
     return ('<font color="red"><b>' + str(val) + '</b></font>')
@@ -136,7 +159,7 @@ def band_to_freq(band_str, is_sota = False):
     return(None)
     
 def freq_to_band(freq_str):
-    
+    freq_str = re.sub(r'([\d\.]+)/[\d\.]+',r'\1',freq_str)
     try:
         freq = float(freq_str)
     except Exception as e:
@@ -165,25 +188,18 @@ def mode_to_airhammode(mode,freq_str):
         return m
 
 def mode_to_SOTAmode(mode):
-    mode_table = [
-        ('CW',['CW']),
-        ('SSB',['SSB']),
-        ('FM',['FM']),
-        ('AM',['AM']),
-        ('DATA',['RTTY','RTY','PSK','PSK31','PSK-31','DIG','DATA',
-                 'JT9','JT65','FT8','FT4','FSQ']),
-        ('DV',['DV','FUSION','DSTAR','D-STAR','DMR','C4FM'])]
-    
-    for smode,pat in mode_table:
+    for smode,pat in sota_mode_table:
         if mode.upper() in pat:
             return smode
     return 'OTHER'
 
 def mode_to_ADIFmode(smode):
     smode = smode.upper()
-    mode_table = [
-        ('DIGITALVOICE',['C4FM','DMR','DSTAR','FREEDV','M17'])]
-    for mode,pat in mode_table:
+    for mode,pat in adif_normalize:
+        if smode in pat:
+            smode = mode
+            break
+    for mode,pat in adif_mode_table:
         if smode in pat:
             return (mode, smode)
     return (smode, '')
@@ -966,7 +982,6 @@ def toADIF2(decoder, row, options):
         adif('date',date),
         adif('time',time),
         adif('band-wlen',h['band-wlen']),
-        adif('mode',h['mode']),
     ]
 
     qso += [
@@ -976,11 +991,22 @@ def toADIF2(decoder, row, options):
         adif('date',date),
         adif('time',time),
         adif('band-wlen',h['band-wlen']),
-        adif('mode',h['mode']),
+    ]
+
+    if h['sub_mode']:
+        qsopota += [adif('mode',h['mode'])] #, adif('sub_mode',h['sub_mode'])]
+        qso += [adif('mode',h['mode'])] #, adif('sub_mode',h['sub_mode'])]
+        disp_mode = h['mode']+ '/' + h['sub_mode']
+    else:
+        qsopota += [adif('mode',h['mode'])]
+        qso += [adif('mode',h['mode'])]
+        disp_mode = h['mode']
+
+    qso += [
         adif('rst_sent',h['rst_sent']),
         adif('rst_rcvd',h['rst_rcvd']),
     ]
-    
+
     log = {}
 
     for my in myref['SOTA']:
@@ -1039,7 +1065,7 @@ def toADIF2(decoder, row, options):
             date,
             time,
             h['band-wlen'],
-            h['mode'],
+            disp_mode,
             h['rst_sent'],
             h['rst_rcvd'],
             hisstr,
