@@ -479,7 +479,8 @@ def decodeHamLogIOS(cols):
             band_error = errMsg(str(e))
             errormsg.append("Err:Frequency out of range:{}".format(e))
             (band_air,band_sota,wlen) = (band_error,band_error,band_error)
-            
+
+        (mode, smode) = mode_to_ADIFmode(cols[11])
         return {
             'error':errorfl,
             'errormsg':" , ".join(errormsg),
@@ -503,7 +504,8 @@ def decodeHamLogIOS(cols):
             'band': band_air,      # AirHam
             'band-sota': band_sota,# SOTA
             'band-wlen': wlen,     # WWFF
-            'mode': cols[11],       # WWFF
+            'mode': mode,       # WWFF
+            'sub_mode': smode,       # WWFF
             'mode-airham': mode_to_airhammode(cols[11],cols[2]), #AirHam
             'mode-sota': mode_to_SOTAmode(cols[11]), #SOTA
             'code': '',   # None
