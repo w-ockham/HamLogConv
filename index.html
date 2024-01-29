@@ -1001,10 +1001,11 @@ function setSample(arg) {
 	    "mycall " + act_call + "\n" +
 	    "operator " + operator + "\n" +
 	    "mywwff jaff-0218\n" +
-	    "mypota ja-1151,ja-1164\n" +
+	    "mypota ja-1151 ja-1164\n" +
 	    "mysota ja/st-012\n" +
 	    "qslmsg $sat丸山$mysota $mypota $rig\n"+
 	    "#Log\n" +
+	    "timezone +0\n"+
 	    "date "+ dddd + "\n" +
 	    "rigset 1\n"+
 	    "40m cw\n" +
@@ -1013,7 +1014,7 @@ function setSample(arg) {
 	    "4 ja8qsw 4 {札幌市}\n" +
 	    "ssb\n" +
 	    "14 ja4qsy\n" + 
-            "40 jq1qso/1 5 3 jaff-0218,ja-1151,ja-1164\n"+
+            "40 jq1qso/1 5 3 jaff-0218 ja-1151 ja-1164\n"+
             "70cm fm\n"+
             "55 jg0qro/0 ja/nn-001 {松本市 AO-91/FM/144MHz}\n"+
             "58 jk2qsu {PM85rl AO-91/FM/144MHz}\n"+
@@ -1137,7 +1138,8 @@ function clickUpdate() {
 var adiflist = [];
 
 function checkRefs(refid){
-    refs = refid.toUpperCase().split(/,|\s/);
+    refid = refid.toUpperCase() 
+    refs = refid.trim().split(/,|\s/);
 
     sotaref = new RegExp(/^\w+\/\w+-\d{3}$/);
     parkref = new RegExp(/^\w+-\d{4}$/);
