@@ -35,92 +35,92 @@ def emitError(txt):
 
 
 freq_table = [
-    (0.1357,0.1378,'135kHz','VLF','2190m'),
-    (0.472,0.479,'475kHz','VLF','630m'),
-    (1.8,1.9125,'1.9MHz','1.8MHz','160m'),
-    (3.5,3.805,'3.8MHz','3.5MHz','80m'),
-    (7.0,7.2,'7MHz','7MHz','40m'),
-    (10.000,10.150,'10MHz','10MHz','30m'),
-    (14.0,14.350,'14MHz','14MHz','20m'),
-    (18.0,18.168,'18MHz','18MHz','17m'),
-    (21.0,21.450,'21MHz','21MHz','15m'),
-    (24.0,24.990,'24MHz','24MHz','12m'),
-    (28.0,29.7,'28MHz','28MHz','10m'),
-    (50.0,54.0,'50MHz','50MHz','6m'),
-    (144.0,146.0,'144MHz','144MHz','2m'),
-    (430.0,440.0,'430MHz','433MHz','70cm'),
-    (1200.0,1300.0,'1200MHz','1290MHz','23cm'),
-    (2400.0,2450.0,'2400MHz','2.3GHz','13cm'),
-    (5650.0,5850.0,'5600MHz','5.6GHz','6cm'),
-    (10000.0,10250.0,'10.1GHz','10GHz','3cm'),
-    (10450.0,10500.0,'10.4GHz','10GHz','3cm'),
-    (351.0,351.38125,'デジタル簡易(351MHz)','',''),
-    (421.0,454.19375,'特定小電力(422MHz)','',''),
-    (26.968,27.144,'CB(27MHz)','',''),
-    (142.0,147.0,'デジタル小電力コミュニティ(142/146MHz)','','')
+    (0.1357, 0.1378, '135kHz', 'VLF', '2190m'),
+    (0.472, 0.479, '475kHz', 'VLF', '630m'),
+    (1.8, 1.9125, '1.9MHz', '1.8MHz', '160m'),
+    (3.5, 3.805, '3.8MHz', '3.5MHz', '80m'),
+    (7.0, 7.2, '7MHz', '7MHz', '40m'),
+    (10.000, 10.150, '10MHz', '10MHz', '30m'),
+    (14.0, 14.350, '14MHz', '14MHz', '20m'),
+    (18.0, 18.168, '18MHz', '18MHz', '17m'),
+    (21.0, 21.450, '21MHz', '21MHz', '15m'),
+    (24.0, 24.990, '24MHz', '24MHz', '12m'),
+    (28.0, 29.7, '28MHz', '28MHz', '10m'),
+    (50.0, 54.0, '50MHz', '50MHz', '6m'),
+    (144.0, 146.0, '144MHz', '144MHz', '2m'),
+    (430.0, 440.0, '430MHz', '433MHz', '70cm'),
+    (1200.0, 1300.0, '1200MHz', '1290MHz', '23cm'),
+    (2400.0, 2450.0, '2400MHz', '2.3GHz', '13cm'),
+    (5650.0, 5850.0, '5600MHz', '5.6GHz', '6cm'),
+    (10000.0, 10250.0, '10.1GHz', '10GHz', '3cm'),
+    (10450.0, 10500.0, '10.4GHz', '10GHz', '3cm'),
+    (351.0, 351.38125, 'デジタル簡易(351MHz)', '', ''),
+    (421.0, 454.19375, '特定小電力(422MHz)', '', ''),
+    (26.968, 27.144, 'CB(27MHz)', '', ''),
+    (142.0, 147.0, 'デジタル小電力コミュニティ(142/146MHz)', '', '')
 ]
 
 JA_region_table = {
-    'JA/NI':'0',
-    'JA/NN':'0',
-    'JA/TK':'1',
-    'JA/KN':'1',
-    'JA/CB':'1',
-    'JA/ST':'1',
-    'JA/IB':'1',
-    'JA/TG':'1',
-    'JA/GM':'1',
-    'JA/YN':'1',
-    'JA/SO':'2',
-    'JA/GF':'2',
-    'JA/AC':'2',
-    'JA/ME':'2',
-    'JA/KT':'3',
-    'JA/SI':'3',
-    'JA/NR':'3',
-    'JA/OS':'3',
-    'JA/WK':'3',
-    'JA/HG':'3',
-    'JA/OY':'4',
-    'JA/SN':'4',
-    'JA/YG':'4',
-    'JA/TT':'4',
-    'JA/HS':'4',
-    'JA5/KA':'5',
-    'JA5/TS':'5',
-    'JA5/EH':'5',
-    'JA5/KC':'5',
-    'JA6/FO':'6',
-    'JA6/SG':'6',
-    'JA6/NS':'6',
-    'JA6/KM':'6',
-    'JA6/OT':'6',
-    'JA6/MZ':'6',
-    'JA6/KG':'6',
-    'JA6/ON':'6',
-    'JA/AM':'7',
-    'JA/IT':'7',
-    'JA/AT':'7',
-    'JA/YM':'7',
-    'JA/MG':'7',
-    'JA/FS':'7',
-    'JA8/SY':'8',
-    'JA8/RM':'8',
-    'JA8/KK':'8',
-    'JA8/OH':'8',
-    'JA8/SC':'8',
-    'JA8/IS':'8',
-    'JA8/NM':'8',
-    'JA8/SB':'8',
-    'JA8/TC':'8',
-    'JA8/KR':'8',
-    'JA8/HD':'8',
-    'JA8/IR':'8',
-    'JA8/HY':'8',
-    'JA8/OM':'8',
-    'JA/TY':'9',
-    'JA/FI':'9',
-    'JA/IK':'9'
+    'JA/NI': '0',
+    'JA/NN': '0',
+    'JA/TK': '1',
+    'JA/KN': '1',
+    'JA/CB': '1',
+    'JA/ST': '1',
+    'JA/IB': '1',
+    'JA/TG': '1',
+    'JA/GM': '1',
+    'JA/YN': '1',
+    'JA/SO': '2',
+    'JA/GF': '2',
+    'JA/AC': '2',
+    'JA/ME': '2',
+    'JA/KT': '3',
+    'JA/SI': '3',
+    'JA/NR': '3',
+    'JA/OS': '3',
+    'JA/WK': '3',
+    'JA/HG': '3',
+    'JA/OY': '4',
+    'JA/SN': '4',
+    'JA/YG': '4',
+    'JA/TT': '4',
+    'JA/HS': '4',
+    'JA5/KA': '5',
+    'JA5/TS': '5',
+    'JA5/EH': '5',
+    'JA5/KC': '5',
+    'JA6/FO': '6',
+    'JA6/SG': '6',
+    'JA6/NS': '6',
+    'JA6/KM': '6',
+    'JA6/OT': '6',
+    'JA6/MZ': '6',
+    'JA6/KG': '6',
+    'JA6/ON': '6',
+    'JA/AM': '7',
+    'JA/IT': '7',
+    'JA/AT': '7',
+    'JA/YM': '7',
+    'JA/MG': '7',
+    'JA/FS': '7',
+    'JA8/SY': '8',
+    'JA8/RM': '8',
+    'JA8/KK': '8',
+    'JA8/OH': '8',
+    'JA8/SC': '8',
+    'JA8/IS': '8',
+    'JA8/NM': '8',
+    'JA8/SB': '8',
+    'JA8/TC': '8',
+    'JA8/KR': '8',
+    'JA8/HD': '8',
+    'JA8/IR': '8',
+    'JA8/HY': '8',
+    'JA8/OM': '8',
+    'JA/TY': '9',
+    'JA/FI': '9',
+    'JA/IK': '9'
 }
 
 sota_mode_table = [
@@ -404,24 +404,25 @@ def decodeADIF(cols):
 
     (mode, smode) = mode_to_ADIFmode(qso['MODE'])
     log = {
-            'error':errorfl,
-            'errormsg':errormsg,
-            'date_error':'',
-            'time_error':'',
-            'band_error':'',
-            
-            'callsign': qso['CALL'] ,# All
-            'year': int(qso['QSO_DATE'][0:4]),# SOTA,WWFF
-            'month':int(qso['QSO_DATE'][4:6]),        # SOTA,WWFF
-            'day': int(qso['QSO_DATE'][6:8]),            # SOTA,WWFF
-            'hour': int(qso['TIME_ON'][0:2]),          # SOTA,WWFF
-            'minute': int(qso['TIME_ON'][2:4]),      # SOTA,WWFF
-            'band-wlen': wlen,     # WWFF
-            'mode': mode ,# WWFF
-            'sub_mode': smode,
-            'qth': his_sig,
-            'rmks2': ''
-        }
+        'error':errorfl,
+        'errormsg':errormsg,
+        'date_error':'',
+        'time_error':'',
+        'band_error':'',
+        
+        'callsign': qso['CALL'] ,# All
+        'year': int(qso['QSO_DATE'][0:4]),# SOTA,WWFF
+        'month':int(qso['QSO_DATE'][4:6]),        # SOTA,WWFF
+        'day': int(qso['QSO_DATE'][6:8]),            # SOTA,WWFF
+        'hour': int(qso['TIME_ON'][0:2]),          # SOTA,WWFF
+        'minute': int(qso['TIME_ON'][2:4]),      # SOTA,WWFF
+        'band-wlen': wlen,     # WWFF
+        'mode': mode ,# WWFF
+        'sub_mode': smode,
+        'qth': his_sig,
+        'rmks1': '',
+        'rmks2': ''
+    }
     
     if 'RST_SENT' in qso:
         log['rst_sent'] =  qso['RST_SENT']
@@ -802,6 +803,10 @@ def adif(key, value):
         
 def toADIF(decoder, lcount, mode, row, options):
     h = decoder(row)
+
+    if h['error']:
+        return ('',[h['errormsg']],{}, True)
+
     if options['myQTH']=='rmks1':
         myref = get_ref(h['rmks1'])
         comment = h['rmks2']
@@ -1362,20 +1367,24 @@ def sendADIF(fp, options, inchar, outchar):
     linecount = 0
     isADIF = False
 
-    firstline = lines[0][0].upper()
-    if 'ADIF' in firstline or '<EOH>' in firstline:
-        r = lines
-        lines = []
-        isADIF = True
-        isbody = False
-        options['QTH'] = 'qth'
-        for l in r:
-            lstr = ','.join(l)
-            if isbody:
-                lines.append(lstr)
-            elif '<EOH>' in lstr.upper():
-                isbody = True
-
+    if lines and lines[0]:
+        firstline = lines[0][0].upper()
+        if 'ADIF' in firstline or '<EOH>' in firstline:
+            r = lines
+            lines = []
+            isADIF = True
+            isbody = False
+            options['QTH'] = 'qth'
+            for l in r:
+                lstr = ','.join(l)
+                if isbody:
+                    lines.append(lstr)
+                elif '<EOH>' in lstr.upper():
+                    isbody = True
+    else:
+        res['status'] = 'NG'
+        res['errorlog'] = ['入力ファイルが空です']
+    
     first_date = ''
     rows = ''
     
@@ -1408,12 +1417,12 @@ def sendADIF(fp, options, inchar, outchar):
             
         if errorfl:
             res['status'] = 'NG'
-            res['errorlog']=log
+            res['errorlog']= ldisp
         if ldisp:
             res['logtext'].append(ldisp)
 
         for ref in log.keys():
-            if 'JA-' in ref:
+            if 'JA-' in ref or 'JP-' in ref:
                 mloc = getPOTALoc(ref)
                 date = first_date
             elif '/' in ref:
@@ -1436,7 +1445,7 @@ def sendADIF(fp, options, inchar, outchar):
             if log[ref]:
                 files[fn] += ''.join(log[ref])
 
-            if 'JA-' in ref:
+            if 'JA-' in ref or 'JP-' in ref:
                 potafiles.append(fn)
                 
         linecount += 1
