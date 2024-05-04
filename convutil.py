@@ -805,7 +805,7 @@ def toADIF(decoder, lcount, mode, row, options):
     h = decoder(row)
 
     if h['error']:
-        return ('',[h['errormsg']],{}, True)
+        return ('', '', [h['errormsg']], [], True)
 
     if options['myQTH']=='rmks1':
         myref = get_ref(h['rmks1'])
