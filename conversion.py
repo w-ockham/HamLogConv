@@ -6,11 +6,8 @@ import json
 import logging
 import sys
 from convutil import (
-    sendSOTA_Both,
     sendSOTA_A,
     sendSOTA_C,
-    sendWWFF,
-    sendPOTA,
     sendADIF,
     sendAirHamLog,
     decodeHamlog,
@@ -24,7 +21,7 @@ from trimgpx import (
 )
 
 debug = False
-#debug = True
+# debug = True
 
 
 def main():
@@ -33,11 +30,9 @@ def main():
 
     form = cgi.FieldStorage()
 
-    activation_call_both = form.getvalue('activation_call_both', None)
     activation_call = form.getvalue('activation_call', None)
     chaser_call = form.getvalue('chaser_call', None)
     pota_activation_call = form.getvalue('pota_activation_call', None)
-    wwffoperator = form.getvalue('wwffoperator', None)
     gpx_trk_interval = form.getvalue('gpx_trk_interval', None)
     command = form.getvalue('command', None)
 
@@ -93,15 +88,7 @@ def main():
 
     inchar = 'cp932'
     try:
-        if activation_call_both:
-            outchar = "utf-8"
-            callsign = activation_call_both
-            fname = "sota-" + fname + ".zip"
-            files = sendSOTA_Both(fp, decodeHamlog, callsign, options,
-                                  inchar, outchar)
-            writeZIP(files,fname)
-                
-        elif activation_call:
+        if activation_call:
             outchar = "utf-8"
             callsign = activation_call
             fname = "sota-" + fname + ".zip"
@@ -127,11 +114,6 @@ def main():
                 fname = "adif-" + fname + ".zip"
                 writeZIP(files,fname)
         
-        elif wwffoperator:
-            outchar = "utf-8"
-            files = sendWWFF(fp, decodeHamlog, options, inchar, outchar)
-            writeTXT(files)
-
         elif gpx_trk_interval:
             inchar = "utf-8"
             outchar = "utf-8"

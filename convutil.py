@@ -244,12 +244,7 @@ def decodeHamlog(cols):
     errormsg = []
     
     if len(cols) < 15:
-        errorfl = True
-        errormsg = [ "入力エラー:HAMLOG CSV形式ではありません" ]
-        return {
-            'error':True,
-            'errormsg': errormsg
-        }
+        raise ValueError("エラー:HAMLOG CSV形式ではありません")
     else:
         (operator, portable) = splitCallsign(cols[0])
         
@@ -267,7 +262,7 @@ def decodeHamlog(cols):
             errordate = ''
         else:
             errorfl = True
-            errormsg.append("Err:Wrong date format:{}".format(cols[1]))
+            errormsg.append("日付フォーマット不正:{}".format(cols[1]))
             year = '1900'
             month = '01'
             day = '01'
@@ -285,7 +280,7 @@ def decodeHamlog(cols):
             errortime = ''
         else:
             errorfl = True
-            errormsg.append("Err:Wrong time format:{}".format(cols[2]))
+            errormsg.append("時刻フォーマット不正:{}".format(cols[2]))
             hour = '00'
             minute = '00'
             timezone = '+0900'
@@ -298,7 +293,7 @@ def decodeHamlog(cols):
             isotime = atime.isoformat()
         except Exception as e:
             errorfl = True
-            errormsg.append("Err:Wrong time format:{}".format(operator+ ":"+tstr))
+            errormsg.append("時刻フォーマット不正:{}".format(operator+ ":"+tstr))
             atime = datetime.datetime.strptime("1900/1/1 0:0 +0000",'%Y/%m/%d %H:%M %z')
             utime = atime.astimezone(datetime.timezone(datetime.timedelta(hours=0)))
             isotime = atime.isoformat()
@@ -314,8 +309,9 @@ def decodeHamlog(cols):
             (band_air,band_sota,wlen) = freq_to_band(cols[5])
             band_error = ''
         except Exception as e:
+            errorfl = True
             band_error = errMsg(str(e))
-            errormsg.append("Err:Frequency out of range:{}".format(e))
+            errormsg.append("周波数不正:{}".format(e))
             (band_air,band_sota,wlen) = (band_error, band_error, band_error)
             
         qsl_sent = 0
@@ -339,7 +335,7 @@ def decodeHamlog(cols):
         (mode, smode) = mode_to_ADIFmode(cols[6])
         return {
             'error':errorfl,
-            'errormsg':" , ".join(errormsg),
+            'errormsg':"エラー:" + ",".join(errormsg),
             'date_error':errordate,
             'time_error':errortime,
             'band_error':band_error,
@@ -377,17 +373,27 @@ def decodeHamlog(cols):
 
 def decodeADIF(cols):
     qsos , header = adif_io.read_from_string(cols)
-    qso = qsos[0]
+
+    if len(qsos) == 0:
+        raise ValueError(f"エラー:ADIF形式が不正です: ({cols})")
+    else:
+        qso = qsos[0]
+
+    errorfl = False
+    errormsg = ''
 
     if 'FREQ' in qso.keys():
-        ( _, _, wlen ) = freq_to_band(qso['FREQ'])
+        try:
+            (_, _ ,wlen) = freq_to_band(qso['FREQ'])
+        except Exception as e:
+            errorfl = True
+            wlen  = errMsg(str(e))
+            errormsg = "周波数不正:{}".format(e)
     elif 'BAND' in qso.keys():
         wlen = qso['BAND']
     else:
         wlen = ''
         
-    errorfl = False
-    errormsg = ''
     if 'MY_SIG_INFO' in qso:
         my_sig = qso['MY_SIG_INFO']
     elif 'MY_SOTA_REF' in qso:
@@ -442,12 +448,7 @@ def decodeHamLogIOS(cols):
     errormsg = []
     
     if len(cols) < 19:
-        errorfl = True
-        errormsg = [ "Fatal:Too short columns." ]
-        return {
-            'error':True,
-            'errormsg': errormsg
-        }
+        raise ValueError(f"Fatal:Too short columns: {cols}")
     else:
         (operator, portable) = splitCallsign(cols[3])
         errordate = ''
@@ -463,8 +464,6 @@ def decodeHamLogIOS(cols):
             utime = atime.astimezone(datetime.timezone(datetime.timedelta(hours=0)))
             isotime = atime.isoformat()
             [errordate ,errortime] = map(errMsg, cols[0].split(' ')[0:2])
-            
-
 
         year = utime.year
         month = utime.month
@@ -477,6 +476,7 @@ def decodeHamLogIOS(cols):
             (band_air,band_sota,wlen) = freq_to_band(cols[2])
             band_error = ''
         except Exception as e:
+            errorfl = True
             band_error = errMsg(str(e))
             errormsg.append("Err:Frequency out of range:{}".format(e))
             (band_air,band_sota,wlen) = (band_error,band_error,band_error)
@@ -527,8 +527,13 @@ def toAirHam(decoder, lcount, row, options):
             "received_qra","frequency","mode","card",
             "remarks"]
         return l
-
-    h = decoder(row)
+    try:
+        h = decoder(row)
+    except ValueError as err:
+        h = {}
+        h['error'] = True
+        h['errormsg'] = str(err)
+        
     if h['error']:
         l = [
             "",
@@ -627,7 +632,13 @@ def get_ref(str):
     return r
 
 def toSOTA(decoder, lcount, actp, row, callsign, options):
-    h = decoder(row)
+    try:
+        h = decoder(row)
+    except ValueError as err:
+        h = {}
+        h['error'] = True
+        h['errormsg'] = str(err)
+        
     if h['error']:
         l = [
             "HamLog format error at Line {}. : {}".format(lcount,h['errormsg']),
@@ -698,80 +709,6 @@ def toSOTA(decoder, lcount, actp, row, callsign, options):
         ]
         return (date2,hisqth['SOTA']!='',l)
 
-def toSOTA_Both(decoder, lcount, row, callsign, options):
-    h = decoder(row)
-    if h['error']:
-        l = [
-            "HamLog format error at Line {}. : {}".format(lcount,h['errormsg']),
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            ""
-        ]
-        return ("000000", False, l)
-    else:
-        date = '{day:02}/{month:02}/{year:02}'.format(
-            day=h['day'], month=h['month'], year=h['year'])
-
-        date2 = '{year:02}{month:02}{day:02}'.format(
-            day=h['day'], month=h['month'], year=h['year'])
-
-        if options['myQTH']=='rmks1':
-            myref = get_ref(h['rmks1'])
-        else:
-            myref = get_ref(h['rmks2'])
-
-        if myref['SOTA'] != '':
-            date2 = date2 + '-' + re.sub('.+/', '', myref['SOTA'])
-            if options['Portable'] == 'fromsummit':
-                callsign = callsign.upper() + '/' + myref['PORT']
-            elif options['Portable'] == 'portable':
-                callsign = callsign.upper() + '/P'
-                
-        if options['hisQTH']=='rmks1':
-            hisqth = get_ref(h['rmks1'])
-        else:
-            hisqth = get_ref(h['rmks2'])
-
-        if hisqth['SOTA'] == '' and options['hisQTHopt']:
-            hisqth = get_ref(h['qth'])
-
-        if options['Note']=='rmks1':
-            comment = get_ref(h['rmks1'])
-        else:
-            comment = get_ref(h['rmks2'])
-
-        gl = get_ref(h['gl'])
-        
-    
-        l = [
-            "V2",
-            callsign,
-            myref['SOTA'],
-            date,
-            '{hour:02}:{minute:02}'.format(hour=h['hour'], minute=h['minute']),
-            h['band-sota'],
-            h['mode-sota'],
-            h['callsign'],
-            hisqth['SOTA'],
-            gl['LOC'] + comment['SAT'] + ' '
-        ]
-
-        if myref['SOTA'] == '':
-            if hisqth['SOTA'] == '':
-                state = 0 #Other
-            else:
-                state = 1 #Chaser
-        else:
-            state = 2 #Activator
-            
-        return (date2, state, l)
-
 def adif(key, value):
     adif_fields = [
         ('STATION_CALLSIGN','activator'),
@@ -802,8 +739,13 @@ def adif(key, value):
     return f
         
 def toADIF(decoder, lcount, mode, row, options):
-    h = decoder(row)
-
+    try: 
+        h = decoder(row)
+    except ValueError as err:
+        h = {}
+        h['error'] = True
+        h['errormsg'] = str(err)
+        
     if h['error']:
         return ('', '', [h['errormsg']], [], True)
 
@@ -915,12 +857,11 @@ def toADIF(decoder, lcount, mode, row, options):
     return (date2, wwffref, l, l2, errorfl)
 
 def toADIF2(decoder, row, options):
+    try:
+        h = decoder(row)
+    except ValueError as err:
+        return ('', [str(err)], {}, str(err))
 
-    h = decoder(row)
-
-    if h['error']:
-        return ('',[h['errormsg']],{}, True)
-    
     if options['myQTH']=='rmks1':
         myref = get_ref(h['rmks1'])
         comment = h['rmks2']
@@ -975,10 +916,10 @@ def toADIF2(decoder, row, options):
 
     if h['error'] or h['band_error']:
         qso = [h['errormsg']]
-        errorfl = True
+        errorfl = h['errormsg']
     else:
         qso = []
-        errorfl = False
+        errorfl = None
 
     potacall = h['callsign']
         
@@ -1123,82 +1064,6 @@ def sendAirHamLog(fp, fname, decoder, options, inchar, outchar):
         except Exception as e:
             print('Line:{} Error{}'.format(linecount, e))
                 
-def sendSOTA_Both(fp, decoder, callsign, options, inchar, outchar):
-    prefix = 'sotaActivation-'
-    prefix2 = 'sotaChaser-'
-    prefix3 = 'other-'
-    fname_act = ''
-    fname_chs = ''
-    files = {}
-    linecount = 0
-
-    outstr_act = io.StringIO()
-    writer_act = csv.writer(outstr_act,delimiter=',',
-                            quoting=csv.QUOTE_MINIMAL)
-
-    outstr_chs = io.StringIO()
-    writer_chs = csv.writer(outstr_chs,delimiter=',',
-                            quoting=csv.QUOTE_MINIMAL)
-
-    outstr_other = io.StringIO()
-    writer_other = csv.writer(outstr_other,delimiter=',',
-                            quoting=csv.QUOTE_MINIMAL)
-
-    with io.TextIOWrapper(fp, encoding=inchar, errors="backslashreplace") as f:
-        reader = csv.reader(f)
-        for row in reader:
-            if linecount > 100000:
-                break
-            elif row:
-                (fn, state, lcsv) = toSOTA_Both(decoder, linecount, row, callsign, options)
-                if linecount==0:
-                    fname_act = fn
-                    fname_chs = fn
-                        
-                if fn == fname_act:
-                    if state == 0:
-                        writer_other.writerow(lcsv)
-                    elif state == 1:
-                        writer_chs.writerow(lcsv)
-                    else:
-                        writer_act.writerow(lcsv)
-                else:
-                    buff = outstr_act.getvalue()
-                    if len(buff) > 0:
-                        name = prefix + fname_act + '.csv'
-                        files.update({name : buff})
-                        
-                    outstr_act = io.StringIO()
-                    writer_act = csv.writer(outstr_act,delimiter=',',
-                                            quoting=csv.QUOTE_MINIMAL)
-                    if state == 0:
-                        writer_other.writerow(lcsv)
-                    elif state == 1:
-                        writer_chs.writerow(lcsv)
-                    else:
-                        writer_act.writerow(lcsv)
-
-                    fname_act = fn
-
-            linecount += 1
-
-        buff = outstr_act.getvalue()
-        if len(buff) > 0:
-            name = prefix + fname_act + '.csv'
-            files.update({name : buff})
-
-        buff = outstr_chs.getvalue()
-        if len(buff) > 0:
-            name = prefix2 + fname_chs + '.csv'
-            files.update({name : buff})
-
-        buff = outstr_other.getvalue()
-        if len(buff) > 0:
-            name = prefix3 + fname_chs + '.csv'
-            files.update({name : buff})
-
-    return(files)
-
 def sendSOTA_A(fp, decoder, callsign, options, inchar, outchar):
     prefix = 'sota'
     prefix2 = 'sota-s2s-'
@@ -1321,34 +1186,10 @@ def sendSOTA_C(fp, decoder, callsign, options, inchar, outchar):
         
     return(files)
 
-def sendWWFF(fp, decoder, options, inchar, outchar):
-    files = {}
-    outstr = io.StringIO()
-    linecount = 0
-    writer = csv.writer(outstr, delimiter=' ',
-                        quoting=csv.QUOTE_MINIMAL)
-    with io.TextIOWrapper(fp, encoding=inchar,errors="backslashreplace") as f:
-        reader = csv.reader(f)
-        for row in reader:
-            if linecount > 100000:
-                break
-            else:
-                (date,ref,l,_,_) = toADIF(decoder, linecount, 'WWFF', row, options)
-                if linecount == 0:
-                    act_call = options['WWFFActivator']
-                    fname = act_call.replace('/','-') + '@' + ref + ' '+ date +'.adi'
-                    outstr.write('ADIF Export from HAMLOG by JL1NIE\n')
-                    outstr.write(adif('programid','FCTH')+'\n')
-                    outstr.write(adif('adifver','3.0.6')+'\n')
-                    outstr.write('<EOH>\n')
-                writer.writerow(l)
-                linecount += 1
-        files.update({fname : outstr.getvalue()})
-
 def sendADIF(fp, options, inchar, outchar):
     files = {}
     potafiles = []
-    res = {'status':'OK','logtext':[],'filelist':[]}
+    res = {'status':'OK','errorlog':[], 'logtext':[],'filelist':[]}
     header = 'ADIF Export from HAMLOG by JL1NIE\n'+ adif('programid','FCTH')+ '\n' + adif('adifver','3.1.4')+'\n' + '<EOH>\n'
     
     act_call = options['POTAActivator']
@@ -1359,10 +1200,15 @@ def sendADIF(fp, options, inchar, outchar):
 
     lines = []
     with io.TextIOWrapper(fp, encoding=inchar,errors="backslashreplace") as f:
-        reader = csv.reader(f)
-        for row in reader:
-            lines += [row]
-
+        try:
+            reader = csv.reader(f)
+            for row in reader:
+                lines += [row]
+        except Exception as e:
+            res['status'] = 'NG'
+            res['errorlog'] = 'CSVファイルにエラーがあります({e})'
+            return files, res
+    
     decoder = None
     linecount = 0
     isADIF = False
@@ -1383,7 +1229,8 @@ def sendADIF(fp, options, inchar, outchar):
                     isbody = True
     else:
         res['status'] = 'NG'
-        res['errorlog'] = ['入力ファイルが空です']
+        res['errorlog'] = '入力ファイルが空です'
+        return files, res
     
     first_date = ''
     rows = ''
@@ -1417,7 +1264,9 @@ def sendADIF(fp, options, inchar, outchar):
             
         if errorfl:
             res['status'] = 'NG'
-            res['errorlog']= ldisp
+            res['errorlog'].append(f"{linecount+1}行:{errorfl}")
+            ldisp.append(errorfl)
+            
         if ldisp:
             res['logtext'].append(ldisp)
 
@@ -1451,68 +1300,6 @@ def sendADIF(fp, options, inchar, outchar):
         linecount += 1
         
     res['filelist'] = sorted(set(potafiles), key=potafiles.index)
-    return files,res
-
-def sendPOTA(fp, options, inchar, outchar):
-    files = {}
-    res = {'status':'OK','logtext':[]}
-    outstr = io.StringIO()
-    linecount = 0
-    fname = ''
-    writer = csv.writer(outstr, delimiter=' ',
-                        quoting=csv.QUOTE_MINIMAL)
-    header = 'ADIF Export from HAMLOG by JL1NIE\n' + adif('programid','FCTH')+ '\n' + adif('adifver','3.1.4')+'\n' + '<EOH>\n'
+    res['errorlog'] = "\n".join(res['errorlog'])
     
-    act_call = options['POTAActivator']
-    (operator,portable) = splitCallsign(act_call)
-    if not options['POTAOperator']:
-        options['POTAOperator'] = operator
-
-    decoder = None
-    with io.TextIOWrapper(fp, encoding=inchar,errors="backslashreplace") as f:
-        reader = csv.reader(f)
-        for row in reader:
-            if linecount > 100000:
-                break
-            if not decoder:
-                if 'TimeOn' in row:
-                    decoder = decodeHamLogIOS
-                    continue
-                else:
-                  decoder = decodeHamlog
-                    
-            (date,ref,l,l2,errorfl) = toADIF(decoder, linecount, 'POTA', row, options)
-            if errorfl:
-                res['status'] = 'NG'
-                
-            fn = act_call.replace('/','-') + '@' + ref + '.adi'
-            if l:
-                if linecount==0:
-                    fname = fn
-                    
-                if fn == fname:
-                    writer.writerow(l)
-                else:
-                    if fname in files:
-                        newstr = files[fname] + outstr.getvalue()
-                    else:
-                        newstr = header + outstr.getvalue()
-
-                    files.update({fname : newstr })
-                    outstr = io.StringIO()
-                    writer = csv.writer(outstr,delimiter=' ',
-                                        quoting=csv.QUOTE_MINIMAL)
-                    fname = fn
-                    writer.writerow(l)
-            if l2:
-                res['logtext'].append(l2)
-            linecount += 1
-
-        if fname != '':
-            if fname in files:
-                newstr = files[fname] + outstr.getvalue()
-            else:
-                newstr = header + outstr.getvalue()
-            files.update({fname : newstr })
-            
     return files,res

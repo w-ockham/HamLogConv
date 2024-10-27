@@ -209,119 +209,6 @@
 	</div>
       </div><!-- end of tab-pane -->
 
-      <div class="tab-pane fade" id="SOTABoth" role="tabpanel" aria-labelledby="SOTABoth-tab">	
-	<form id="SOTABoth" method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
-	  <div class="form-group">
-	    <label for="activation_call_both"><b> 運用時のコールサイン</b></label>
-	    <input type="text" id="activation_call_both" name="activation_call_both" class="form-control" placeholder="コールサイン" required>
-	  </div>
-	  <div class="form-group">
-	    <h6><b>コールサインに付与するポータブル表記</b><small>(アクティベーション時のみ)</small></h6>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="portable" id="fromsummit" value="fromsummit">
-	      <label class="form-check-label" for="fromsummit">
-		運用したSOTA山岳IDから自動付与
-	      </label>
-	    </div>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="portable" id="portable" value="portable">
-	      <label class="form-check-label" for="portable">
-		/P
-	      </label>
-	    </div>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="portable" id="none" value="none" checked>
-	      <label class="form-check-label" for="none">
-		付与しない
-	      </label>
-	    </div>
-	  </div>
-	  <div class="form-group">
-	    <h6><b>運用したSOTA山岳ID</b></h6>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="myQTH" id="myQTH1" value="rmks1" onchange="btnChk1()">
-	      <label class="form-check-label" for="myQTH1">
-		Remarks1で指定する
-	      </label>
-	    </div>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="myQTH" id="myQTH2" value="rmks2" onchange="btnChk1()" checked>
-	      <label class="form-check-label" for="myQTH2">
-		Remarks2で指定する
-	      </label>
-	    </div>
-	  </div>
-	  <div class="form-group">
-	    <h6><b>相手局のSOTA山岳ID</b></h6>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="hisQTH" id="QTH1" value="rmks1" onchange="btnChk2()" checked>
-	      <label class="form-check-label" for="QTH1">
-		Remarks1で指定する
-	      </label>
-	    </div>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="hisQTH" id="QTH2" value="rmks2" onchange="btnChk2()">
-	      <label class="form-check-label" for="QTH2">
-		Remarks2で指定する
-	      </label>
-	    </div>
-  	    <div class="form-check">
-	      <input class="form-check-input" type="checkbox" name="hisQTHopt" id="hisQTHopt" value="yes">
-	      <label class="form-check-label" for="hisQTHopt">
-		QTHも参照する<small>(重複時はRemarksの山岳IDを優先)</small>
-	      </label>
-	    </div>	    
-	  </div>
-	  <div class="form-group">
-	    <h6><b>衛星運用情報</b><span class="font-weight-light"><small>(入力例: AO-92/FM/144MHz)</small></span></h6>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="Note" id="Note1" value="rmks1" checked>
-	      <label class="form-check-label" for="Note1">
-		Remarks1で指定する
-	      </label>
-	    </div>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="Note" id="Note2" value="rmks2">
-	      <label class="form-check-label" for="Note2">
-		Remarks2で指定する
-	      </label>
-	    </div>
-	  </div>
-	  <div class="form-group">
-	    <div class="custom-file">
-	      <input type="file" class="custom-file-input" id="filename" name="filename" required>
-	      <label class="custom-file-label" for="filename">HamLog CSVファイルを選択</label>
-	      <div class="invalid-feedback">ファイルを指定してください</div>
-	    </div>
-	  </div>
-	  <div class="form-group">
-	    <button type="submit" class="btn btn-primary">変換</button>
-	    <a href="https://www.sotadata.org.uk/" target="_blank" class="btn btn-outline-info" role="button">sotadata.org.uk</a>
-	  </div>
-      	</form>
-      </div><!-- end of tab-pane -->
-      <script>
-        function btnChk1() {
-	    var form = document.forms.SOTABoth;
- 	    if( form.myQTH.value == "rmks1" && form.hisQTH.value == "rmks1") {
-		form.hisQTH.value = "rmks2";
-	    }
-	    if( form.myQTH.value == "rmks2" && form.hisQTH.value == "rmks2") {
-		form.hisQTH.value = "rmks1";
-	    }
-	}
-
-        function btnChk2() {
-	    var form = document.forms.SOTABoth;
- 	    if( form.myQTH.value == "rmks1" && form.hisQTH.value == "rmks1") {
-		form.myQTH.value = "rmks2";
-	    }
-	    if( form.myQTH.value == "rmks2" && form.hisQTH.value == "rmks2") {
-		form.myQTH.value = "rmks1";
-	    }
-	}
-      </script>
-
       <div class="tab-pane fade" id="SOTAActivator" role="tabpanel" aria-labelledby="SOTAActivator-tab">	
 	<form id="SOTAActivator" method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' onsubmit="return formCheckSOTA()" style="padding:10px">
 	  <div class="form-group">
@@ -401,6 +288,7 @@
 	    return true;
         }
       </script>
+      
       <div class="tab-pane fade" id="SOTAChaser" role="tabpanel" aria-labelledby="SOTAChaser-tab">	
 	<form id="SOTAChaser" method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
 	  <div class ="form-group">
@@ -442,51 +330,6 @@
 	  </div>
 	</form>
       </div><!-- end of tab-pane -->
-      <div class="tab-pane fade" id="JAFFActivator" role="tabpanel" aria-labelledby="JAFFActivator-tab">
-	<form method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' style="padding:10px">
-	  <div class ="form-group">
-	    <label for="operator"><b>運用時のオペレータ</b></label>
-	    <input type="text" id="wwffoperator" name="wwffoperator" class="form-control" placeholder="オペレータ(e.g. JL1NIE)" required>
-	    <label for="wwffact_call"><b>運用時のコールサイン</b></label>
-	    <input type="text" id="wwffact_call" name="wwffact_call" class="form-control" placeholder="コールサイン(e.g. JL1NIE/1)" required>
-	    <label for="wwffref"><b>運用したWWFFリファレンス</b></label>
-	    <input type="text" id="wwffref" name="wwffref" class="form-control" placeholder="e.g. JAFF-0202" required>
-	  </div>
-	  <div class="form-group">
-	    <h6><b>P2P交信局のWWFFリファレンス</b></h6>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="QTH" id="QTHNone" value="none" checked>
-	      <label class="form-check-label" for="QTHNone">
-		指定しない
-	      </label>
-	    </div>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="QTH" id="QTH1" value="rmks1">
-	      <label class="form-check-label" for="QTH1">
-		Remarks1で指定する
-	      </label>
-	    </div>
-	    <div class="form-check">
-	      <input class="form-check-input" type="radio" name="QTH" id="QTH2" value="rmks2">
-	      <label class="form-check-label" for="QTH2">
-		Remarks2で指定する
-	      </label>
-	    </div>
-	  </div>
-	  <div class="form-group">
-	    <div class="custom-file">
-	      <input type="file" class="custom-file-input" id="filename" name="filename" required>
-	      <label class="custom-file-label" for="filename">HamLog CSVファイルを選択</label>
-	      <div class="invalid-feedback">ファイルを指定してください</div>
-	    </div>
-	  </div>
-
-	  <div class="form-group">
-	    <button type="submit" class="btn btn-primary">変換</button>
-	    <a href="mailto:jaff-log@niftycom" target="_blank" class="btn btn-outline-info" role="button">mailto:jaff-log@nifty.com</a>
-	  </div>
-	</form>
-      </div><!-- end of tab-pane -->
 
       <div class="tab-pane fade show active" id="POTAActivator" role="tabpanel" aria-labelledby="POTAActivator-tab">
 	<form id="POTAActivatorForm" name="POTAActivatorForm" method="post" enctype="multipart/form-data" action='/cgi-bin/conversion.py' onsubmit="return formCheckPOTA()" style="padding:10px">
@@ -507,7 +350,7 @@
 		    <div class="form-check">
 		      <input class="form-check-input" type="radio" name="myQTH" id="myQTH" value="form" checked>
 		      <label for="park">リファレンス/公園番号を入力</label>
-		      <input type="text" id="park" name="park" class="form-control" placeholder="例: JAFF-0005 JA-0014">
+		      <input type="text" id="park" name="park" class="form-control" placeholder="例: JAFF-0005 JP-0014">
 		    </div>
 		    <div class="form-check">
 		      <input class="form-check-input" type="radio" name="myQTH" id="myQTH1" value="rmks1">
@@ -1001,7 +844,7 @@ function setSample(arg) {
 	    "mycall " + act_call + "\n" +
 	    "operator " + operator + "\n" +
 	    "mywwff jaff-0218\n" +
-	    "mypota ja-1151 ja-1164\n" +
+	    "mypota jp-1151 jp-1164\n" +
 	    "mysota ja/st-012\n" +
 	    "qslmsg $sat丸山$mysota $mypota $rig\n"+
 	    "#Log\n" +
@@ -1225,14 +1068,21 @@ function readPOTACSV() {
 	    textinterpreted = true;
 	else {
 	    textinterpreted = false;
-	    alert('CSVファイルにエラーがあります。\nHAMLOG CSVファイルを指定してください');
+	    console.log(data.errorlog);
+	    alert('CSVファイルにエラーがあります。\n'+ data.errorlog);
 	}
 	
 	tlist = data.logtext;
 	var count = 1
 	for(var i = 0, len = tlist.length; i < len; ++i,++count) {
-	    td = "<td>"+count+"</td>";
-	    for(var j =0,len2 = tlist[i].length; j < len2;++j)
+	    var length = tlist[i].length;  
+	    if ( length > 11) {
+		length = 11
+		td = '<td bgcolor="red"><a href="#" title="'+ tlist[i][11] + '" target="_blank">' + count + '</a></td>'
+	    } else {
+		td = '<td>'+count+'</td>'
+	    };
+	    for(var j =0;j < length; ++j)
 		td = td + "<td>" + tlist[i][j] + "&nbsp</td>";
 	    $('#potacsvlisttable').append('<tr>'+td+'</tr>');
 	}
